@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     siteName: "Tamazight",
     images: [
       {
-        url: "/og-image.jpg",
+        url: "/logo-tamazight.png",
         width: 1200,
         height: 630,
         alt: "Tamazight - الأمازيغية هويتنا",
