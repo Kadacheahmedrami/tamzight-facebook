@@ -30,28 +30,32 @@ export default function CreatePostModal() {
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <div className="post-card cursor-pointer hover:bg-gray-50 transition-colors">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
-            <Input placeholder="إنشاء منشور جديد ونشره في هذا القسم" className="flex-1 cursor-pointer" readOnly />
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full"></div>
+            <Input
+              placeholder="إنشاء منشور جديد ونشره في هذا القسم"
+              className="flex-1 cursor-pointer text-sm sm:text-base"
+              readOnly
+            />
           </div>
         </div>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl mx-2 sm:mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>إنشاء منشور جديد</DialogTitle>
+          <DialogTitle className="text-lg sm:text-xl">إنشاء منشور جديد</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+          <div className="flex items-center gap-2 sm:gap-3 mb-4">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 rounded-full"></div>
             <div>
-              <p className="font-medium">سيبتموس الليبي</p>
-              <p className="text-sm text-gray-500">من ليبيا</p>
+              <p className="font-medium text-sm sm:text-base">سيبتموس الليبي</p>
+              <p className="text-xs sm:text-sm text-gray-500">من ليبيا</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="اختار قسم رئيسي" />
               </SelectTrigger>
               <SelectContent>
@@ -67,7 +71,7 @@ export default function CreatePostModal() {
             </Select>
 
             <Select>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="اختار قسم فرعي" />
               </SelectTrigger>
               <SelectContent>
@@ -83,6 +87,7 @@ export default function CreatePostModal() {
             placeholder="اكتب عنوان المنشور هنا"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            className="form-input-mobile"
             required
           />
 
@@ -90,31 +95,41 @@ export default function CreatePostModal() {
             placeholder="أكتب منشورك هنا وانشره للجميع"
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            rows={6}
+            rows={4}
+            className="form-input-mobile resize-none"
             required
           />
 
-          <div className="flex items-center gap-4 p-4 bg-gray-50 rounded-lg">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
             <span className="text-sm font-medium">أضف لمنشورك:</span>
-            <Button type="button" variant="ghost" size="sm">
-              <ImageIcon className="h-4 w-4 ml-1" />
-              صورة
-            </Button>
-            <Button type="button" variant="ghost" size="sm">
-              <FileUp className="h-4 w-4 ml-1" />
-              ملف
-            </Button>
-            <Button type="button" variant="ghost" size="sm">
-              <Video className="h-4 w-4 ml-1" />
-              فيديو
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" variant="ghost" size="sm" className="text-xs sm:text-sm bg-transparent">
+                <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                صورة
+              </Button>
+              <Button type="button" variant="ghost" size="sm" className="text-xs sm:text-sm bg-transparent">
+                <FileUp className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                ملف
+              </Button>
+              <Button type="button" variant="ghost" size="sm" className="text-xs sm:text-sm bg-transparent">
+                <Video className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                فيديو
+              </Button>
+            </div>
           </div>
 
-          <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+          <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+              className="touch-target bg-transparent"
+            >
               إلغاء
             </Button>
-            <Button type="submit">أنشر منشورك الآن</Button>
+            <Button type="submit" className="touch-target">
+              أنشر منشورك الآن
+            </Button>
           </div>
         </form>
       </DialogContent>

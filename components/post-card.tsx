@@ -20,21 +20,21 @@ interface PostCardProps {
 export default function PostCard({ title, content, author, timestamp, category, image, stats }: PostCardProps) {
   return (
     <div className="post-card">
-      <div className="flex items-center gap-2 mb-3">
-        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{category}</span>
-        <span className="text-gray-500 text-sm">•</span>
-        <span className="text-gray-500 text-sm">{timestamp}</span>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-3">
+        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full w-fit">{category}</span>
+        <span className="text-gray-500 text-sm hidden sm:inline">•</span>
+        <span className="text-gray-500 text-xs sm:text-sm">{timestamp}</span>
       </div>
 
-      <div className="flex items-start gap-3 mb-3">
-        <div className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0"></div>
+      <div className="flex items-start gap-2 sm:gap-3 mb-3">
+        <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full flex-shrink-0"></div>
         <div>
-          <h3 className="font-semibold text-gray-900">{author}</h3>
-          <p className="text-sm text-gray-500">{timestamp}</p>
+          <h3 className="font-semibold text-gray-900 text-sm sm:text-base">{author}</h3>
+          <p className="text-xs sm:text-sm text-gray-500">{timestamp}</p>
         </div>
       </div>
 
-      <h2 className="text-lg font-semibold mb-2 text-gray-900">{title}</h2>
+      <h2 className="text-base sm:text-lg font-semibold mb-2 text-gray-900 leading-tight">{title}</h2>
 
       {image && (
         <div className="mb-3">
@@ -43,36 +43,36 @@ export default function PostCard({ title, content, author, timestamp, category, 
             alt={title}
             width={600}
             height={300}
-            className="w-full h-48 object-cover rounded-lg"
+            className="w-full h-40 sm:h-48 object-cover rounded-lg"
           />
         </div>
       )}
 
-      <p className="text-gray-700 mb-4 leading-relaxed">{content}</p>
+      <p className="text-gray-700 mb-4 leading-relaxed text-sm sm:text-base">{content}</p>
 
-      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-red-500">
-            <Heart className="h-4 w-4 ml-1" />
-            {stats.likes}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-3 border-t border-gray-100 gap-3">
+        <div className="flex items-center gap-2 sm:gap-4">
+          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-red-500 p-1 sm:p-2">
+            <Heart className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+            <span className="text-xs sm:text-sm">{stats.likes}</span>
           </Button>
-          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-500">
-            <MessageCircle className="h-4 w-4 ml-1" />
-            {stats.comments}
+          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-500 p-1 sm:p-2">
+            <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+            <span className="text-xs sm:text-sm">{stats.comments}</span>
           </Button>
-          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-green-500">
-            <Share2 className="h-4 w-4 ml-1" />
-            {stats.shares}
+          <Button variant="ghost" size="sm" className="text-gray-500 hover:text-green-500 p-1 sm:p-2">
+            <Share2 className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+            <span className="text-xs sm:text-sm">{stats.shares}</span>
           </Button>
         </div>
 
-        <div className="flex items-center gap-4 text-sm text-gray-500">
+        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
           <span className="flex items-center gap-1">
-            <Eye className="h-4 w-4" />
+            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
             {stats.views}
           </span>
           <span className="flex items-center gap-1">
-            <Fingerprint className="h-4 w-4" />
+            <Fingerprint className="h-3 w-3 sm:h-4 sm:w-4" />
             بصمة
           </span>
         </div>

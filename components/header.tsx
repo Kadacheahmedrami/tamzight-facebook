@@ -2,10 +2,11 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
-import { Search, User, MessageCircle, Bell, Users, Home, X, LogOut } from "lucide-react"
+import { Search, User, MessageCircle, Bell, Users, Home, X, LogOut, Menu } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useAuthContext } from "@/components/auth-provider"
 
 interface SearchResult {
@@ -45,6 +46,7 @@ export default function Header() {
   const [messages, setMessages] = useState<Message[]>([])
   const [notificationsLoading, setNotificationsLoading] = useState(false)
   const [messagesLoading, setMessagesLoading] = useState(false)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const searchRef = useRef<HTMLDivElement>(null)
 
   // Fetch notifications
@@ -121,6 +123,7 @@ export default function Header() {
 
   const handleLogout = async () => {
     await logout()
+    setMobileMenuOpen(false)
   }
 
   const unreadNotifications = notifications.filter((n) => !n.read).length
@@ -129,16 +132,16 @@ export default function Header() {
   if (loading) {
     return (
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4">
+          <div className="flex items-center justify-between h-14 sm:h-16">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
+              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gray-200 rounded animate-pulse"></div>
             </div>
-            <div className="flex-1 max-w-md mx-8">
-              <div className="h-10 bg-gray-200 rounded animate-pulse"></div>
+            <div className="flex-1 max-w-md mx-4 sm:mx-8">
+              <div className="h-8 sm:h-10 bg-gray-200 rounded animate-pulse"></div>
             </div>
             <div className="flex items-center">
-              <img src="/logo-tamazight.png" alt="Tamazight Logo" className="h-10 w-auto" />
+              <img src="/logo-tamazight.png" alt="Tamazight Logo" className="h-8 sm:h-10 w-auto" />
             </div>
           </div>
         </div>
@@ -148,192 +151,300 @@ export default function Header() {
 
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4">
-        <div className="flex items-center justify-between h-16">
-          {/* Navigation Icons - Left */}
-          <div className="flex items-center gap-2">
+      <div className="max-w-7xl mx-auto px-2 sm:px-4">
+        <div className="flex items-center justify-between h-14 sm:h-16">
+          {/* Mobile Menu Button & Navigation - Left */}
+          <div className="flex items-center gap-1 sm:gap-2">
             {user ? (
               <>
-                <Link href="/home">
-                  <Button variant="ghost" size="sm" className="relative">
-                    <Home className="h-5 w-5" />
-                  </Button>
-                </Link>
-
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="relative">
-                      <User className="h-5 w-5" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-80">
-                    <div className="p-4">
-                      <h3 className="font-semibold mb-2">ملف بياناتك الشخصية</h3>
-                      <div className="flex items-center gap-3 mb-4">
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
-                          <User className="h-6 w-6 text-gray-500" />
+                {/* Mobile Menu */}
+                <div className="md:hidden">
+                  <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+                    <SheetTrigger asChild>
+                      <Button variant="ghost" size="sm" className="p-2">
+                        <Menu className="h-5 w-5" />
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent side="right" className="w-80 p-0">
+                      <div className="flex flex-col h-full">
+                        {/* Custom close button on the left */}
+                        <div className="absolute left-4 top-4 z-10">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
+                          >
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">إغلاق</span>
+                          </Button>
                         </div>
-                        <div>
-                          <p className="font-medium">
-                            {user.firstName} {user.lastName}
-                          </p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
+
+                        {/* User Profile Section */}
+                        <div className="p-4 pt-12 border-b bg-gradient-to-r from-blue-600 to-green-600 text-white">
+                          <div className="flex items-center gap-3">
+                            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                              <User className="h-6 w-6" />
+                            </div>
+                            <div>
+                              <p className="font-medium">
+                                {user.firstName} {user.lastName}
+                              </p>
+                              <p className="text-sm text-blue-100">{user.email}</p>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Navigation Links */}
+                        <div className="flex-1 p-4 space-y-2">
+                          <Link href="/home" onClick={() => setMobileMenuOpen(false)} className="mobile-nav-item">
+                            <Home className="h-5 w-5" />
+                            <span>الصفحة الرئيسية</span>
+                          </Link>
+                          <Link href="/member" onClick={() => setMobileMenuOpen(false)} className="mobile-nav-item">
+                            <User className="h-5 w-5" />
+                            <span>ملفي الشخصي</span>
+                          </Link>
+                          <Link href="/messages" onClick={() => setMobileMenuOpen(false)} className="mobile-nav-item">
+                            <MessageCircle className="h-5 w-5" />
+                            <span>الرسائل</span>
+                            {unreadMessages > 0 && (
+                              <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                                {unreadMessages}
+                              </span>
+                            )}
+                          </Link>
+                          <Link href="/friends" onClick={() => setMobileMenuOpen(false)} className="mobile-nav-item">
+                            <Users className="h-5 w-5" />
+                            <span>الأصدقاء</span>
+                          </Link>
+                          <Link href="/settings" onClick={() => setMobileMenuOpen(false)} className="mobile-nav-item">
+                            <User className="h-5 w-5" />
+                            <span>الإعدادات</span>
+                          </Link>
+                        </div>
+
+                        {/* Logout Button */}
+                        <div className="p-4 border-t">
+                          <Button
+                            onClick={handleLogout}
+                            variant="outline"
+                            className="w-full text-red-600 border-red-200 bg-transparent"
+                          >
+                            <LogOut className="h-4 w-4 ml-2" />
+                            تسجيل خروج
+                          </Button>
                         </div>
                       </div>
-                    </div>
-                    <DropdownMenuItem asChild>
-                      <Link href="/member">متابعتك</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>محفوظاتك</DropdownMenuItem>
-                    <DropdownMenuItem>كُن شريك التجمع</DropdownMenuItem>
-                    <DropdownMenuItem>انضم لفريق التجمع</DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                      <Link href="/settings">الإعدادات</Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout} className="text-red-600">
-                      <LogOut className="h-4 w-4 ml-2" />
-                      تسجيل خروج
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                    </SheetContent>
+                  </Sheet>
+                </div>
 
-                <DropdownMenu onOpenChange={(open) => open && fetchMessages()}>
-                  <DropdownMenuTrigger asChild>
+                {/* Desktop Navigation */}
+                <div className="hidden md:flex items-center gap-2">
+                  <Link href="/home">
                     <Button variant="ghost" size="sm" className="relative">
-                      <MessageCircle className="h-5 w-5" />
-                      {unreadMessages > 0 && <span className="badge-notification">{unreadMessages}</span>}
+                      <Home className="h-5 w-5" />
                     </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-80">
-                    <div className="p-4">
-                      <h3 className="font-semibold mb-2">مراسلتك</h3>
-                      {messagesLoading ? (
-                        <p className="text-sm text-gray-500">جاري التحميل...</p>
-                      ) : messages.length > 0 ? (
-                        <div className="space-y-3 max-h-64 overflow-y-auto">
-                          {messages.map((message) => (
-                            <div
-                              key={message.id}
-                              className={`flex items-start gap-3 p-2 rounded ${!message.read ? "bg-blue-50" : ""}`}
-                            >
-                              <img
-                                src={message.avatar || "/placeholder.svg"}
-                                alt={message.sender}
-                                className="w-8 h-8 rounded-full"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium truncate">{message.sender}</p>
-                                <p className="text-xs text-gray-600 truncate">{message.message}</p>
-                                <p className="text-xs text-gray-400">{message.timestamp}</p>
-                              </div>
-                            </div>
-                          ))}
+                  </Link>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="relative">
+                        <User className="h-5 w-5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-80">
+                      <div className="p-4">
+                        <h3 className="font-semibold mb-2">ملف بياناتك الشخصية</h3>
+                        <div className="flex items-center gap-3 mb-4">
+                          <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                            <User className="h-6 w-6 text-gray-500" />
+                          </div>
+                          <div>
+                            <p className="font-medium">
+                              {user.firstName} {user.lastName}
+                            </p>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                          </div>
                         </div>
-                      ) : (
-                        <p className="text-sm text-gray-500">ليس عندك أي رسائل</p>
-                      )}
-                    </div>
-                    <div className="border-t p-2">
-                      <Link href="/messages">
-                        <Button variant="ghost" size="sm" className="w-full">
-                          عرض جميع الرسائل
-                        </Button>
-                      </Link>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                      </div>
+                      <DropdownMenuItem asChild>
+                        <Link href="/member">متابعتك</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem>محفوظاتك</DropdownMenuItem>
+                      <DropdownMenuItem>كُن شريك التجمع</DropdownMenuItem>
+                      <DropdownMenuItem>انضم لفريق التجمع</DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href="/settings">الإعدادات</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={handleLogout} className="text-red-600">
+                        <LogOut className="h-4 w-4 ml-2" />
+                        تسجيل خروج
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
-                <DropdownMenu onOpenChange={(open) => open && fetchNotifications()}>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="relative">
-                      <Bell className="h-5 w-5" />
-                      {unreadNotifications > 0 && <span className="badge-notification">{unreadNotifications}</span>}
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-80">
-                    <div className="p-4">
-                      <h3 className="font-semibold mb-2">الإشعارات</h3>
-                      {notificationsLoading ? (
-                        <p className="text-sm text-gray-500">جاري التحميل...</p>
-                      ) : notifications.length > 0 ? (
-                        <div className="space-y-3 max-h-64 overflow-y-auto">
-                          {notifications.map((notification) => (
-                            <div
-                              key={notification.id}
-                              className={`flex items-start gap-3 p-2 rounded ${!notification.read ? "bg-blue-50" : ""}`}
-                            >
-                              <img
-                                src={notification.avatar || "/placeholder.svg"}
-                                alt="User"
-                                className="w-8 h-8 rounded-full"
-                              />
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-800">{notification.message}</p>
-                                <p className="text-xs text-gray-400">{notification.timestamp}</p>
+                  <DropdownMenu onOpenChange={(open) => open && fetchMessages()}>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="relative">
+                        <MessageCircle className="h-5 w-5" />
+                        {unreadMessages > 0 && <span className="badge-notification">{unreadMessages}</span>}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-80">
+                      <div className="p-4">
+                        <h3 className="font-semibold mb-2">مراسلتك</h3>
+                        {messagesLoading ? (
+                          <p className="text-sm text-gray-500">جاري التحميل...</p>
+                        ) : messages.length > 0 ? (
+                          <div className="space-y-3 max-h-64 overflow-y-auto">
+                            {messages.map((message) => (
+                              <div
+                                key={message.id}
+                                className={`flex items-start gap-3 p-2 rounded ${!message.read ? "bg-blue-50" : ""}`}
+                              >
+                                <img
+                                  src={message.avatar || "/placeholder.svg"}
+                                  alt={message.sender}
+                                  className="w-8 h-8 rounded-full"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{message.sender}</p>
+                                  <p className="text-xs text-gray-600 truncate">{message.message}</p>
+                                  <p className="text-xs text-gray-400">{message.timestamp}</p>
+                                </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-sm text-gray-500">ليس عندك أي إشعارات</p>
-                      )}
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500">ليس عندك أي رسائل</p>
+                        )}
+                      </div>
+                      <div className="border-t p-2">
+                        <Link href="/messages">
+                          <Button variant="ghost" size="sm" className="w-full">
+                            عرض جميع الرسائل
+                          </Button>
+                        </Link>
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="relative">
-                      <Users className="h-5 w-5" />
-                      <span className="badge-notification">9</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="start" className="w-80">
-                    <div className="p-4">
-                      <h3 className="font-semibold mb-2">أصدقاء أمازيغ</h3>
-                      <p className="text-sm text-gray-500">يوجد 10 أصدقاء جديد</p>
-                    </div>
-                    <div className="border-t p-2">
-                      <Link href="/friends">
-                        <Button variant="ghost" size="sm" className="w-full">
-                          عرض جميع الأصدقاء
-                        </Button>
-                      </Link>
-                    </div>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                  <DropdownMenu onOpenChange={(open) => open && fetchNotifications()}>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="relative">
+                        <Bell className="h-5 w-5" />
+                        {unreadNotifications > 0 && <span className="badge-notification">{unreadNotifications}</span>}
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-80">
+                      <div className="p-4">
+                        <h3 className="font-semibold mb-2">الإشعارات</h3>
+                        {notificationsLoading ? (
+                          <p className="text-sm text-gray-500">جاري التحميل...</p>
+                        ) : notifications.length > 0 ? (
+                          <div className="space-y-3 max-h-64 overflow-y-auto">
+                            {notifications.map((notification) => (
+                              <div
+                                key={notification.id}
+                                className={`flex items-start gap-3 p-2 rounded ${!notification.read ? "bg-blue-50" : ""}`}
+                              >
+                                <img
+                                  src={notification.avatar || "/placeholder.svg"}
+                                  alt="User"
+                                  className="w-8 h-8 rounded-full"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-gray-800">{notification.message}</p>
+                                  <p className="text-xs text-gray-400">{notification.timestamp}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-gray-500">ليس عندك أي إشعارات</p>
+                        )}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="relative">
+                        <Users className="h-5 w-5" />
+                        <span className="badge-notification">9</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-80">
+                      <div className="p-4">
+                        <h3 className="font-semibold mb-2">أصدقاء أمازيغ</h3>
+                        <p className="text-sm text-gray-500">يوجد 10 أصدقاء جديد</p>
+                      </div>
+                      <div className="border-t p-2">
+                        <Link href="/friends">
+                          <Button variant="ghost" size="sm" className="w-full">
+                            عرض جميع الأصدقاء
+                          </Button>
+                        </Link>
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {/* Mobile Quick Actions */}
+                <div className="md:hidden flex items-center gap-1">
+                  <Button variant="ghost" size="sm" className="relative p-2" onClick={() => fetchNotifications()}>
+                    <Bell className="h-4 w-4" />
+                    {unreadNotifications > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                        {unreadNotifications}
+                      </span>
+                    )}
+                  </Button>
+                  <Button variant="ghost" size="sm" className="relative p-2" onClick={() => fetchMessages()}>
+                    <MessageCircle className="h-4 w-4" />
+                    {unreadMessages > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                        {unreadMessages}
+                      </span>
+                    )}
+                  </Button>
+                </div>
               </>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 sm:gap-2">
                 <Link href="/login">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="text-xs sm:text-sm px-2 sm:px-3 bg-transparent">
                     تسجيل الدخول
                   </Button>
                 </Link>
                 <Link href="/register">
-                  <Button size="sm">إنشاء حساب</Button>
+                  <Button size="sm" className="text-xs sm:text-sm px-2 sm:px-3">
+                    إنشاء حساب
+                  </Button>
                 </Link>
               </div>
             )}
           </div>
 
           {/* Search Bar - Center */}
-          <div className="flex-1 max-w-md mx-8 relative" ref={searchRef}>
+          <div className="flex-1 max-w-md mx-2 sm:mx-8 relative" ref={searchRef}>
             <div className="relative">
-              <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Search className="absolute right-2 sm:right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-3 w-3 sm:h-4 sm:w-4" />
               <Input
                 type="text"
                 placeholder="أبحث في الامازيغية هويتنا"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-10 pl-8 text-right"
+                className="pr-8 sm:pr-10 pl-6 sm:pl-8 text-right text-sm sm:text-base h-8 sm:h-10 form-input-mobile"
               />
               {searchQuery && (
                 <button
                   onClick={clearSearch}
-                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3 w-3 sm:h-4 sm:w-4" />
                 </button>
               )}
             </div>
@@ -342,7 +453,7 @@ export default function Header() {
             {showResults && (
               <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-96 overflow-y-auto z-50">
                 {searchLoading ? (
-                  <div className="p-4 text-center text-gray-500">جاري البحث...</div>
+                  <div className="p-4 text-center text-gray-500 text-sm">جاري البحث...</div>
                 ) : searchResults.length > 0 ? (
                   <div className="py-2">
                     {searchResults.map((result) => (
@@ -350,16 +461,16 @@ export default function Header() {
                         key={result.id}
                         href={result.url}
                         onClick={() => setShowResults(false)}
-                        className="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                        className="block px-3 sm:px-4 py-2 sm:py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
                       >
-                        <div className="flex items-start gap-3">
+                        <div className="flex items-start gap-2 sm:gap-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                              <span className="text-xs bg-blue-100 text-blue-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full">
                                 {result.type}
                               </span>
                             </div>
-                            <h4 className="font-medium text-sm line-clamp-1 mb-1">{result.title}</h4>
+                            <h4 className="font-medium text-xs sm:text-sm line-clamp-1 mb-1">{result.title}</h4>
                             <p className="text-xs text-gray-600 line-clamp-2 mb-1">{result.content}</p>
                             <p className="text-xs text-gray-500">بواسطة {result.author}</p>
                           </div>
@@ -368,16 +479,16 @@ export default function Header() {
                     ))}
                   </div>
                 ) : (
-                  <div className="p-4 text-center text-gray-500">لا توجد نتائج للبحث</div>
+                  <div className="p-4 text-center text-gray-500 text-sm">لا توجد نتائج للبحث</div>
                 )}
               </div>
             )}
           </div>
 
           {/* Logo and Site Name - Right */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <Link href="/" className="flex items-center">
-              <img src="/logo-tamazight.png" alt="Tamazight Logo" className="h-10 w-auto" />
+              <img src="/logo-tamazight.png" alt="Tamazight Logo" className="h-8 sm:h-10 w-auto" />
             </Link>
           </div>
         </div>
