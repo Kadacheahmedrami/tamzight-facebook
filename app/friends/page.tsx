@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react"
 import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
+import { MobileSidebar } from "@/components/MobileSidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { UserPlus, Users, Search, Menu } from "lucide-react"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { UserPlus, Users, Search } from "lucide-react"
 
 interface Friend {
   id: number
@@ -28,7 +28,6 @@ export default function FriendsPage() {
   const [friendsData, setFriendsData] = useState<FriendsData>({ friends: [], suggestions: [] })
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
-  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const fetchFriends = async () => {
     setLoading(true)
@@ -57,13 +56,14 @@ export default function FriendsPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
+        <MobileSidebar title="أصدقاء من الأمازيغ" description="تواصل مع الأعضاء" />
         <div className="max-w-7xl mx-auto flex">
-          <Sidebar />
           <div className="flex-1 p-2 sm:p-4">
             <div className="max-w-2xl mx-auto">
               <div className="text-center py-8">جاري التحميل...</div>
             </div>
           </div>
+          <Sidebar />
         </div>
       </div>
     )
@@ -72,78 +72,20 @@ export default function FriendsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      <MobileSidebar title="أصدقاء من الأمازيغ" description="تواصل مع الأعضاء" />
       <div className="max-w-7xl mx-auto flex">
-        {/* Desktop Left Sidebar - Friend Suggestions */}
-        <div className="hidden lg:block w-64 p-4">
-          <div className="bg-white rounded-lg p-4 border">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <UserPlus className="h-4 w-4 text-blue-600" />
-              اقتراحات صداقة
-            </h3>
-            <div className="space-y-3">
-              {friendsData.suggestions.map((friend) => (
-                <div key={friend.id} className="border rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <img src={friend.avatar || "/placeholder.svg"} alt={friend.name} className="w-8 h-8 rounded-full" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{friend.name}</p>
-                      <p className="text-xs text-gray-500">{friend.location}</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-600 mb-2">{friend.occupation}</p>
-                  <p className="text-xs text-blue-600 mb-2">{friend.mutualFriends} أصدقاء مشتركين</p>
-                  <Button size="sm" className="w-full text-xs">
-                    إضافة صديق
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
+        {/* Right Sidebar - Main Navigation */}
+        <Sidebar />
 
         {/* Main Content - Friends List */}
         <div className="flex-1 p-2 sm:p-4">
           <div className="max-w-2xl mx-auto">
-            {/* Mobile Navigation Button */}
+            {/* Mobile Friend Suggestions Button */}
             <div className="lg:hidden mb-4">
-              <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full bg-transparent">
-                    <Menu className="h-4 w-4 ml-2" />
-                    اقتراحات الأصدقاء
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-80 p-0">
-                  <div className="p-4">
-                    <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <UserPlus className="h-4 w-4 text-blue-600" />
-                      اقتراحات صداقة
-                    </h3>
-                    <div className="space-y-3">
-                      {friendsData.suggestions.map((friend) => (
-                        <div key={friend.id} className="border rounded-lg p-3">
-                          <div className="flex items-center gap-2 mb-2">
-                            <img
-                              src={friend.avatar || "/placeholder.svg"}
-                              alt={friend.name}
-                              className="w-8 h-8 rounded-full"
-                            />
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium truncate">{friend.name}</p>
-                              <p className="text-xs text-gray-500">{friend.location}</p>
-                            </div>
-                          </div>
-                          <p className="text-xs text-gray-600 mb-2">{friend.occupation}</p>
-                          <p className="text-xs text-blue-600 mb-2">{friend.mutualFriends} أصدقاء مشتركين</p>
-                          <Button size="sm" className="w-full text-xs" onClick={() => setSidebarOpen(false)}>
-                            إضافة صديق
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </SheetContent>
-              </Sheet>
+              <Button variant="outline" className="w-full bg-white">
+                <UserPlus className="h-4 w-4 ml-2" />
+                عرض اقتراحات الأصدقاء ({friendsData.suggestions.length})
+              </Button>
             </div>
 
             {/* Breadcrumb */}
@@ -226,11 +168,67 @@ export default function FriendsPage() {
                 )}
               </div>
             </div>
+
+            {/* Mobile Friend Suggestions Section */}
+            <div className="lg:hidden mt-6">
+              <div className="bg-white rounded-lg border">
+                <div className="p-3 sm:p-4 border-b">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <UserPlus className="h-5 w-5 text-blue-600" />
+                    اقتراحات صداقة
+                  </h3>
+                </div>
+                <div className="p-3 sm:p-4 space-y-3">
+                  {friendsData.suggestions.map((friend) => (
+                    <div key={friend.id} className="border rounded-lg p-3">
+                      <div className="flex items-center gap-3 mb-3">
+                        <img src={friend.avatar || "/placeholder.svg"} alt={friend.name} className="w-10 h-10 rounded-full" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{friend.name}</p>
+                          <p className="text-sm text-gray-500">{friend.location}</p>
+                          <p className="text-sm text-gray-600">{friend.occupation}</p>
+                          <p className="text-xs text-blue-600">{friend.mutualFriends} أصدقاء مشتركين</p>
+                        </div>
+                      </div>
+                      <Button size="sm" className="w-full">
+                        إضافة صديق
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Desktop Right Sidebar - Main Navigation */}
-        <Sidebar />
+        {/* Left Section - Friend Suggestions */}
+        <div className="hidden lg:block w-64 p-4">
+          <div className="bg-white rounded-lg p-4 border">
+            <h3 className="font-semibold mb-3 flex items-center gap-2">
+              <UserPlus className="h-4 w-4 text-blue-600" />
+              اقتراحات صداقة
+            </h3>
+            <div className="space-y-3">
+              {friendsData.suggestions.map((friend) => (
+                <div key={friend.id} className="border rounded-lg p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <img src={friend.avatar || "/placeholder.svg"} alt={friend.name} className="w-8 h-8 rounded-full" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">{friend.name}</p>
+                      <p className="text-xs text-gray-500">{friend.location}</p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-2">{friend.occupation}</p>
+                  <p className="text-xs text-blue-600 mb-2">{friend.mutualFriends} أصدقاء مشتركين</p>
+                  <Button size="sm" className="w-full text-xs">
+                    إضافة صديق
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
   )
