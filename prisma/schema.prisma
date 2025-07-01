@@ -1,0 +1,465 @@
+// This is your Prisma schema file for Amazigh Social Platform
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - Main user entity
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  role        String   @default("user") // admin, user, moderator
+  location    String?
+  occupation  String?
+  bio         String?
+  avatar      String?
+  coverImage  String?
+  joinDate    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations - User can create many content types
+  posts         Post[]
+  books         Book[]
+  ideas         Idea[]
+  images        Image[]
+  videos        Video[]
+  truths        Truth[]
+  questions     Question[]
+  ads           Ad[]
+  products      Product[]
+  
+  // User interactions
+  likes         Like[]
+  comments      Comment[]
+  shares        Share[]
+  
+  // Friend system
+  sentFriendRequests     FriendRequest[] @relation("SentRequests")
+  receivedFriendRequests FriendRequest[] @relation("ReceivedRequests")
+  friendships           Friendship[]    @relation("UserFriendships")
+  friendOf              Friendship[]    @relation("FriendOfUser")
+  
+  // Messages and notifications
+  sentMessages     GroupMessage[]
+  notifications    Notification[]
+  
+  // User badges
+  badges UserBadge[]
+
+  @@map("users")
+}
+
+// Friend Request model
+model FriendRequest {
+  id        Int      @id @default(autoincrement())
+  senderId  Int
+  receiverId Int
+  status    String   @default("pending") // pending, accepted, rejected
+  createdAt DateTime @default(now())
+  
+  sender   User @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  
+  @@unique([senderId, receiverId])
+  @@map("friend_requests")
+}
+
+// Friendship model (after request is accepted)
+model Friendship {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  friendId  Int
+  createdAt DateTime @default(now())
+  
+  user   User @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("FriendOfUser", fields: [friendId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, friendId])
+  @@map("friendships")
+}
+
+// Post model
+model Post {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  authorId    Int
+  timestamp   DateTime @default(now())
+  category    String
+  subcategory String?
+  image       String?
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  
+  @@map("posts")
+}
+
+// Book model
+model Book {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  authorId    Int
+  timestamp   DateTime @default(now())
+  category    String   @default("كتاب")
+  subcategory String?
+  image       String?
+  pages       Int?
+  language    String?
+  isbn        String?
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  
+  @@map("books")
+}
+
+// Idea model
+model Idea {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  authorId    Int
+  timestamp   DateTime @default(now())
+  category    String
+  image       String?
+  status      String   @default("قيد المراجعة")
+  priority    String   @default("متوسطة")
+  votes       Int      @default(0)
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  
+  @@map("ideas")
+}
+
+// Image model
+model Image {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  category    String
+  image       String
+  authorId    Int
+  timestamp   DateTime @default(now())
+  location    String?
+  resolution  String?
+  tags        String[] // Array of tags
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  
+  @@map("images")
+}
+
+// Video model
+model Video {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  authorId    Int
+  timestamp   DateTime @default(now())
+  category    String   @default("فيديو")
+  subcategory String?
+  image       String? // thumbnail
+  duration    String?
+  quality     String?
+  language    String?
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  
+  @@map("videos")
+}
+
+// Truth model
+model Truth {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  authorId    Int
+  timestamp   DateTime @default(now())
+  category    String   @default("حقيقة")
+  subcategory String?
+  image       String?
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  
+  @@map("truths")
+}
+
+// Question model
+model Question {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  authorId    Int
+  timestamp   DateTime @default(now())
+  category    String   @default("سؤال")
+  type        String   @default("answer")
+  answered    Boolean  @default(false)
+  image       String?
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  
+  @@map("questions")
+}
+
+// Ad model (charity and other ads)
+model Ad {
+  id            Int      @id @default(autoincrement())
+  title         String
+  content       String
+  authorId      Int
+  timestamp     DateTime @default(now())
+  category      String
+  subcategory   String?
+  image         String?
+  targetAmount  String?
+  currentAmount String?
+  deadline      DateTime?
+  views         Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  
+  @@map("ads")
+}
+
+// Product model
+model Product {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  authorId    Int      // seller
+  timestamp   DateTime @default(now())
+  category    String
+  image       String?
+  price       String
+  currency    String
+  inStock     Boolean  @default(true)
+  sizes       String[] // Array of sizes
+  colors      String[] // Array of colors
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  
+  @@map("products")
+}
+
+// Like model - polymorphic likes for all content types
+model Like {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  emoji     String   @default("👍") // User can specify emoji
+  createdAt DateTime @default(now())
+  
+  // Polymorphic relations - only one should be set
+  postId     Int?
+  bookId     Int?
+  ideaId     Int?
+  imageId    Int?
+  videoId    Int?
+  truthId    Int?
+  questionId Int?
+  adId       Int?
+  productId  Int?
+  
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post     Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  book     Book?     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  idea     Idea?     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  image    Image?    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  video    Video?    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  truth    Truth?    @relation(fields: [truthId], references: [id], onDelete: Cascade)
+  question Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  ad       Ad?       @relation(fields: [adId], references: [id], onDelete: Cascade)
+  product  Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, postId])
+  @@unique([userId, bookId])
+  @@unique([userId, ideaId])
+  @@unique([userId, imageId])
+  @@unique([userId, videoId])
+  @@unique([userId, truthId])
+  @@unique([userId, questionId])
+  @@unique([userId, adId])
+  @@unique([userId, productId])
+  @@map("likes")
+}
+
+// Comment model - polymorphic comments for all content types
+model Comment {
+  id        Int      @id @default(autoincrement())
+  content   String
+  userId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Polymorphic relations - only one should be set
+  postId     Int?
+  bookId     Int?
+  ideaId     Int?
+  imageId    Int?
+  videoId    Int?
+  truthId    Int?
+  questionId Int?
+  adId       Int?
+  productId  Int?
+  
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post     Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  book     Book?     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  idea     Idea?     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  image    Image?    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  video    Video?    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  truth    Truth?    @relation(fields: [truthId], references: [id], onDelete: Cascade)
+  question Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  ad       Ad?       @relation(fields: [adId], references: [id], onDelete: Cascade)
+  product  Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@map("comments")
+}
+
+// Share model - polymorphic shares for all content types
+model Share {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  createdAt DateTime @default(now())
+  
+  // Polymorphic relations - only one should be set
+  postId     Int?
+  bookId     Int?
+  ideaId     Int?
+  imageId    Int?
+  videoId    Int?
+  truthId    Int?
+  questionId Int?
+  adId       Int?
+  productId  Int?
+  
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post     Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  book     Book?     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  idea     Idea?     @relation(fields: [ideaId], references: [id], onDelete: Cascade)
+  image    Image?    @relation(fields: [imageId], references: [id], onDelete: Cascade)
+  video    Video?    @relation(fields: [videoId], references: [id], onDelete: Cascade)
+  truth    Truth?    @relation(fields: [truthId], references: [id], onDelete: Cascade)
+  question Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  ad       Ad?       @relation(fields: [adId], references: [id], onDelete: Cascade)
+  product  Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  @@map("shares")
+}
+
+// Group Message model - single group chat
+model GroupMessage {
+  id        Int      @id @default(autoincrement())
+  senderId  Int
+  message   String
+  timestamp DateTime @default(now())
+  read      Boolean  @default(false)
+  avatar    String?
+  
+  sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  
+  @@map("group_messages")
+}
+
+// Notification model
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  type      String   // like, comment, share, friend_request, etc.
+  message   String
+  timestamp DateTime @default(now())
+  read      Boolean  @default(false)
+  avatar    String?
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+}
+
+// Badge model
+model Badge {
+  id          Int    @id @default(autoincrement())
+  name        String @unique
+  color       String
+  description String?
+  
+  userBadges UserBadge[]
+  
+  @@map("badges")
+}
+
+// User Badge junction table
+model UserBadge {
+  id       Int @id @default(autoincrement())
+  userId   Int
+  badgeId  Int
+  earnedAt DateTime @default(now())
+  
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
