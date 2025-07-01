@@ -7,7 +7,7 @@ import PostCard from "@/components/post-card"
 import CreatePostModal from "@/components/create-post-modal"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger, SheetClose } from "@/components/ui/sheet"
 import {
   Menu,
   Edit,
@@ -26,6 +26,7 @@ import {
   User,
   Home,
   ChevronRight,
+  X,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -166,14 +167,16 @@ export default function ShopPage() {
               <div className="flex flex-col min-h-full">
                 {/* Custom close button on the left */}
                 <div className="absolute left-4 top-4 z-10">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-11 w-11 p-0 rounded-full hover:bg-gray-100 shadow-md bg-white border"
-                  >
-                    <span className="text-lg">×</span>
-                    <span className="sr-only">إغلاق</span>
-                  </Button>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-11 w-11 p-0 rounded-full hover:bg-gray-100 shadow-md bg-white border"
+                    >
+                      <X className="h-5 w-5" />
+                      <span className="sr-only">إغلاق</span>
+                    </Button>
+                  </SheetClose>
                 </div>
 
                 {/* Header Section - Fixed */}
@@ -191,36 +194,37 @@ export default function ShopPage() {
                 <div className="flex-1 overflow-y-auto p-4">
                   <nav className="space-y-3">
                     {navigationItems.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:translate-x-1 group ${
-                          item.active ? "bg-green-50 border-l-4 border-green-500" : "hover:bg-green-50"
-                        }`}
-                      >
-                        <div
-                          className={`p-2 rounded-lg group-hover:shadow-md transition-shadow ${
-                            item.active
-                              ? "bg-gradient-to-br from-green-500 to-teal-500 shadow-md"
-                              : "bg-gradient-to-br from-blue-500 to-blue-600"
+                      <SheetClose asChild key={item.href}>
+                        <Link
+                          href={item.href}
+                          className={`flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:translate-x-1 group ${
+                            item.active ? "bg-green-50 border-l-4 border-green-500" : "hover:bg-green-50"
                           }`}
                         >
-                          <item.icon className="h-5 w-5 text-white flex-shrink-0" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className={`font-medium text-gray-900 truncate ${item.active ? "text-green-900" : ""}`}>
-                            {item.label}
-                          </h3>
-                          <p className={`text-sm text-gray-500 truncate ${item.active ? "text-green-600" : ""}`}>
-                            {item.description}
-                          </p>
-                        </div>
-                        <ChevronRight
-                          className={`h-4 w-4 transition-colors ${
-                            item.active ? "text-green-500" : "text-gray-400 group-hover:text-green-500"
-                          }`}
-                        />
-                      </Link>
+                          <div
+                            className={`p-2 rounded-lg group-hover:shadow-md transition-shadow ${
+                              item.active
+                                ? "bg-gradient-to-br from-green-500 to-teal-500 shadow-md"
+                                : "bg-gradient-to-br from-blue-500 to-blue-600"
+                            }`}
+                          >
+                            <item.icon className="h-5 w-5 text-white flex-shrink-0" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className={`font-medium text-gray-900 truncate ${item.active ? "text-green-900" : ""}`}>
+                              {item.label}
+                            </h3>
+                            <p className={`text-sm text-gray-500 truncate ${item.active ? "text-green-600" : ""}`}>
+                              {item.description}
+                            </p>
+                          </div>
+                          <ChevronRight
+                            className={`h-4 w-4 transition-colors ${
+                              item.active ? "text-green-500" : "text-gray-400 group-hover:text-green-500"
+                            }`}
+                          />
+                        </Link>
+                      </SheetClose>
                     ))}
                   </nav>
                 </div>
