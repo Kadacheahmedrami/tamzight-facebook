@@ -1,5 +1,6 @@
 import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
+import { MobileSidebar } from "@/components/MobileSidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -10,15 +11,24 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
+      
+      {/* Mobile Sidebar */}
+      <MobileSidebar 
+        title="تواصل معنا" 
+        description="نحن هنا للمساعدة والإجابة على استفساراتك"
+      />
+      
       <div className="max-w-7xl mx-auto flex">
-        {/* Left Sidebar - Main Navigation */}
-        <Sidebar />
+        {/* Left Sidebar - Main Navigation - Hidden on mobile */}
+        <div className="hidden lg:block">
+          <Sidebar />
+        </div>
 
         {/* Main Content */}
         <div className="flex-1 p-4">
           <div className="max-w-4xl mx-auto">
-            {/* Breadcrumb */}
-            <nav className="mb-6">
+            {/* Breadcrumb - Hidden on mobile since we have the mobile header */}
+            <nav className="mb-6 hidden lg:block">
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <span>تواصل معنا</span>
               </div>
@@ -157,8 +167,8 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* Right Sidebar - Ads */}
-        <div className="w-64 p-4">
+        {/* Right Sidebar - Ads - Hidden on mobile */}
+        <div className="hidden lg:block w-64 p-4">
           <div className="bg-white rounded-lg p-4 border">
             <h3 className="font-semibold mb-2">ساحة اعلانات</h3>
             <div className="h-32 bg-gray-100 rounded-lg mb-2"></div>
