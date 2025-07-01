@@ -6,7 +6,8 @@ import Sidebar from "@/components/sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { UserPlus, Users, Search } from "lucide-react"
+import { UserPlus, Users, Search, Menu } from "lucide-react"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 interface Friend {
   id: number
@@ -27,6 +28,7 @@ export default function FriendsPage() {
   const [friendsData, setFriendsData] = useState<FriendsData>({ friends: [], suggestions: [] })
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState("")
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const fetchFriends = async () => {
     setLoading(true)
@@ -57,15 +59,9 @@ export default function FriendsPage() {
         <Header />
         <div className="max-w-7xl mx-auto flex">
           <Sidebar />
-          <div className="flex-1 p-4">
+          <div className="flex-1 p-2 sm:p-4">
             <div className="max-w-2xl mx-auto">
               <div className="text-center py-8">جاري التحميل...</div>
-            </div>
-          </div>
-          <div className="w-64 p-4">
-            <div className="bg-white rounded-lg p-4 border">
-              <h3 className="font-semibold mb-2">ساحة اعلانات</h3>
-              <div className="h-32 bg-gray-100 rounded-lg mb-2"></div>
             </div>
           </div>
         </div>
@@ -77,8 +73,8 @@ export default function FriendsPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       <div className="max-w-7xl mx-auto flex">
-        {/* Left Sidebar - Friend Suggestions */}
-        <div className="w-64 p-4">
+        {/* Desktop Left Sidebar - Friend Suggestions */}
+        <div className="hidden lg:block w-64 p-4">
           <div className="bg-white rounded-lg p-4 border">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
               <UserPlus className="h-4 w-4 text-blue-600" />
@@ -106,8 +102,50 @@ export default function FriendsPage() {
         </div>
 
         {/* Main Content - Friends List */}
-        <div className="flex-1 p-4">
+        <div className="flex-1 p-2 sm:p-4">
           <div className="max-w-2xl mx-auto">
+            {/* Mobile Navigation Button */}
+            <div className="lg:hidden mb-4">
+              <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="w-full bg-transparent">
+                    <Menu className="h-4 w-4 ml-2" />
+                    اقتراحات الأصدقاء
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-80 p-0">
+                  <div className="p-4">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <UserPlus className="h-4 w-4 text-blue-600" />
+                      اقتراحات صداقة
+                    </h3>
+                    <div className="space-y-3">
+                      {friendsData.suggestions.map((friend) => (
+                        <div key={friend.id} className="border rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-2">
+                            <img
+                              src={friend.avatar || "/placeholder.svg"}
+                              alt={friend.name}
+                              className="w-8 h-8 rounded-full"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{friend.name}</p>
+                              <p className="text-xs text-gray-500">{friend.location}</p>
+                            </div>
+                          </div>
+                          <p className="text-xs text-gray-600 mb-2">{friend.occupation}</p>
+                          <p className="text-xs text-blue-600 mb-2">{friend.mutualFriends} أصدقاء مشتركين</p>
+                          <Button size="sm" className="w-full text-xs" onClick={() => setSidebarOpen(false)}>
+                            إضافة صديق
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+
             {/* Breadcrumb */}
             <nav className="mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -124,13 +162,13 @@ export default function FriendsPage() {
                 placeholder="ابحث عن صديق"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pr-10"
+                className="pr-10 form-input-mobile"
               />
             </div>
 
             {/* Friends List */}
             <div className="bg-white rounded-lg border">
-              <div className="p-4 border-b">
+              <div className="p-3 sm:p-4 border-b">
                 <h3 className="font-semibold flex items-center gap-2">
                   <Users className="h-5 w-5 text-green-600" />
                   جميع اصدقائي
@@ -139,41 +177,41 @@ export default function FriendsPage() {
               <div className="divide-y">
                 {filteredFriends.length > 0 ? (
                   filteredFriends.map((friend) => (
-                    <div key={friend.id} className="p-4 hover:bg-gray-50">
-                      <div className="flex items-center justify-between">
+                    <div key={friend.id} className="p-3 sm:p-4 hover:bg-gray-50">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-3">
                           <div className="relative">
                             <img
                               src={friend.avatar || "/placeholder.svg"}
                               alt={friend.name}
-                              className="w-12 h-12 rounded-full"
+                              className="w-10 h-10 sm:w-12 sm:h-12 rounded-full"
                             />
                             {friend.isOnline && (
                               <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                             )}
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{friend.name}</p>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <p className="font-medium text-sm sm:text-base">{friend.name}</p>
                               {friend.isOnline && (
-                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-800">
+                                <Badge variant="secondary" className="text-xs bg-green-100 text-green-800 w-fit">
                                   متصل
                                 </Badge>
                               )}
                             </div>
-                            <p className="text-sm text-gray-500">{friend.location}</p>
-                            <p className="text-sm text-gray-600">{friend.occupation}</p>
+                            <p className="text-xs sm:text-sm text-gray-500">{friend.location}</p>
+                            <p className="text-xs sm:text-sm text-gray-600">{friend.occupation}</p>
                             <p className="text-xs text-blue-600">{friend.mutualFriends} أصدقاء مشتركين</p>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm">
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <Button variant="outline" size="sm" className="flex-1 sm:flex-none bg-transparent">
                             رسالة
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-red-600 hover:text-red-700 bg-transparent"
+                            className="text-red-600 hover:text-red-700 bg-transparent flex-1 sm:flex-none"
                           >
                             إزالة
                           </Button>
@@ -182,7 +220,7 @@ export default function FriendsPage() {
                     </div>
                   ))
                 ) : (
-                  <div className="p-8 text-center text-gray-500">
+                  <div className="p-6 sm:p-8 text-center text-gray-500">
                     {searchQuery ? "لا توجد نتائج للبحث" : "لا يوجد أصدقاء"}
                   </div>
                 )}
@@ -191,7 +229,7 @@ export default function FriendsPage() {
           </div>
         </div>
 
-        {/* Right Sidebar - Main Navigation */}
+        {/* Desktop Right Sidebar - Main Navigation */}
         <Sidebar />
       </div>
     </div>
