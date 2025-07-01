@@ -1,8 +1,21 @@
 "use client"
-import React, { useState } from 'react';
-import { Archive, Menu, ChevronRight, X } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { Archive, Menu, ChevronRight } from "lucide-react";
 
-const navigationItems = [
+interface NavigationItem {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  description: string;
+}
+
+interface MobileSidebarProps {
+  title?: string;
+  description?: string;
+}
+
+const navigationItems: NavigationItem[] = [
   { href: "/", icon: ChevronRight, label: "الصفحة الرئيسية", description: "العودة للصفحة الرئيسية" },
   { href: "/truth", icon: ChevronRight, label: "حقائق ثابتة حول الامازيغ", description: "حقائق تاريخية وثقافية" },
   { href: "/posts", icon: ChevronRight, label: "منشورات حول الامة الامازيغ", description: "منشورات ومقالات متنوعة" },
@@ -20,14 +33,46 @@ const navigationItems = [
   { href: "/settings", icon: ChevronRight, label: "اعدادات ملفي الشخصي", description: "إعدادات الحساب" },
 ];
 
-const MobileSidebar = ({ title = "تجمع الأمازيغ", description = "منصة التواصل الأمازيغية" }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [activeItem, setActiveItem] = useState("/");
+const MobileSidebar: React.FC<MobileSidebarProps> = ({ 
+  title = "تجمع الأمازيغ", 
+  description = "منصة التواصل الأمازيغية" 
+}) => {
+  const [isOpen, setIsOpen] = useState<boolean>(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const handleItemClick = (href) => {
-    setActiveItem(href);
+  // Close sidebar when route changes
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
+  // Handle navigation
+  const handleItemClick = (href: string): void => {
+    router.push(href);
     setIsOpen(false);
   };
+
+  // Close sidebar on escape key
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent): void => {
+      if (e.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      // Prevent body scroll when sidebar is open
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen]);
 
   return (
     <>
@@ -44,6 +89,7 @@ const MobileSidebar = ({ title = "تجمع الأمازيغ", description = "م�
           <button
             onClick={() => setIsOpen(true)}
             className="p-2 rounded-lg text-white hover:bg-blue-700 transition-colors"
+            aria-label="فتح القائمة"
           >
             <Menu className="h-6 w-6" />
           </button>
@@ -55,6 +101,14 @@ const MobileSidebar = ({ title = "تجمع الأمازيغ", description = "م�
         <div 
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={() => setIsOpen(false)}
+          role="button"
+          tabIndex={0}
+          aria-label="إغلاق القائمة"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              setIsOpen(false);
+            }
+          }}
         />
       )}
 
@@ -68,10 +122,10 @@ const MobileSidebar = ({ title = "تجمع الأمازيغ", description = "م�
           <div className="absolute left-4 top-4 z-10">
             <button
               onClick={() => setIsOpen(false)}
-              className="h-11 w-11 p-0 rounded-full hover:bg-gray-100 shadow-md bg-white border flex items-center justify-center"
+              className="h-11 w-11 p-0 rounded-full hover:bg-gray-100 shadow-md bg-white border flex items-center justify-center transition-colors"
+              aria-label="إغلاق القائمة"
             >
               <span className="text-lg">×</span>
-              <span className="sr-only">إغلاق</span>
             </button>
           </div>
 
@@ -79,7 +133,7 @@ const MobileSidebar = ({ title = "تجمع الأمازيغ", description = "م�
           <div className="flex-shrink-0 bg-gradient-to-b from-blue-600 to-white p-6 pt-16 text-center">
             <div className="flex justify-center mb-4">
               <div className="p-3 bg-white bg-opacity-20 backdrop-blur-sm rounded-full">
-                <img src="/logo-tamazight.png" alt="Tamazight Logo" className="h-12 w-auto" />
+                <Archive className="h-12 w-12 text-white" />
               </div>
             </div>
             <h2 className="text-xl font-bold text-white mb-2">تجمع الأمازيغ</h2>
@@ -88,27 +142,30 @@ const MobileSidebar = ({ title = "تجمع الأمازيغ", description = "م�
 
           {/* Navigation Menu */}
           <div className="flex-1 overflow-y-auto p-4">
-            <nav className="space-y-3">
+            <nav className="space-y-3" role="navigation">
               {navigationItems.map((item) => {
-                const isActive = activeItem === item.href;
+                const isActive = pathname === item.href;
+                const IconComponent = item.icon;
+                
                 return (
                   <button
                     key={item.href}
                     onClick={() => handleItemClick(item.href)}
-                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:translate-x-1 group ${
+                    className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 hover:translate-x-1 group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
                       isActive ? "bg-blue-50 border-l-4 border-blue-500" : "hover:bg-blue-50"
                     }`}
+                    aria-current={isActive ? 'page' : undefined}
                   >
                     <div
-                      className={`p-2 rounded-lg ${
+                      className={`p-2 rounded-lg transition-all ${
                         isActive
                           ? "bg-gradient-to-br from-blue-500 to-teal-500 shadow-md"
-                          : "bg-gradient-to-br from-blue-500 to-blue-600"
+                          : "bg-gradient-to-br from-blue-500 to-blue-600 group-hover:shadow-md"
                       }`}
                     >
-                      <item.icon className="h-5 w-5 text-white flex-shrink-0" />
+                      <IconComponent className="h-5 w-5 text-white flex-shrink-0" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="flex-1 min-w-0 text-right">
                       <h3 className={`font-medium truncate ${isActive ? "text-blue-900" : "text-gray-900"}`}>
                         {item.label}
                       </h3>
@@ -140,6 +197,5 @@ const MobileSidebar = ({ title = "تجمع الأمازيغ", description = "م�
   );
 };
 
-// Export both named and default exports to support both import styles
 export { MobileSidebar };
 export default MobileSidebar;
