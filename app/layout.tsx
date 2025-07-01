@@ -9,7 +9,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Tamazight - الأمازيغية هويتنا",
   description: "منصة تواصل اجتماعي للثقافة الأمازيغية",
-    generator: 'v0.dev'
+
 }
 
 export default function RootLayout({
