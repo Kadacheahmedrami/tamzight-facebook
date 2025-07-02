@@ -2,12 +2,11 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { CircleUserRoundIcon, MessageCircle, BellRing, Users, House, X, LogOut, Menu } from "lucide-react"
+import { CircleUserRoundIcon, MessageCircle, BellRing, Users, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useAuthContext } from "@/components/auth-provider"
+import MobileUserMenu from "./MobileUserMenu"
 
 interface Notification {
   id: number
@@ -49,7 +48,6 @@ export default function UserActions({
   const [messages, setMessages] = useState<Message[]>([])
   const [notificationsLoading, setNotificationsLoading] = useState(false)
   const [messagesLoading, setMessagesLoading] = useState(false)
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -83,7 +81,6 @@ export default function UserActions({
 
   const handleLogout = async () => {
     await logout()
-    setMobileMenuOpen(false)
   }
 
   const unreadNotifications = notifications.filter((n) => !n.read).length
@@ -95,78 +92,7 @@ export default function UserActions({
         <>
           {/* Mobile Menu */}
           <div className="md:hidden">
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="sm" className="p-2 text-blue-600 hover:bg-blue-50">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-80 p-0">
-                <div className="flex flex-col h-full">
-                  {/* Custom close button */}
-                  <div className="absolute left-4 top-4 z-10">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="h-8 w-8 p-0 rounded-full hover:bg-gray-100"
-                    >
-                      <X className="h-4 w-4" />
-                      <span className="sr-only">إغلاق</span>
-                    </Button>
-                  </div>
-
-                  {/* User Profile Section */}
-                  <div className="p-4 pt-12 border-b bg-blue-600 text-white">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                        <CircleUserRoundIcon className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          {user.firstName} {user.lastName}
-                        </p>
-                        <p className="text-sm text-blue-100">{user.email}</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Navigation Links */}
-                  <div className="flex-1 p-4 space-y-2">
-                   
-                    <Link href="/member" onClick={() => setMobileMenuOpen(false)} className="text-blue-600 hover:bg-blue-50 rounded-lg p-3 flex items-center gap-3 transition-all">
-                      <CircleUserRoundIcon className="h-5 w-5" />
-                      <span>ملفي الشخصي</span>
-                    </Link>
-                    <Link href="/messages" onClick={() => setMobileMenuOpen(false)} className="text-blue-600 hover:bg-blue-50 rounded-lg p-3 flex items-center gap-3 transition-all">
-                      <MessageCircle className="h-5 w-5 fill-current" />
-                      <span>الرسائل</span>
-                      {unreadMessages > 0 && (
-                        <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                          {unreadMessages}
-                        </span>
-                      )}
-                    </Link>
-                    <Link href="/friends" onClick={() => setMobileMenuOpen(false)} className="text-blue-600 hover:bg-blue-50 rounded-lg p-3 flex items-center gap-3 transition-all">
-                      <Users className="h-5 w-5 fill-current" />
-                      <span>الأصدقاء</span>
-                    </Link>
-                  </div>
-
-                  {/* Logout Button */}
-                  <div className="p-4 border-t">
-                    <Button
-                      onClick={handleLogout}
-                      variant="outline"
-                      className="w-full text-red-600 border-red-300 hover:bg-red-50"
-                    >
-                      <LogOut className="h-4 w-4 ml-2" />
-                      تسجيل خروج
-                    </Button>
-                  </div>
-                </div>
-              </SheetContent>
-            </Sheet>
+            <MobileUserMenu user={user} unreadMessages={unreadMessages} />
           </div>
 
           {/* Desktop Icons */}
