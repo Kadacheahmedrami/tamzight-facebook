@@ -22,10 +22,10 @@ export default function SupportPage() {
   const [activeTab, setActiveTab] = useState<string>("definition")
 
   const supportCards = [
-    { title: "دعم الطلاب", description: "منح دراسية وتعليمية", icon: GraduationCap, color: "from-blue-500 to-blue-600", stats: "1,234 طالب مستفيد" },
+    { title: "دعم الطلاب", description: "منح دراسية وتعليمية", icon: GraduationCap, color: "from-blue-500 to-[#4531fc]", stats: "1,234 طالب مستفيد" },
     { title: "بناء المدارس", description: "مراكز تعليمية حديثة", icon: Building, color: "from-green-500 to-green-600", stats: "45 مدرسة تم بناؤها" },
     { title: "المساعدات الطبية", description: "رعاية صحية شاملة", icon: Cross, color: "from-red-500 to-red-600", stats: "890 مريض تم علاجه" },
-    { title: "المشاريع الصغيرة", description: "دعم الأسر المنتجة", icon: Briefcase, color: "from-purple-500 to-purple-600", stats: "567 مشروع ممول" },
+    { title: "المشاريع الصغيرة", description: "دعم الأسر المنتجة", icon: Briefcase, color: "from-purple-500 to-[#4531fc]", stats: "567 مشروع ممول" },
   ]
 
   return (
@@ -49,7 +49,7 @@ export default function SupportPage() {
             </nav>
 
             {/* Hero Section */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-lg p-6 mb-6">
+            <div className="bg-gradient-to-r from-[#4531fc] to-blue-700 text-white rounded-lg p-6 mb-6">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-white/20 backdrop-blur-sm rounded-full">
                   <Heart className="h-8 w-8" />
@@ -94,7 +94,7 @@ export default function SupportPage() {
                 <AccordionItem value="definition">
                   <AccordionTrigger className="px-6 py-4 text-right hover:bg-gray-50">
                     <div className="flex items-center gap-3">
-                      <Target className="h-5 w-5 text-blue-600" />
+                      <Target className="h-5 w-5 text-[#4531fc]" />
                       <span>تعريف بصندوق دعم الامازيغ</span>
                     </div>
                   </AccordionTrigger>
@@ -133,7 +133,7 @@ export default function SupportPage() {
                 <AccordionItem value="how-to-support">
                   <AccordionTrigger className="px-6 py-4 text-right hover:bg-gray-50">
                     <div className="flex items-center gap-3">
-                      <HandHeart className="h-5 w-5 text-purple-600" />
+                      <HandHeart className="h-5 w-5 text-[#4531fc]" />
                       <span>كيف تدعم الصندوق؟</span>
                     </div>
                   </AccordionTrigger>
@@ -153,14 +153,14 @@ export default function SupportPage() {
             </div>
 
             {/* Call to Action */}
-            <div className="mt-6 bg-gradient-to-r from-purple-600 to-purple-800 text-white rounded-lg p-6 text-center shadow-lg">
+            <div className="mt-6 bg-gradient-to-r from-[#4531fc] to-blue-900 text-white rounded-lg p-6 text-center shadow-lg">
               <h2 className="text-xl font-bold mb-2">كن جزءاً من التغيير</h2>
               <p className="text-purple-100 mb-4">مساهمتك الصغيرة قد تغير حياة الكثيرين</p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button size="lg" className="bg-white text-purple-700 font-semibold hover:bg-white hover:text-purple-800 border border-white">
+                <Button size="lg" className="bg-white text-[#4531fc] font-semibold hover:bg-white hover:text-blue-800 border border-white">
                   تبرع الآن
                 </Button>
-                <Button size="lg" className="bg-transparent text-white border border-white hover:bg-white hover:text-purple-800">
+                <Button size="lg" className="bg-transparent text-white border border-white hover:bg-white hover:text-blue-800">
                   تعرف على المزيد
                 </Button>
               </div>
@@ -183,7 +183,7 @@ export default function SupportPage() {
             <h3 className="font-semibold mb-3 text-center">إحصائيات الدعم</h3>
             <div className="space-y-3">
               <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-blue-600">2,736</div>
+                <div className="text-2xl font-bold text-[#4531fc]">2,736</div>
                 <div className="text-sm text-gray-600">إجمالي المستفيدين</div>
               </div>
               <div className="text-center p-3 bg-green-50 rounded-lg">
@@ -191,7 +191,7 @@ export default function SupportPage() {
                 <div className="text-sm text-gray-600">مشروع مُنجز</div>
               </div>
               <div className="text-center p-3 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-purple-600">1.2M</div>
+                <div className="text-2xl font-bold text-[#4531fc]">1.2M</div>
                 <div className="text-sm text-gray-600">إجمالي التبرعات</div>
               </div>
             </div>

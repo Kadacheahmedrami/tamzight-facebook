@@ -138,7 +138,7 @@ export default function IdeasPage() {
                     <SelectItem value="technical">تقني</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="sm" onClick={() => fetchIdeas(selectedCategory)} className="w-full sm:w-auto">
+                <Button size="sm" onClick={() => fetchIdeas(selectedCategory)} className="bg-[#4531fc] hover:bg-blue-800  w-full sm:w-auto">
                   اعرض
                 </Button>
               </div>

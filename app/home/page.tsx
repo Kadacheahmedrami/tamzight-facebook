@@ -1,418 +1,257 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import Header from "@/components/header"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import Header from '@/components/header';
 import {
-  Sun,
+  Users,
+  Bell,
+  MessageCircle,
+  User,
   Edit,
-  Book,
+  Settings,
+  Monitor,
+  BookOpen,
   Video,
   Megaphone,
-  Store,
-  Lightbulb,
+  ShoppingCart,
   Archive,
-  User,
-  MessageCircle,
-  Bell,
-  Users,
-  ArrowUp,
-  Globe,
-  Handshake,
-  Building,
-  Target,
-  Send,
-  Mail,
-  Download,
-} from "lucide-react"
-import Link from "next/link"
+  Lightbulb,
+  Map
+} from 'lucide-react';
+import React from 'react';
 
-const animatedSlogans = [
-  "الأمازيغية هويتُنا",
-  "الأمازيغية حضارتُنا",
-  "الأمازيغية ثقافتُنا",
-  "الأمازيغية وحدتُنا",
-  "الأمازيغية قوتُنا",
-  "الأمازيغية تجمعنا",
-  "امازيغ باقون",
-  "وبحضارتُنا مُستمرون",
-  "وبثقافتُنا مُتمسكون",
-  "وبعادتُنا مُعتزون",
-  "وبتقاليدُنا نعيشون",
-  "وبأمازيغيتُنا نفتخرون",
-  "ازول ولن نزول",
-  "امازيغ الخلود",
-  "امازيغ لن نزول",
-  "امازيغ احرار",
-  "خُلقنا احرار",
-  "ونعيش احرار",
-  "ونموت احرار",
-  "وتحيا الامازيغ الاحرار الشُرفاء أينما يكونون",
-]
+const features = [
+  // quick‑action buttons (no change)
+  { icon: Users,       color: '#4531fc', title: 'أصدقاء من الأمازيغ',         description: '' },
+  { icon: Bell,        color: '#4531fc', title: 'إشعارات أقسام التجمع',     description: '' },
+  { icon: MessageCircle,color: '#4531fc', title: 'مراسلات بين الأعضاء',        description: '' },
+  { icon: User,        color: '#4531fc', title: 'ملف شخصي على التجمع',       description: '' },
+
+  // 1. حقائق ثابتة حول الأمازيغي
+  {
+    icon: Settings,
+    color: '#4531fc',
+    title: 'حقائق ثابتة حول الأمازيغي',
+    description: `يمكنك في هذا القسم الاطلاع على الكثير من الحقائق المُهمة حول حقيقة الأُمة الأمازيغية الأفريقية من جميع النواحي، 
+ويُمكنك أيضاً المُشاركة بنفسك في نشر مثل هذه الحقائق التاريخية في الماضي والحاضر حول الأُمة الأمازيغية الأفريقية، 
+إذا أنت أحد الأمازيغ الأحرار، أو أنت مهتم بحقيقة هذه الأُمة الأفريقية، وسواء أنت رجلاً أو امرأة، 
+فمرحبا بك على تجمع الأمازيغية هويتنا لمعرفة الحقيقة الأكيدَة حول الأُمة الأمازيغية الأفريقية.`,
+  },
+
+  // 2. منشورات حول الأمة الأمازيغي
+  {
+    icon: Edit,
+    color: '#4531fc',
+    title: 'منشورات حول الأمة الأمازيغي',
+    description: `يتم في هذا القسم نشر منشورات خاصة حول الأُمة الأمازيغية الأفريقية من ناحية أصلُهم ولغتهُم وتاريخهم وحضارتهم وفنونهُم وأدبهم وعلمهم ودينهم 
+وشخصيتهم وأحداثهم التاريخية، ولباسهم وأكلهم وزواجهم التقليدي، وطرح الأسئلة للإجابة والتصويت عليها، 
+ويمكن لجميع الأعضاء الأمازيغ نشر منشورات تتعلق فيما سبق ذكره، أو منشورات عامة وخاصة بهم وبحياتهم اليومية، 
+وأهلاً ومرحبا بالجميع معنا وبيننا.`,
+  },
+
+  // 3. كتب أمازيغية متنوعة
+  {
+    icon: BookOpen,
+    color: '#4531fc',
+    title: 'كتب أمازيغية متنوعة',
+    description: `يحتوي هذا القسم على الكثير من الكُتب الأمازيغية وبأكثر من لغة، وهي كتب لتعليم اللغة الأمازيغية، 
+وكتب تاريخية وثقافية عن الأُمة الأمازيغية وأصلها، وكتب أمازيغية أخرى متنوعة، 
+حيث يُمكنك في هذا القسم تنزيل أي كتاب مجاني لتستفيد من محتواه، أو تقديم رأيك حول محتوى الكتاب، 
+ويُمكنك أيضاً إضافة أي كتاب أمازيغي جديد ليستفيد منه جميع الأمازيغ حول العالم. 
+فمرحبا بك معنا وبيننا في التجمع.`,
+  },
+
+  // 4. فيديوهات أمازيغية متنوعة
+  {
+    icon: Monitor,
+    color: '#4531fc',
+    title: 'فيديوهات أمازيغية متنوعة',
+    description: `يعرض هذا القسم الأمازيغي فيديوهات تتعلق بكل شيء حول الحياة والمعيشة اليومية للأُمة الأمازيغية الأفريقية، 
+مثل فيديوهات عن الحضارة الأمازيغية أو العادات والتقاليد الأمازيغية أو اللباس الأمازيغي أو الغناء الأمازيغي 
+أو تعليم اللغة الأمازيغية بحروف تيفيناغ أو غيرها، يمكنك المشاركة بنشر فيديو ليشاهده الجميع، فمرحبا بك معنا وبيننا.`,
+  },
+
+  // 5. إعلانات أمازيغية ترويجية
+  {
+    icon: Megaphone,
+    color: '#4531fc',
+    title: 'إعلانات أمازيغية ترويجية',
+    description: `يحتوي هذا القسم على إعلانات أمازيغية يومية بجميع أنواعها المهمة، 
+مثل إعلانات للمساهمة في بناء مدرسة أو بناء مركز صحي أو حفر بئر ماء أو زراعة أرض بالأشجار 
+أو إعلان عن حالة وفاة أو نجاح أو حفلة زواج أو حفلة تخرج أو إعلان دعوة لاجتماع خاص أو عام 
+أو إعلان طلب زواج، وجميعها إعلانات مجانية النشر، ويمكنك نشر إعلانك في هذا القسم في أي وقت، 
+وأهلاً وسهلاً بك في أي وقت.`,
+  },
+
+  // 6. تسوق صناعات أمازيغية
+  {
+    icon: ShoppingCart,
+    color: '#4531fc',
+    title: 'تسوق صناعات أمازيغية',
+    description: `هذا القسم خاص بتسويق الصناعات الأمازيغية التقليدية فقط، 
+مثل صناعة الملابس والأقمشة والسجاد والمفروشات والأحذية والأواني الفخارية والمعدنية والخشبية، 
+وغيرهم من الصناعات الأمازيغية التقليدية، ويُمنع في هذا القسم نشر أي صناعة أخرى غير الصناعة الأمازيغية الأفريقية، 
+فمرحبا بك في هذا القسم ومحتواه.`,
+  },
+
+  // 7. اقتراح لتطوير تجمع الأمازيغي
+  {
+    icon: Lightbulb,
+    color: '#4531fc',
+    title: 'اقتراح لتطوير تجمع الأمازيغي',
+    description: `يمكنك في هذا القسم تقديم أي اقتراح أو فكرة جميلة لمشرفي هذه المنصة الإلكترونية للتواصل الاجتماعي 
+الخاصة بالأُمة الأمازيغية الأفريقية، من أجل تطويرها إلى الأفضل، أو تعديل أي قسم موجود، أو إضافة قسم جديد إليها، 
+ليصبح ظهورها بشكل أجمل وأفضل لجميع مستخدميها الأمازيغ وغيرهم من ضيوفهم الكرام، 
+فأهلاً بك وباقتراحك وفكرتك لنا.`,
+  },
+
+  // 8. صندوق دعم الأمازيغه
+  {
+    icon: Archive,
+    color: '#4531fc',
+    title: 'صندوق دعم الأمازيغه',
+    description: `هذا الصندوق الخاص بدعم الأمازيغ بصفة خاصة وعامة، وهو صندوق يُساعد في بناء مدارس تعليمية 
+أو مراكز صحية أو آبار مائية أو مُساعدة كبار السن والمرضى صحياً من أبناء وبنات الشعب الأمازيغي الأفريقي، 
+والمُساهمة في دعم هذا الصندوق يكون من الشعب الأمازيغي ومن داخل الوطن فقط، 
+وكل واحد يُساعد على حسب قدرته لذلك سبيل في أي وقت يُريد ذلك.`,
+  },
+];
+
+const footerLinks = [
+  { title: 'حول التجمع', items: ['أهداف تجمع الأمازيغ', 'لغات تجمع موقعنا', 'نبذة أهمية تراث الأمازيغ', 'برنامج أو تور تيجة الأمازيغية'] },
+  { title: 'تحميل تطبيقاتنا', items: ['تحميل تطبيق للهاتف الذكي', 'تحميل ملف أيقونات للهاتف الذكي', 'تحميل تطبيق لجهاز الكمبيوتر', 'مدونة الأمازيغ'] },
+  { title: 'للتواصل معنا', items: ['تواصل معنا عبر تليجرام', 'تواصل معنا عبر الواتس آب', 'تواصل معنا عبر الفيسبوك', 'دليل موقع تجمع الأمازيغ'] },
+  { title: 'شعار تجمع الأمازيغ', items: ['الأمازيغية وحدتنا'] },
+];
 
 export default function HomePage() {
-  const [currentSlogan, setCurrentSlogan] = useState(0)
-  const [showScrollTop, setShowScrollTop] = useState(false)
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentSlogan((prev) => (prev + 1) % animatedSlogans.length)
-    }, 3000)
-
-    return () => clearInterval(interval)
-  }, [])
-
-  useEffect(() => {
-    const handleScroll = () => {
-      setShowScrollTop(window.scrollY > 500)
-    }
-
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
-
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" })
-  }
-
-  const sections = [
-    {
-      icon: Sun,
-      title: "حقائق ثابتة حول الامازيغ",
-      description:
-        "يُمكنك في هذا القسم الاطلاع على الكثير من الحقائق المُهمة حول حقيقة الامة الأمازيغية الافريقية من جميع النواحي، ويُمكنك أيضاً المُشاركة بنفسك في نشر مثل هذه الحقائق التاريخية في الماضي والحاضر حول الامة الأمازيغية الافريقية.",
-      link: "/truth",
-      color: "from-yellow-500 to-orange-500",
-      iconColor: "text-yellow-600",
-    },
-    {
-      icon: Edit,
-      title: "منشورات حول الامة الامازيغ",
-      description:
-        "يتم في هذا القسم نشر منشورات خاصة حول الامة الامازيغية الافريقية من ناحية اصلُهم ولغتهُم وتاريخهُم وحضارتهُم وفنونهُم وادبهُم وعلمهُم ودينهُم وشخصيتهُم واحداثهُم التاريخية، ولباسهُم واكلهُم وزواجهُم التقليدي.",
-      link: "/posts",
-      color: "from-blue-500 to-cyan-500",
-      iconColor: "text-blue-600",
-    },
-    {
-      icon: Book,
-      title: "كُتب امازيغية متنوعة",
-      description:
-        "يحتوى هذا القسم على الكثير من الكُتب الامازيغية وبأكثر من لغة، وهي كُتب لتعليم اللغة الامازيغية، وكُتب تاريخية وثقافية عن الامة الامازيغية واصلها، وكُتب امازيغية أُخرة متنوعة.",
-      link: "/books",
-      color: "from-green-500 to-emerald-500",
-      iconColor: "text-green-600",
-    },
-    {
-      icon: Video,
-      title: "فيديوهات امازيغية متنوعة",
-      description:
-        "يعرض هذا القسم الامازيغي فيديوهات تتعلق بكل شيء حول الحياة والمعيشة اليومية للامة الامازيغية الافريقية، مثل فيديوهات عن الحضارة الامازيغية او العادات والتقاليد الامازيغية.",
-      link: "/videos",
-      color: "from-red-500 to-pink-500",
-      iconColor: "text-red-600",
-    },
-    {
-      icon: Megaphone,
-      title: "اعلانات امازيغية ترويجية",
-      description:
-        "يحتوى هذا القسم على اعلانات امازيغية يومية بجميع انواعها المهمة، مثل اعلانات للمساهمة في بناء مدرسة او بناء مركز صحي او حفر بئر ماء او زراعة ارض بالأشجار.",
-      link: "/ads",
-      color: "from-purple-500 to-violet-500",
-      iconColor: "text-purple-600",
-    },
-    {
-      icon: Store,
-      title: "تسوق صناعات امازيغية",
-      description:
-        "هذا القسم خاص بتسويق الصناعات الامازيغية التقليدية فقط، مثل صناعة الملابس والاقمشة والسجاد والمفروشات والاحدية والاواني الفخرية والمعدنية والخشبية.",
-      link: "/shop",
-      color: "from-indigo-500 to-blue-500",
-      iconColor: "text-indigo-600",
-    },
-    {
-      icon: Lightbulb,
-      title: "اقتراح لتطوير تجمع الامازيغ",
-      description:
-        "يُمكنك في هذا القسم تقديم أي اقتراح او فكرة جميلة لمشرفي هذه المنصة الالكترونية للتواصل الاجتماعي الخاصة بالأمة الامازيغية الافريقية، من اجل تطويرها الى الافضل.",
-      link: "/ideas",
-      color: "from-amber-500 to-yellow-500",
-      iconColor: "text-amber-600",
-    },
-    {
-      icon: Archive,
-      title: "صندوق دعم الامازيغ",
-      description:
-        "هذا الصندوق الخاص بدعم الامازيغ بصفة خاصة وعامة، وهو صندوق يُساعد في بناء مدارس تعليمة او مراكز صحية او ابار مائية او مُساعدة كبار السن والمرضى صحياً من ابناء وبنات الشعب الامازيغي الافريقي.",
-      link: "/support",
-      color: "from-teal-500 to-green-500",
-      iconColor: "text-teal-600",
-    },
-  ]
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50">
+    <div className="min-h-screen bg-white" dir="rtl">
       <Header />
+      <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* Introduction */}
+      
+        <section className="bg-white px-6 py-12">
+          <h2 className="text-green-700 text-2xl font-bold mb-6">
+            الأوّل - سلام - تعريف بمنصة تجمع الامازيغ
+          </h2>
+          <p className="text-blue-700 font-bold leading-loose text-2xl">
+            تَجمُّع الامازيغ ... هي منصة تواصل اجتماعيّ تعرف بالهويّة الأمازيغية تاريخيّاً، وحضاريّاً، وثقافيّاً، وعلميّاً، وفنيّاً متنوّعاً في الماضي والحاضر ...
+            مع التعريف بالقبائل والعائلات الأمازيغية وأصولهم ... وأماكن تواجدها في شمال أفريقيا والعالم.
+            كما يقوم هذا التّجمُّع الأمازيغي بإحياء، وتعليم اللغة الأمازيغية بحروفها الأصليّة ومراحل تطورها عبر الزمن ...
+            وندعو جميع أبناء وبنات الأمّة الأمازيغية الأفريقية حول العالم ...
+            المساهمة والمشاركة معنا في إنجاح هذا التّجمُّع الأمازيغي الأفريقي العالمي على شبكة الانترنت ...
+            من خلال الانضمام لهذا التّجمُّع الأمازيغي ...
+            ونشر كل ما يتعلق بالامة الامازيغية الافريقية في الماضي والحاضر ...
+            ودعوة الأهل والأقارب للانضمام الى هذا التّجمُّع الأمازيغي ...
+            للاستفادة من محتواه الامازيغي المتنوع والجميل ...
+            ويكون هذا التجمّع قاعدة بيانات ومعلومات لجميع الأمازيغ الأحرار حول العالم ...
+            ولمن يُريد التعرّف على الهويّة الامازيغية الافريقية في الماضي والحاضر من اصدقاء الأمازيغ المغتربين حول العالم ...
+            بإذن وتوفيق الله وحده في ذلك إن شاء الله.
+          </p>
 
-      {/* Hero Section with Kabyle Colors */}
-      <div className="bg-gradient-to-r from-blue-600 via-green-600 to-yellow-500 text-white py-8 sm:py-12 lg:py-16 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-800/20 via-green-800/20 to-yellow-600/20"></div>
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6 relative z-10">
-          <div className="text-center">
-            <div className="flex justify-center mb-4 sm:mb-6">
-              <div className="p-2 sm:p-4 bg-white/10 backdrop-blur-sm rounded-full">
-                <img src="/logo-tamazight.png" alt="Tamazight Logo" className="h-12 sm:h-16 lg:h-20 w-auto" />
-              </div>
-            </div>
-            <h1 className="text-2xl sm:text-4xl lg:text-6xl font-bold mb-3 sm:mb-4 text-shadow-lg">أزول - سلام</h1>
-            <h2 className="text-base sm:text-xl lg:text-2xl mb-4 sm:mb-8 text-yellow-100">تعريف بمنصة تجمع الامازيغ</h2>
-            <div className="max-w-4xl mx-auto text-sm sm:text-base lg:text-lg leading-relaxed">
-              <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
-                <p className="mb-4 sm:mb-6">
-                  تجمُع الأمازيغ ... هي منصة تواصل اجتماعي تعرف بالهوية الأمازيغية تاريخياً، وحضارياً، وثقافياً، وعلمياً،
-                  وفنياً مُتنوعاً في الماضي والحاضر ... مع التعريف بالقبائل والعائلات الأمازيغية وأُصولهُم ... وأماكن تواجدها
-                  في شمال أفريقيا والعالم.
-                </p>
-                <p className="text-red-300 font-semibold text-base sm:text-xl">امازيغ باقون ولن نزول إن شاء الله</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+          <p className="text-red-600 font-bold text-3xl mt-2">
+            الأمازيغ باقون ولن نزول إن شاء الله
+          </p>
 
-      {/* Account Features with Kabyle Colors */}
-      <div className="py-8 sm:py-12 bg-white">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-          <div className="text-center mb-8 sm:mb-12">
-            <h3 className="text-xl sm:text-2xl font-bold mb-4 flex items-center justify-center gap-2 text-blue-800">
-              <User className="h-5 w-5 sm:h-6 sm:w-6" />
-              خريطة منصة تجمع الامازيغ
-            </h3>
+          <div className="mt-6 flex   gap-2 text-blue-700 font-bold text-3xl">
+            <Map size={32} />
+            <a href="#" className="hover:underline">خريطة منصة تجمع الامازيغ</a>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-            <Card className="text-center border-blue-200 hover:shadow-lg transition-all duration-300 hover:border-blue-400">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mb-2">
-                  <User className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                </div>
-                <CardTitle className="text-base sm:text-lg text-blue-800">ملف شخصي على التجمع</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card className="text-center border-green-200 hover:shadow-lg transition-all duration-300 hover:border-green-400">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mb-2">
-                  <MessageCircle className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                </div>
-                <CardTitle className="text-base sm:text-lg text-green-800">مراسلات بين الاعضاء</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card className="text-center border-yellow-200 hover:shadow-lg transition-all duration-300 hover:border-yellow-400">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-full flex items-center justify-center mb-2">
-                  <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                </div>
-                <CardTitle className="text-base sm:text-lg text-yellow-800">اشعارات اقسام التجمع</CardTitle>
-              </CardHeader>
-            </Card>
-            <Card className="text-center border-red-200 hover:shadow-lg transition-all duration-300 hover:border-red-400">
-              <CardHeader className="pb-3">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center mb-2">
-                  <Users className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
-                </div>
-                <CardTitle className="text-base sm:text-lg text-red-800">اصدقاء من الامازيغ</CardTitle>
-              </CardHeader>
-            </Card>
-          </div>
-        </div>
-      </div>
+        </section>
 
-      {/* Platform Sections with Kabyle Colors */}
-      <div className="py-8 sm:py-12 lg:py-16 bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-            {sections.map((section, index) => (
-              <Card key={index} className="hover:shadow-xl transition-all duration-300 border-0 overflow-hidden group">
-                <div className={`h-1 sm:h-2 bg-gradient-to-r ${section.color}`}></div>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-2 sm:gap-3 mb-3">
-                    <div
-                      className={`p-2 sm:p-3 rounded-full bg-gradient-to-br ${section.color} shadow-lg group-hover:scale-110 transition-transform duration-300`}
-                    >
-                      <section.icon className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-                    </div>
-                    <CardTitle className="text-base sm:text-xl text-gray-800 leading-tight">{section.title}</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <CardDescription className="text-gray-700 leading-relaxed mb-4 text-sm sm:text-base">
-                    {section.description}
-                  </CardDescription>
-                  <Link href={section.link}>
-                    <Button
-                      className={`w-full bg-gradient-to-r ${section.color} hover:opacity-90 transition-opacity border-0 text-white shadow-lg text-sm sm:text-base`}
-                    >
-                      استكشف القسم
-                    </Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
-          <div className="text-center mt-8 sm:mt-12 p-4 sm:p-6 bg-gradient-to-r from-blue-100 via-green-100 to-yellow-100 rounded-lg border border-blue-200">
-            <p className="text-sm sm:text-lg text-gray-800 leading-relaxed">
-              سجل دخولك للتجمع مجاناً، وأستفيد من محتوياته الامازيغية المتنوعة، وادعو اهلك واصدقائك الامازيغ للانضمام
-              لهذا التجمع للتواصل الاجتماعي الامازيغي{" "}
-              <Link
-                href="/register"
-                className="text-blue-700 hover:text-blue-600 font-semibold underline decoration-2 decoration-blue-400"
+        {/* Quick-Action Buttons */}
+        <section className="grid grid-cols-4 gap-4 mb-8">
+          {features.slice(0, 4).map((feat, idx) => {
+            const Icon = feat.icon;
+            return (
+              <div
+                key={idx}
+                className="flex flex-row gap-1  items-center bg-gray-50 border border-gray-200 shadow-sm rounded-lg px-2 hover:shadow-md transition-all"
               >
-                اضغط هنا
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
+                <div className="w-10 h-10  rounded-md flex items-center justify-center  mb-2">
+                  <Icon className="w-6 h-6" style={{ color: feat.color }} />
+                </div>
+                <span className="text-base font-semibold" style={{ color: feat.color }}>
+                  {feat.title}
+                </span>
+              </div>
+            );
+          })}
+        </section>
 
-      {/* Footer with Kabyle Colors */}
-      <footer className="bg-gradient-to-r from-blue-900 via-green-900 to-blue-900 text-white py-8 sm:py-12 lg:py-16">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 lg:px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-            {/* Animated Slogans */}
-            <div>
-              <h4 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-yellow-300">شعار تجمع الامازيغ</h4>
-              <div className="h-12 sm:h-16 flex items-center">
-                <p className="text-sm sm:text-lg font-semibold text-yellow-200 animate-pulse">
-                  {animatedSlogans[currentSlogan]}
+        {/* Features Grid */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          {features.slice(4).map((feat, idx) => {
+            const Icon = feat.icon;
+            return (
+              <div
+                key={idx}
+                className="flex flex-col bg-gray-50 border border-gray-200 shadow-sm rounded-lg p-4 hover:shadow-md transition-all"
+              >
+                <div className="flex items-center justify-start mb-2 space-x-reverse space-x-2">
+                  <div className="w-8 h-8  rounded-md flex items-center justify-center ">
+                    <Icon className="w-5 h-5" style={{ color: feat.color }} />
+                  </div>
+                  <h3 className="text-base font-semibold" style={{ color: feat.color }}>
+                    {feat.title}
+                  </h3>
+                </div>
+                <p className="text-gray-700 text-sm leading-relaxed text-right">
+                  {feat.description}
                 </p>
               </div>
-            </div>
+            );
+          })}
+        </section>
 
-            {/* Contact */}
-            <div>
-              <h4 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-green-300">للتواصل معنا</h4>
-              <div className="space-y-2 sm:space-y-3">
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Send className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
-                  <span className="text-xs sm:text-sm">تواصل معنا على تلغرام</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Mail className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
-                  <span className="text-xs sm:text-sm">تواصل معنا عبر البريد الالكتروني</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Lightbulb className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
-                  <span className="text-xs sm:text-sm">لتقديم اقتراح لتطوير التجمع</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Archive className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
-                  <span className="text-xs sm:text-sm">دعم منصة تجمع الامازيغ</span>
-                </div>
-              </div>
-            </div>
+        {/* Call to Action */}
+        <section className="bg-blue-600 flex flex-row justify-center items-center text-white p-2 rounded-md text-center mb-8">
+          <h2 className="text-xl">
+            سجل دخولك للتجمع مجاناً، وأستفيد من محتوياته الامازيغية المتنوعة، وادعو اهلك واصدقائك الامازيغ للانضمام لهذا التجمع للتواصل الاجتماعي الامازيغي
+          </h2>
+          <button className="bg-white my-auto text-blue-600 px-2 mx-3 rounded-[5px] hover:bg-gray-50 transition-colors">
+            انضم إلينا
+          </button>
+        </section>
+      </main>
 
-            {/* Apps */}
-            <div>
-              <h4 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-blue-300">تحميل تطبيقاتنا</h4>
-              <div className="space-y-2 sm:space-y-3">
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Download className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
-                  <span className="text-xs sm:text-sm">تطبيق تعلم اللغة الامازيغية</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Download className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
-                  <span className="text-xs sm:text-sm">تطبيق قاموس كلمات اللغة الامازيغية</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Download className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
-                  <span className="text-xs sm:text-sm">تطبيق اطلس الأُمة الامازيغية</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Download className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
-                  <span className="text-xs sm:text-sm">تطبيق الامازيغ</span>
-                </div>
-              </div>
+      {/* Footer */}
+      <footer className="bg-green-600 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
+          {footerLinks.map((col, idx) => (
+            <div key={idx}>
+              <h3 className="text-lg font-bold mb-4">{col.title}</h3>
+              <ul className="space-y-2 text-sm">
+                {col.items.map((item, i) => (
+                  <li key={i}>
+                    <a href="#" className="hover:text-green-200 transition-colors">{item}</a>
+                  </li>
+                ))}
+              </ul>
             </div>
-
-            {/* About */}
-            <div>
-              <h4 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 text-red-300">حول التجمع</h4>
-              <div className="space-y-2 sm:space-y-3">
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-400" />
-                  <span className="text-xs sm:text-sm">اهداف تجمع الامازيغ</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Handshake className="h-4 w-4 sm:h-5 sm:w-5 text-green-400" />
-                  <span className="text-xs sm:text-sm">كُن شريكُ التجمع في مدينتك</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Users className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
-                  <span className="text-xs sm:text-sm">أنضم لفريق تجمع الامازيغ</span>
-                </div>
-                <div className="flex items-center gap-2 sm:gap-3 hover:text-yellow-300 transition-colors cursor-pointer">
-                  <Building className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
-                  <span className="text-xs sm:text-sm">مركز الامازيغ لتوحيد اللغة الامازيغية</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Footer Bottom */}
-          <div className="border-t border-gray-700 mt-8 sm:mt-12 pt-6 sm:pt-8">
-            <div className="flex flex-col lg:flex-row justify-between items-center gap-4">
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                <Globe className="h-4 w-4 sm:h-5 sm:w-5 text-yellow-400" />
-                <div className="flex flex-wrap justify-center gap-3 sm:gap-4 text-xs sm:text-sm">
-                  <Link href="#" className="hover:text-yellow-300 transition-colors">
-                    ⴰⵎⵣⵉⵖ
-                  </Link>
-                  <Link href="#" className="hover:text-green-300 transition-colors">
-                    Tamaziɣt
-                  </Link>
-                  <Link href="#" className="hover:text-blue-300 transition-colors">
-                    عربي
-                  </Link>
-                  <Link href="#" className="hover:text-red-300 transition-colors">
-                    English
-                  </Link>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap justify-center gap-3 sm:gap-4 text-xs sm:text-sm">
-                <Link href="/privacy" className="hover:text-blue-300 transition-colors">
-                  سياسة الخصوصية
-                </Link>
-                <Link href="/policy" className="hover:text-green-300 transition-colors">
-                  سياسة الاستخدام
-                </Link>
-                <Link href="/help" className="hover:text-yellow-300 transition-colors">
-                  المساعدة
-                </Link>
-              </div>
-            </div>
-
-            <div className="text-center mt-4 sm:mt-6 text-xs sm:text-sm text-gray-300">
-              <p>
-                حقوق الملكية الفكرية للتصميم والنشر &copy;{" "}
-                <span className="text-yellow-300 font-semibold">محفوظة لتجمع الامازيغ 2025 - 2026</span>
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
       </footer>
 
-      {/* Scroll to Top Button with Kabyle Colors */}
-      {showScrollTop && (
-        <Button
-          onClick={scrollToTop}
-          className="fixed bottom-4 right-4 sm:bottom-8 sm:right-8 rounded-full w-10 h-10 sm:w-12 sm:h-12 p-0 shadow-lg z-50 bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 border-0"
-          title="العودة للأعلى"
-        >
-          <ArrowUp className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-        </Button>
-      )}
+      {/* Bottom Bar */}
+      <div className="bg-yellow-400 text-gray-800 py-4">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-sm">
+          <span className="bg-green-600 text-white px-3 py-1 rounded text-xs">
+            حقوق الطبع والنشر محفوظة © تجمع الأمازيغ للتصميم والبرمجة 2025 - 2026
+          </span>
+          <div className="flex items-center space-x-reverse space-x-4 mt-2 md:mt-0">
+            <a href="#" className="hover:text-gray-600">سياسة الخصوصية</a>
+            <a href="#" className="hover:text-gray-600">سياسة الاستخدام</a>
+            <a href="#" className="hover:text-gray-600">المساعدة</a>
+          </div>
+          <div className="flex items-center space-x-reverse space-x-2 text-xs mt-2 md:mt-0">
+            <span>ⵜⵉⴼⵉⵏⴰⵖ</span>
+            <span>Tamazight</span>
+            <span>عربي</span>
+            <span>English</span>
+          </div>
+        </div>
+      </div>
     </div>
-  )
+  );
 }

@@ -86,7 +86,7 @@ export default function CookiesPage() {
                   <h3 className="text-lg font-semibold mb-3">إعدادات الكوكيز</h3>
                   <p className="text-gray-700 mb-4">يمكنك تخصيص إعدادات الكوكيز حسب تفضيلاتك:</p>
                   <div className="space-y-2">
-                    <Button variant="outline" className="w-full bg-transparent">
+                    <Button variant="outline" className="w-full   bg-transparent">
                       قبول جميع الكوكيز
                     </Button>
                     <Button variant="outline" className="w-full bg-transparent">

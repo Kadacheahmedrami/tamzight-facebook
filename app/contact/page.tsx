@@ -33,7 +33,7 @@ export default function ContactPage() {
               {/* Contact Form */}
               <Card>
                 <CardHeader>
-                  <CardTitle>أرسل لنا رسالة</CardTitle>
+                  <CardTitle className="text-[#4531fc]">أرسل لنا رسالة</CardTitle>
                   <CardDescription>نحن هنا للمساعدة. أرسل لنا رسالة وسنرد عليك في أقرب وقت ممكن</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -70,7 +70,7 @@ export default function ContactPage() {
                       <label className="block text-sm font-medium mb-2">الرسالة</label>
                       <Textarea placeholder="اكتب رسالتك بالتفصيل هنا..." rows={6} required />
                     </div>
-                    <Button type="submit" className="w-full">
+                    <Button type="submit" className="bg-[#4531fc] hover:bg-blue-900 w-full">
                       إرسال الرسالة
                     </Button>
                   </form>
@@ -81,7 +81,7 @@ export default function ContactPage() {
               <div className="space-y-6">
                 <Card>
                   <CardHeader>
-                    <CardTitle>معلومات التواصل</CardTitle>
+                    <CardTitle className="text-[#4531fc]">معلومات التواصل</CardTitle>
                     <CardDescription>يمكنك التواصل معنا من خلال الطرق التالية</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -118,7 +118,7 @@ export default function ContactPage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>الدعم السريع</CardTitle>
+                    <CardTitle className="text-[#4531fc]">الدعم السريع</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     <Button variant="outline" className="w-full justify-start bg-transparent">
@@ -138,7 +138,7 @@ export default function ContactPage() {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>أوقات الاستجابة المتوقعة</CardTitle>
+                    <CardTitle className="text-[#4531fc]">أوقات الاستجابة المتوقعة</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2 text-sm">

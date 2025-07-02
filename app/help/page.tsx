@@ -119,7 +119,7 @@ export default function HelpPage() {
                       <label className="block text-sm font-medium mb-2">الرسالة</label>
                       <Textarea placeholder="اكتب رسالتك هنا..." rows={5} />
                     </div>
-                    <Button type="submit" className="w-full">
+                    <Button type="submit" className="bg-[#4531fc] hover:bg-blue-800  w-full">
                       إرسال الرسالة
                     </Button>
                   </form>

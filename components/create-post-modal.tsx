@@ -42,7 +42,7 @@ export default function CreatePostModal() {
       </DialogTrigger>
       <DialogContent className="max-w-2xl mx-2 sm:mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-lg sm:text-xl">إنشاء منشور جديد</DialogTitle>
+          <DialogTitle className="text-[#4531fc] mx-auto text-lg sm:text-xl">إنشاء منشور جديد</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="flex items-center gap-2 sm:gap-3 mb-4">
@@ -127,7 +127,7 @@ export default function CreatePostModal() {
             >
               إلغاء
             </Button>
-            <Button type="submit" className="touch-target">
+            <Button type="submit" className="bg-[#4531fc] hover:bg-blue-800 touch-target">
               أنشر منشورك الآن
             </Button>
           </div>

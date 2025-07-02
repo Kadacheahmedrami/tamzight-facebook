@@ -94,11 +94,11 @@ export default function Sidebar() {
                 href={link.href} 
                 className={`sidebar-link transition-colors duration-200 ${
                   isActive 
-                    ? "bg-blue-50 text-blue-700 border-r-4 border-blue-700" 
+                    ? "bg-blue-50 text-[#4531fc] border-r-4 border-[#4531fc]" 
                     : "hover:bg-gray-50"
                 }`}
               >
-                <link.icon className={`h-5 w-5 ${isActive ? "text-blue-700" : "text-gray-500"}`} />
+                <link.icon className={`h-5 w-5 ${isActive ? "text-[#4531fc]" : "text-gray-500"}`} />
                 <span className="flex-1">{link.label}</span>
                 {link.badge && (
                   <span

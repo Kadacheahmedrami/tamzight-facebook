@@ -122,7 +122,7 @@ export default function VideosPage() {
                     <SelectItem value="historical">فيديوهات تاريخية</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="sm" onClick={() => fetchVideos(selectedCategory)} className="w-full sm:w-auto">
+                <Button size="sm" onClick={() => fetchVideos(selectedCategory)} className="w-full bg-[#4531fc] sm:w-auto">
                   اعرض
                 </Button>
               </div>

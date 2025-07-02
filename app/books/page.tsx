@@ -119,7 +119,7 @@ export default function BooksPage() {
                     <SelectItem value="children">أطفال</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="sm" onClick={() => fetchBooks(selectedCategory)} className="w-full sm:w-auto">
+                <Button size="sm" onClick={() => fetchBooks(selectedCategory)} className="bg-[#4531fc] hover:bg-blue-900  w-full sm:w-auto">
                   اعرض الكتب
                 </Button>
               </div>
@@ -181,7 +181,7 @@ export default function BooksPage() {
                           <Eye className="h-3 w-3 mr-1" />
                           معاينة
                         </Button>
-                        <Button size="sm" className="flex-1">
+                        <Button size="sm" className="bg-[#4531fc] hover:bg-blue-900  flex-1">
                           <Download className="h-3 w-3 mr-1" />
                           تحميل
                         </Button>

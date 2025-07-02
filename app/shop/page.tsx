@@ -132,7 +132,7 @@ export default function ShopPage() {
                     <SelectItem value="furniture">مفروشات</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="sm" onClick={() => fetchProducts(selectedCategory)} className="w-full sm:w-auto">
+                <Button size="sm" onClick={() => fetchProducts(selectedCategory)} className="w-full bg-[#4531fc] hover:bg-blue-800  sm:w-auto">
                   اعرض
                 </Button>
               </div>

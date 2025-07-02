@@ -149,7 +149,7 @@ export default function ImagesPage() {
                     className="pr-10"
                   />
                 </div>
-                <Button type="submit" size="sm">
+                <Button type="submit" size="sm" className="bg-[#4531fc] hover:bg-blue-800 ">
                   بحث
                 </Button>
               </form>

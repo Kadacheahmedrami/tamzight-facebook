@@ -111,7 +111,7 @@ export default function QuestionsPage() {
                     <SelectItem value="vote">للتصويت عليه</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="sm" onClick={() => fetchQuestions(selectedType)} className="w-full sm:w-auto">
+                <Button size="sm" onClick={() => fetchQuestions(selectedType)} className="bg-[#4531fc] hover:bg-blue-800  w-full sm:w-auto">
                   اعرض الاسئلة
                 </Button>
               </div>

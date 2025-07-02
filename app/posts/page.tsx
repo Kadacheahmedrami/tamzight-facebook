@@ -107,7 +107,7 @@ export default function PostsPage() {
                     <SelectItem value="art">فنية</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="sm" onClick={() => fetchPosts(selectedCategory)} className="w-full sm:w-auto">
+                <Button size="sm" onClick={() => fetchPosts(selectedCategory)} className="bg-[#4531fc] hover:bg-blue-800  w-full sm:w-auto">
                   اعرض
                 </Button>
               </div>

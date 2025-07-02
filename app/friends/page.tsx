@@ -61,7 +61,7 @@ export default function FriendsPage() {
               <div className="text-center py-8">جاري التحميل...</div>
             </div>
           </div>
-          <Sidebar />
+        
         </div>
       </div>
     )
@@ -108,8 +108,8 @@ export default function FriendsPage() {
             {/* Friends List */}
             <div className="bg-white rounded-lg border">
               <div className="p-3 sm:p-4 border-b">
-                <h3 className="font-semibold flex items-center gap-2">
-                  <Users className="h-5 w-5 text-green-600" />
+                <h3 className="font-semibold text-[#4531fc]  flex items-center gap-2">
+                  <Users className="h-5 w-5 text-[#4531fc]  " />
                   جميع اصدقائي
                 </h3>
               </div>
@@ -140,7 +140,7 @@ export default function FriendsPage() {
                             </div>
                             <p className="text-xs sm:text-sm text-gray-500">{friend.location}</p>
                             <p className="text-xs sm:text-sm text-gray-600">{friend.occupation}</p>
-                            <p className="text-xs text-blue-600">{friend.mutualFriends} أصدقاء مشتركين</p>
+                            <p className="text-xs text-[#4531fc] ">{friend.mutualFriends} أصدقاء مشتركين</p>
                           </div>
                         </div>
                         <div className="flex gap-2 w-full sm:w-auto">
@@ -171,7 +171,7 @@ export default function FriendsPage() {
               <div className="bg-white rounded-lg border">
                 <div className="p-3 sm:p-4 border-b">
                   <h3 className="font-semibold flex items-center gap-2">
-                    <UserPlus className="h-5 w-5 text-blue-600" />
+                    <UserPlus className="h-5 w-5 text-[#4531fc] " />
                     اقتراحات صداقة
                   </h3>
                 </div>
@@ -184,10 +184,10 @@ export default function FriendsPage() {
                           <p className="font-medium truncate">{friend.name}</p>
                           <p className="text-sm text-gray-500">{friend.location}</p>
                           <p className="text-sm text-gray-600">{friend.occupation}</p>
-                          <p className="text-xs text-blue-600">{friend.mutualFriends} أصدقاء مشتركين</p>
+                          <p className="text-xs text-[#4531fc] ">{friend.mutualFriends} أصدقاء مشتركين</p>
                         </div>
                       </div>
-                      <Button size="sm" className="w-full">
+                      <Button size="sm" className="bg-[#4531fc] hover:bg-blue-900 w-full">
                         إضافة صديق
                       </Button>
                     </div>
@@ -202,7 +202,7 @@ export default function FriendsPage() {
         <div className="hidden lg:block w-64 p-4">
           <div className="bg-white rounded-lg p-4 border">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <UserPlus className="h-4 w-4 text-blue-600" />
+              <UserPlus className="h-4 w-4 text-[#4531fc] " />
               اقتراحات صداقة
             </h3>
             <div className="space-y-3">
@@ -216,8 +216,8 @@ export default function FriendsPage() {
                     </div>
                   </div>
                   <p className="text-xs text-gray-600 mb-2">{friend.occupation}</p>
-                  <p className="text-xs text-blue-600 mb-2">{friend.mutualFriends} أصدقاء مشتركين</p>
-                  <Button size="sm" className="w-full text-xs">
+                  <p className="text-xs text-[#4531fc]  mb-2">{friend.mutualFriends} أصدقاء مشتركين</p>
+                  <Button size="sm" className="bg-[#4531fc] hover:bg-blue-900 w-full text-xs">
                     إضافة صديق
                   </Button>
                 </div>
