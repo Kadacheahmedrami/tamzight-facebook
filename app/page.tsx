@@ -77,55 +77,12 @@ export default function LatestPostsPage() {
       setPosts(data)
     } catch (error) {
       console.error("Error fetching posts:", error)
-      // Fallback sample data
-      const samplePosts = [
-        {
-          id: 1,
-          title: "تاريخ الأمازيغ في شمال أفريقيا",
-          content: "مقال شامل عن تاريخ الأمازيغ العريق في شمال أفريقيا",
-          author: "أحمد أمازيغ",
-          timestamp: "نشر بتاريخ 01-07-2025 الساعة 02:30 مساء",
-          category: "تاريخ",
-          image: "/placeholder.svg?height=300&width=600",
-          stats: { views: 450, likes: 230, comments: 45, shares: 15 },
-        },
-        {
-          id: 2,
-          title: "تعلم اللغة الأمازيغية بسهولة",
-          content: "دروس مبسطة لتعلم اللغة الأمازيغية للمبتدئين",
-          author: "فاطمة تامازيغت",
-          timestamp: "نشر بتاريخ 01-07-2025 الساعة 01:15 مساء",
-          category: "تعليم",
-          image: "/placeholder.svg?height=300&width=600",
-          stats: { views: 320, likes: 180, comments: 32, shares: 8 },
-        },
-      ]
-      setPosts(samplePosts)
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchStats = async () => {
-    try {
-      const response = await fetch("/api/stats")
-      const data = await response.json()
-      setStats({
-        totalPosts: data.totalPosts,
-        todayPosts: data.todayPosts,
-        trendingPosts: data.trendingPosts,
-      })
-    } catch (error) {
-      console.error("Error fetching stats:", error)
-      // Fallback sample data
-      setStats({
-        totalPosts: 1250,
-        todayPosts: 24,
-        trendingPosts: 8,
-      })
-    }
-  }
-
+ 
   const fetchTrendingTopics = async () => {
     try {
       const response = await fetch("/api/trending")
@@ -146,7 +103,7 @@ export default function LatestPostsPage() {
 
   useEffect(() => {
     fetchPosts()
-    fetchStats()
+   
     fetchTrendingTopics()
   }, [])
 
@@ -199,44 +156,7 @@ export default function LatestPostsPage() {
               </div>
             </nav>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="bg-white rounded-lg p-4 border border-blue-200">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-lg">
-                    <TrendingUp className="h-5 w-5 text-blue-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">المنشورات الشائعة</p>
-                    <p className="text-xl font-bold text-blue-600">{stats.trendingPosts}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 border border-green-200">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 rounded-lg">
-                    <Clock className="h-5 w-5 text-green-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">منشورات اليوم</p>
-                    <p className="text-xl font-bold text-green-600">{stats.todayPosts}</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-lg p-4 border border-yellow-200">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-100 rounded-lg">
-                    <Rss className="h-5 w-5 text-yellow-600" />
-                  </div>
-                  <div>
-                    <p className="text-sm text-gray-600">إجمالي المنشورات</p>
-                    <p className="text-xl font-bold text-yellow-600">{stats.totalPosts}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+      
 
             {/* Filter */}
             <div className="bg-white rounded-lg p-4 mb-4 border">
