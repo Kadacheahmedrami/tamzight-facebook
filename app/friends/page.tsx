@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
-import { MobileSidebar } from "@/components/MobileSidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -56,7 +55,6 @@ export default function FriendsPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <MobileSidebar title="أصدقاء من الأمازيغ" description="تواصل مع الأعضاء" />
         <div className="max-w-7xl mx-auto flex">
           <div className="flex-1 p-2 sm:p-4">
             <div className="max-w-2xl mx-auto">
@@ -72,7 +70,6 @@ export default function FriendsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <MobileSidebar title="أصدقاء من الأمازيغ" description="تواصل مع الأعضاء" />
       <div className="max-w-7xl mx-auto flex">
         {/* Right Sidebar - Main Navigation */}
         <Sidebar />

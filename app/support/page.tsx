@@ -5,7 +5,6 @@
 import { useState } from "react"
 import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
-import { MobileSidebar } from "@/components/MobileSidebar"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,7 +31,6 @@ export default function SupportPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <MobileSidebar title="صندوق دعم الامازيغ" description="دعم المشاريع الخيرية" />
 
       <div className="max-w-7xl mx-auto flex">
         {/* Desktop Sidebar */}

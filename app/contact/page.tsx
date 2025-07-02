@@ -1,6 +1,5 @@
 import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
-import { MobileSidebar } from "@/components/MobileSidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -12,12 +11,8 @@ export default function ContactPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       
-      {/* Mobile Sidebar */}
-      <MobileSidebar 
-        title="تواصل معنا" 
-        description="نحن هنا للمساعدة والإجابة على استفساراتك"
-      />
-      
+
+
       <div className="max-w-7xl mx-auto flex">
         {/* Left Sidebar - Main Navigation - Hidden on mobile */}
         <div className="hidden lg:block">

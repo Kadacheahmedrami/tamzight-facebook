@@ -4,7 +4,6 @@
 
 import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
-import { MobileSidebar } from "@/components/MobileSidebar"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 
@@ -12,11 +11,7 @@ export default function PolicyPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      {/* Mobile Sidebar */}
-      <MobileSidebar
-        title="سياسة الخصوصية والاستخدام والكوكيز والمساعدة"
-        description="تعرف على سياساتنا وكيفية استخدام المنصة"
-      />
+
 
       <div className="max-w-7xl mx-auto flex">
         {/* Desktop Sidebar */}

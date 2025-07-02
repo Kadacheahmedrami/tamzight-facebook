@@ -1,6 +1,5 @@
 import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
-import { MobileSidebar } from "@/components/MobileSidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 
@@ -8,7 +7,6 @@ export default function CookiesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <MobileSidebar title="سياسة الكوكيز" description="معلومات ملفات تعريف الارتباط" />
       <div className="max-w-7xl mx-auto flex">
         {/* Right Sidebar - Main Navigation */}
         <Sidebar />

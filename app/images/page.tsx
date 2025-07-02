@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
-import { MobileSidebar } from "@/components/MobileSidebar"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
@@ -83,10 +82,7 @@ export default function ImagesPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <MobileSidebar 
-          title="صور امازيغية متنوعة" 
-          description="معرض الصور التراثية" 
-        />
+   
         <div className="max-w-7xl mx-auto flex">
           <Sidebar />
           <div className="flex-1 p-4">
@@ -109,12 +105,7 @@ export default function ImagesPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Mobile Navigation using MobileSidebar component */}
-      <MobileSidebar 
-        title="صور امازيغية متنوعة" 
-        description="معرض الصور التراثية" 
-      />
-
+ 
       <div className="max-w-7xl mx-auto flex">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block">

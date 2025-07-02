@@ -5,7 +5,6 @@
 import { useEffect, useState } from "react"
 import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
-import { MobileSidebar } from "@/components/MobileSidebar"
 import PostCard from "@/components/post-card"
 import CreatePostModal from "@/components/create-post-modal"
 import { Button } from "@/components/ui/button"
@@ -75,7 +74,6 @@ export default function PostsPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
       {/* Mobile Sidebar */}
-      <MobileSidebar title="منشورات حول الامة الامازيغ" description="منشورات ومقالات متنوعة" />
 
       <div className="max-w-7xl mx-auto flex">
         {/* Desktop Sidebar */}

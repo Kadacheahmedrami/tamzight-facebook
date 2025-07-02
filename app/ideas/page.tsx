@@ -5,7 +5,6 @@ import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
 import PostCard from "@/components/post-card"
 import CreatePostModal from "@/components/create-post-modal"
-import { MobileSidebar } from "@/components/MobileSidebar"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Lightbulb } from "lucide-react"
@@ -82,10 +81,7 @@ export default function IdeasPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <MobileSidebar 
-          title="اقتراحات لتطوير المنصة" 
-          description="أفكار لتحسين التجمع" 
-        />
+    
         <div className="max-w-7xl mx-auto flex">
           <Sidebar />
           <div className="flex-1 p-4">
@@ -109,11 +105,7 @@ export default function IdeasPage() {
       <Header />
 
       {/* Mobile Navigation */}
-      <MobileSidebar 
-        title="اقتراحات لتطوير المنصة" 
-        description="أفكار لتحسين التجمع" 
-      />
-
+   
       <div className="max-w-7xl mx-auto flex">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block">

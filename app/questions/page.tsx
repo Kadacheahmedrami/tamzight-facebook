@@ -5,7 +5,6 @@ import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
 import PostCard from "@/components/post-card"
 import CreatePostModal from "@/components/create-post-modal"
-import { MobileSidebar } from "@/components/MobileSidebar"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
@@ -57,10 +56,7 @@ export default function QuestionsPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <MobileSidebar 
-          title="اسئلة أمازيغية" 
-          description="أسئلة للإجابة والتصويت" 
-        />
+   
         <div className="max-w-7xl mx-auto flex">
           <Sidebar />
           <div className="flex-1 p-4">
@@ -83,11 +79,7 @@ export default function QuestionsPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Mobile Navigation */}
-      <MobileSidebar 
-        title="اسئلة أمازيغية" 
-        description="أسئلة للإجابة والتصويت" 
-      />
+
 
       <div className="max-w-7xl mx-auto flex">
         {/* Desktop Sidebar */}

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
-import { MobileSidebar } from "@/components/MobileSidebar"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -67,10 +66,7 @@ export default function VideosPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <MobileSidebar 
-          title="فيديوهات امازيغية متنوعة"
-          description="مقاطع فيديو تعليمية وثقافية"
-        />
+        
         <div className="max-w-7xl mx-auto flex">
           <Sidebar />
           <div className="flex-1 p-4">
@@ -93,11 +89,7 @@ export default function VideosPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Mobile Navigation */}
-      <MobileSidebar 
-        title="فيديوهات امازيغية متنوعة"
-        description="مقاطع فيديو تعليمية وثقافية"
-      />
+   
 
       <div className="max-w-7xl mx-auto flex">
         {/* Desktop Sidebar */}

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Header from "@/components/header"
 import Sidebar from "@/components/sidebar"
-import { MobileSidebar } from "@/components/MobileSidebar"
+
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -63,10 +63,7 @@ export default function BooksPage() {
     return (
       <div className="min-h-screen bg-gray-50">
         <Header />
-        <MobileSidebar 
-          title="كُتب امازيغية متنوعة" 
-          description="مكتبة الكتب الامازيغية"
-        />
+  
         <div className="max-w-7xl mx-auto flex">
           <div className="hidden lg:block">
             <Sidebar />
@@ -91,11 +88,7 @@ export default function BooksPage() {
     <div className="min-h-screen bg-gray-50">
       <Header />
 
-      {/* Mobile Sidebar */}
-      <MobileSidebar 
-        title="كُتب امازيغية متنوعة" 
-        description="مكتبة الكتب الامازيغية"
-      />
+   
 
       <div className="max-w-7xl mx-auto flex">
         {/* Desktop Sidebar */}

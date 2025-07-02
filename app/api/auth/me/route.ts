@@ -24,19 +24,19 @@ const FAKE_USERS = [
 export async function GET(request: NextRequest) {
   try {
     // Get token from cookie
-    const token = request.cookies.get("auth_token")?.value
+    // const token = request.cookies.get("auth_token")?.value
 
-    if (!token || !token.startsWith("fake_jwt_")) {
-      return NextResponse.json({ success: false, message: "غير مصرح" }, { status: 401 })
-    }
+    // if (!token || !token.startsWith("fake_jwt_")) {
+    //   return NextResponse.json({ success: false, message: "غير مصرح" }, { status: 401 })
+    // }
 
-    // Extract user ID from fake token
-    const userId = Number.parseInt(token.split("_")[2])
-    const user = FAKE_USERS.find((u) => u.id === userId)
+    // // Extract user ID from fake token
+    // const userId = Number.parseInt(token.split("_")[2])
+    const user = FAKE_USERS[0]
 
-    if (!user) {
-      return NextResponse.json({ success: false, message: "المستخدم غير موجود" }, { status: 404 })
-    }
+    // if (!user) {
+    //   return NextResponse.json({ success: false, message: "المستخدم غير موجود" }, { status: 404 })
+    // }
 
     // Return user data (exclude password)
     const userData = {
