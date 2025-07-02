@@ -7,28 +7,10 @@ import PostCard from "@/components/post-card"
 import CreatePostModal from "@/components/create-post-modal"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import {
-  Menu,
-  Edit,
-  Sun,
-  Book,
-  Video,
-  ImageIcon,
-  HelpCircle,
-  Megaphone,
-  Store,
-  Lightbulb,
-  Archive,
-  Users,
-  MessageCircle,
-  Settings,
-  User,
-  Home,
-  ChevronRight,
-  Rss,
+
   TrendingUp,
-  Clock,
+
 } from "lucide-react"
 import Link from "next/link"
 
@@ -175,7 +157,7 @@ export default function LatestPostsPage() {
                     <SelectItem value="art">الفن الأمازيغي</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button size="sm" onClick={() => fetchPosts(selectedCategory)} className="w-full sm:w-auto">
+                <Button size="sm" onClick={() => fetchPosts(selectedCategory)} className="bg-[#4531fc] hover:bg-blue-800  w-full sm:w-auto">
                   اعرض
                 </Button>
               </div>
@@ -200,7 +182,7 @@ export default function LatestPostsPage() {
           <div className="bg-white rounded-lg p-4 border mb-4">
             <h3 className="font-semibold mb-2">ساحة اعلانات</h3>
             <div className="h-32 bg-gray-100 rounded-lg mb-2"></div>
-            <Button variant="link" size="sm" className="p-0 h-auto">
+            <Button variant="link" size="sm" className="text-[#4531fc] p-0 h-auto">
               شاهد جميع الاعلانات
             </Button>
           </div>
