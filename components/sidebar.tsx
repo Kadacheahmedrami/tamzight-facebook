@@ -52,33 +52,34 @@ export default function Sidebar() {
   }, [])
 
   const sidebarLinks = [
-    { href: "/home", icon: Home, label: "الصفحة الرئيسية", badge: null },
-    { href: "/", icon: Rss, label: "آخر المنشورات", badge: "جديد" },
-    { href: "/posts", icon: Edit, label: "منشورات امازيغية", badge: stats?.sections.posts?.toString() || "0" },
-    { href: "/truth", icon: Sun, label: "حقيقة امازيغية", badge: stats?.sections.truth?.toString() || "0" },
+   
+    { href: "/main", icon: Rss, label: "آخر المنشورات", badge: "جديد" },
+    { href: "/main/posts", icon: Edit, label: "منشورات امازيغية", badge: stats?.sections.posts?.toString() || "0" },
+    { href: "/main/truth", icon: Sun, label: "حقيقة امازيغية", badge: stats?.sections.truth?.toString() || "0" },
     {
-      href: "/questions",
+      href: "/main/questions",
       icon: HelpCircle,
       label: "اسئلة امازيغية",
       badge: stats?.sections.questions?.toString() || "0",
     },
-    { href: "/books", icon: Book, label: "كُتب امازيغية", badge: stats?.sections.books?.toString() || "0" },
-    { href: "/images", icon: ImageIcon, label: "صور امازيغية", badge: stats?.sections.images?.toString() || "0" },
-    { href: "/videos", icon: Video, label: "فيديوهات امازيغية", badge: stats?.sections.videos?.toString() || "0" },
-    { href: "/ads", icon: Megaphone, label: "اعلانات امازيغية", badge: stats?.sections.ads?.toString() || "0" },
-    { href: "/shop", icon: Store, label: "تسوق منتجات امازيغية", badge: stats?.sections.shop?.toString() || "0" },
+    { href: "/main/books", icon: Book, label: "كُتب امازيغية", badge: stats?.sections.books?.toString() || "0" },
+    { href: "/main/images", icon: ImageIcon, label: "صور امازيغية", badge: stats?.sections.images?.toString() || "0" },
+    { href: "/main/videos", icon: Video, label: "فيديوهات امازيغية", badge: stats?.sections.videos?.toString() || "0" },
+    { href: "/main/ads", icon: Megaphone, label: "اعلانات امازيغية", badge: stats?.sections.ads?.toString() || "0" },
+    { href: "/main/shop", icon: Store, label: "تسوق منتجات امازيغية", badge: stats?.sections.shop?.toString() || "0" },
     {
-      href: "/ideas",
+      href: "/main/ideas",
       icon: Lightbulb,
       label: "اقتراحات لتطوير المنصة",
       badge: stats?.sections.ideas?.toString() || "0",
     },
-    { href: "/support", icon: Archive, label: "صندوق دعم الامازيغ", badge: stats?.sections.support?.toString() || "0" },
+    { href: "/main/support", icon: Archive, label: "صندوق دعم الامازيغ", badge: stats?.sections.support?.toString() || "0" },
   ]
 
   const isActiveLink = (href: string) => {
-    if (href === "/" && pathname === "/") return true
-    if (href !== "/" && pathname.startsWith(href)) return true
+    if(href === "/" ) return false
+    if (href === "/main" && pathname === "/main") return true
+    if (href !== "/main" && pathname.startsWith(href)) return true
     return false
   }
 
