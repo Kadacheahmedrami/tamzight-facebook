@@ -2,7 +2,10 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { AuthProvider } from "@/components/auth-provider"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
+
+import Header from "@/components/header"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -43,16 +46,23 @@ export const metadata: Metadata = {
   themeColor: "#00796B",
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  const session = await getServerSession(authOptions)
+
+
+
   return (
     <html lang="ar" dir="rtl">
       <head />
       <body className={inter.className}>
-        <AuthProvider>{children}</AuthProvider>
+        <Header user={session?.user || null} />
+        <main>
+          {children}
+        </main>
       </body>
     </html>
   )
