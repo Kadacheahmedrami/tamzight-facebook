@@ -385,7 +385,7 @@ export default function UserActions({ user }: UserActionsProps) {
                 دخول
               </Button>
             </Link>
-            <Link href="auth/register">
+            <Link href="/auth/register">
               <Button size="sm" className="text-xs px-2 h-8 bg-[#4531fc] hover:bg-blue-700">
                 تسجيل
               </Button>

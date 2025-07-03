@@ -101,10 +101,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-[93svh] bg-gray-50">
       <div className="container-mobile py-4 sm:py-8">
         <div className="max-w-md mx-auto p-4 sm:p-6 lg:p-8 bg-white rounded-lg shadow-md">
-          <h1 className="text-xl sm:text-2xl font-semibold mb-4 sm:mb-6 text-center">أنضم إلينا مجاناً</h1>
+          <h1 className="text-xl text-[#4531fc] sm:text-2xl font-semibold mb-4 sm:mb-6 text-center">أنضم إلينا مجاناً</h1>
           <p className="text-gray-700 mb-4 text-center text-sm sm:text-base leading-relaxed">
             أبدا بالتواصل مع الاعضاء، وشارك بالنشر على تجمع الامازيغية هويتنا واستفيد من منشوراته في اقسامه الثقافية
             المتنوعة، وادعو اهلك واصدقاءك الامازيغ للانضمام الينا.
@@ -217,7 +217,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="flex flex-col sm:flex-row justify-between gap-3">
-              <Button type="submit" disabled={loading} className="touch-target">
+              <Button type="submit" disabled={loading} className="touch-target bg-[#4531fc]">
                 {loading ? "جاري التسجيل..." : "سجل الان"}
               </Button>
               <Button
