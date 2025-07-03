@@ -125,7 +125,7 @@ export default function Sidebar() {
               <h4 className="font-semibold mb-2">روابط مهمة</h4>
               <div className="space-y-2 text-gray-600">
                 <Link 
-                  href="/policy" 
+                  href="/main/policy" 
                   className={`block transition-colors duration-200 ${
                     pathname === "/policy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                   }`}
