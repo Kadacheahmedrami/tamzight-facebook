@@ -7,7 +7,6 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/use-toast"
-import MobileUserMenu from "./MobileUserMenu"
 
 interface Notification {
   id: number
@@ -142,19 +141,14 @@ export default function UserActions({ user }: UserActionsProps) {
     <div className="flex items-center gap-2">
       {user ? (
         <>
-          {/* Mobile Menu */}
-          <div className="md:hidden">
-            <MobileUserMenu user={user} unreadMessages={unreadMessages} />
-          </div>
-
           {/* Desktop Icons */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className=" md:flex items-center gap-3">
             {/* Profile Icon */}
             <Link href={"/main/member"} className="group relative">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
               >
                 <i className="fas fa-user-circle text-xl"></i>
               </Button>
@@ -193,7 +187,7 @@ export default function UserActions({ user }: UserActionsProps) {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
               >
                 <i className="fas fa-comments text-lg"></i>
                 {unreadMessages > 0 && (
@@ -241,7 +235,7 @@ export default function UserActions({ user }: UserActionsProps) {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
               >
                 <i className="fas fa-bell text-lg"></i>
                 {unreadNotifications > 0 && (
@@ -288,7 +282,7 @@ export default function UserActions({ user }: UserActionsProps) {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
               >
                <i className="fas fa-user-friends text-lg"></i>
 
@@ -311,32 +305,12 @@ export default function UserActions({ user }: UserActionsProps) {
               </div>
             </Link>
           </div>
-
-          {/* Mobile Icons */}
-          <div className="md:hidden flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="relative p-2 text-[#4531fc] hover:bg-blue-50">
-              <i className="fas fa-bell text-sm"></i>
-              {unreadNotifications > 0 && (
-                <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                  {unreadNotifications}
-                </span>
-              )}
-            </Button>
-            <Button variant="ghost" size="sm" className="relative p-2 text-[#4531fc] hover:bg-blue-50">
-              <i className="fas fa-comments text-sm"></i>
-              {unreadMessages > 0 && (
-                <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                  {unreadMessages}
-                </span>
-              )}
-            </Button>
-          </div>
         </>
       ) : (
         /* Authentication Form - When user is not authenticated */
         <div className="flex items-center gap-2">
           {/* Desktop Login Form */}
-          <div className="hidden md:flex items-center gap-2">
+          <div className=" md:flex items-center gap-2">
             <form onSubmit={handleSignIn} className="flex items-center gap-2">
               <Input
                 type="email"
