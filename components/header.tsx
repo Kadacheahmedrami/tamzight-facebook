@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import UserActions from "./UserActions"
-
+import MobileUserMenu from "./MobileUserMenu"
 interface SearchResult {
   id: string
   title: string
@@ -13,6 +13,15 @@ interface SearchResult {
   author: string
   type: string
   url: string
+}
+
+interface Message {
+  id: number
+  sender: string
+  message: string
+  timestamp: string
+  read: boolean
+  avatar: string
 }
 
 interface User {
@@ -33,7 +42,7 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
   const [searchLoading, setSearchLoading] = useState(false)
   const [currentLogoIndex, setCurrentLogoIndex] = useState(0)
   const searchRef = useRef<HTMLDivElement>(null)
-
+ const [messages, setMessages] = useState<Message[]>([])
   // Check if user is authenticated
   const isAuthenticated = user && user.id
 
@@ -120,16 +129,20 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
     setShowResults(false)
   }
 
+
+  const unreadMessages = messages.filter((m) => !m.read).length
+
   return (
     <>
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl  mx-auto px-2 sm:px-4">
           <div className="flex items-center justify-between h-14 sm:h-16">
             {/* User Actions - Right Section */}
+
             <UserActions user={user} />
 
             {/* Search Bar - Center (Desktop Only) */}
-            <div className="hidden md:flex  flex-row  justify-center items-center  lg:w-[700px]">
+            <div className="hidden  md:flex  flex-row  justify-center items-center  lg:w-[700px]">
               <div className={`flex-1 mx-4 relative ${isAuthenticated ? 'max-w-2xl' : 'max-w-md'}`} ref={searchRef}>
                 <div className="relative flex">
                   <Input
@@ -198,7 +211,7 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
             {/* Logo and Site Name - Left */}
             <div className="flex items-center gap-2">
               <Link href={isAuthenticated ? "/main" : "/"} className="flex items-center gap-2">
-                <h1 className="text-[#4531fc] text-3xl font-extrabold">
+                <h1 className="text-[#4531fc]  text-xl  md:text-3xl font-extrabold">
                   TAMAZIGHT
                 </h1>
                 <img 
@@ -213,9 +226,14 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
       </header>
 
       {/* Mobile Search Bar - Below Header */}
-      <div className="md:hidden bg-white w-full  border-b border-gray-200 shadow-sm">
+      <div className= "md:hidden bg-white w-full  border-b border-gray-200 shadow-sm">
         <div className="px-4 py-4 ">
           <div className="relative w-full  flex flex-row" ref={searchRef}>
+                    {/* Mobile Menu */}
+                      <div className= "md:hidden ml-2">
+                        <MobileUserMenu user={user} unreadMessages={unreadMessages} />
+                      </div>
+            
             <div className="relative flex gap-2 flex-row w-full  ">
               <Input
                 type="text"
