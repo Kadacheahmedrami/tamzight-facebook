@@ -197,7 +197,7 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
 
             {/* Logo and Site Name - Left */}
             <div className="flex items-center gap-2">
-              <Link href="/main" className="flex items-center gap-2">
+              <Link href={isAuthenticated ? "/main" : "/"} className="flex items-center gap-2">
                 <h1 className="text-[#4531fc] text-3xl font-extrabold">
                   TAMAZIGHT
                 </h1>
