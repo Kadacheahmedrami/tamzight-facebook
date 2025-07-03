@@ -25,42 +25,20 @@ const samplePosts = [
 ]
 
 export default function MemberPage() {
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
 
   return (
     <div className="min-h-screen bg-gray-50">
-     
-      {/* Mobile Sidebar Overlay */}
-      {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
-          onClick={() => setIsSidebarOpen(false)}
-        />
-      )}
 
       <div className="max-w-7xl mx-auto flex relative">
-        {/* Mobile Menu Button */}
-        <button
-          className="fixed top-20 right-4 z-50 lg:hidden bg-white p-2 rounded-lg shadow-md border"
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
+     
 
         {/* Left Sidebar - Main Navigation */}
-        <div className={`
-          fixed lg:static top-0 right-0 h-full lg:h-auto w-64 bg-white lg:bg-transparent z-50 lg:z-auto
-          transform transition-transform duration-300 ease-in-out lg:transform-none
-          ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
-          lg:block lg:flex-shrink-0
-        `}>
-          <div className="pt-16 lg:pt-0">
+  
+          <div className=" lg:pt-0">
             <Sidebar />
           </div>
-        </div>
-
+     
         {/* Main Content */}
         <div className="flex-1 min-w-0 lg:p-4 p-2">
           <div className="max-w-4xl mx-auto">
