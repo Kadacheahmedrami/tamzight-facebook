@@ -1,33 +1,15 @@
-'use client';
-
-import {
-  Users,
-  Bell,
-  MessageCircle,
-  User,
-  Edit,
-  Settings,
-  Monitor,
-  BookOpen,
-  Video,
-  Megaphone,
-  ShoppingCart,
-  Archive,
-  Lightbulb,
-  Map
-} from 'lucide-react';
 import React from 'react';
 
 const features = [
   // quick‑action buttons (no change)
-  { icon: Users,       color: '#4531fc', title: 'أصدقاء من الأمازيغ',         description: '' },
-  { icon: Bell,        color: '#4531fc', title: 'إشعارات أقسام التجمع',     description: '' },
-  { icon: MessageCircle,color: '#4531fc', title: 'مراسلات بين الأعضاء',        description: '' },
-  { icon: User,        color: '#4531fc', title: 'ملف شخصي على التجمع',       description: '' },
+  { icon: 'fas fa-users', color: '#4531fc', title: 'أصدقاء من الأمازيغ',         description: '' },
+  { icon: 'fas fa-bell', color: '#4531fc', title: 'إشعارات أقسام التجمع',     description: '' },
+  { icon: 'fas fa-comment', color: '#4531fc', title: 'مراسلات بين الأعضاء',        description: '' },
+  { icon: 'fas fa-user', color: '#4531fc', title: 'ملف شخصي على التجمع',       description: '' },
 
   // 1. حقائق ثابتة حول الأمازيغي
   {
-    icon: Settings,
+    icon: 'fas fa-cog',
     color: '#4531fc',
     title: 'حقائق ثابتة حول الأمازيغي',
     description: `يمكنك في هذا القسم الاطلاع على الكثير من الحقائق المُهمة حول حقيقة الأُمة الأمازيغية الأفريقية من جميع النواحي، 
@@ -38,7 +20,7 @@ const features = [
 
   // 2. منشورات حول الأمة الأمازيغي
   {
-    icon: Edit,
+    icon: 'fas fa-edit',
     color: '#4531fc',
     title: 'منشورات حول الأمة الأمازيغي',
     description: `يتم في هذا القسم نشر منشورات خاصة حول الأُمة الأمازيغية الأفريقية من ناحية أصلُهم ولغتهُم وتاريخهم وحضارتهم وفنونهُم وأدبهم وعلمهم ودينهم 
@@ -49,7 +31,7 @@ const features = [
 
   // 3. كتب أمازيغية متنوعة
   {
-    icon: BookOpen,
+    icon: 'fas fa-book-open',
     color: '#4531fc',
     title: 'كتب أمازيغية متنوعة',
     description: `يحتوي هذا القسم على الكثير من الكُتب الأمازيغية وبأكثر من لغة، وهي كتب لتعليم اللغة الأمازيغية، 
@@ -61,7 +43,7 @@ const features = [
 
   // 4. فيديوهات أمازيغية متنوعة
   {
-    icon: Monitor,
+    icon: 'fas fa-desktop',
     color: '#4531fc',
     title: 'فيديوهات أمازيغية متنوعة',
     description: `يعرض هذا القسم الأمازيغي فيديوهات تتعلق بكل شيء حول الحياة والمعيشة اليومية للأُمة الأمازيغية الأفريقية، 
@@ -71,7 +53,7 @@ const features = [
 
   // 5. إعلانات أمازيغية ترويجية
   {
-    icon: Megaphone,
+    icon: 'fas fa-bullhorn',
     color: '#4531fc',
     title: 'إعلانات أمازيغية ترويجية',
     description: `يحتوي هذا القسم على إعلانات أمازيغية يومية بجميع أنواعها المهمة، 
@@ -83,7 +65,7 @@ const features = [
 
   // 6. تسوق صناعات أمازيغية
   {
-    icon: ShoppingCart,
+    icon: 'fas fa-shopping-cart',
     color: '#4531fc',
     title: 'تسوق صناعات أمازيغية',
     description: `هذا القسم خاص بتسويق الصناعات الأمازيغية التقليدية فقط، 
@@ -94,7 +76,7 @@ const features = [
 
   // 7. اقتراح لتطوير تجمع الأمازيغي
   {
-    icon: Lightbulb,
+    icon: 'fas fa-lightbulb',
     color: '#4531fc',
     title: 'اقتراح لتطوير تجمع الأمازيغي',
     description: `يمكنك في هذا القسم تقديم أي اقتراح أو فكرة جميلة لمشرفي هذه المنصة الإلكترونية للتواصل الاجتماعي 
@@ -105,7 +87,7 @@ const features = [
 
   // 8. صندوق دعم الأمازيغه
   {
-    icon: Archive,
+    icon: 'fas fa-archive',
     color: '#4531fc',
     title: 'صندوق دعم الأمازيغه',
     description: `هذا الصندوق الخاص بدعم الأمازيغ بصفة خاصة وعامة، وهو صندوق يُساعد في بناء مدارس تعليمية 
@@ -116,15 +98,51 @@ const features = [
 ];
 
 const footerLinks = [
-  { title: 'حول التجمع', items: ['أهداف تجمع الأمازيغ', 'لغات تجمع موقعنا', 'نبذة أهمية تراث الأمازيغ', 'برنامج أو تور تيجة الأمازيغية'] },
-  { title: 'تحميل تطبيقاتنا', items: ['تحميل تطبيق للهاتف الذكي', 'تحميل ملف أيقونات للهاتف الذكي', 'تحميل تطبيق لجهاز الكمبيوتر', 'مدونة الأمازيغ'] },
-  { title: 'للتواصل معنا', items: ['تواصل معنا عبر تليجرام', 'تواصل معنا عبر الواتس آب', 'تواصل معنا عبر الفيسبوك', 'دليل موقع تجمع الأمازيغ'] },
-  { title: 'شعار تجمع الأمازيغ', items: ['الأمازيغية وحدتنا'] },
+  { 
+    title: 'حول التجمع', 
+    icon: 'fas fa-info-circle',
+    items: [
+      { text: 'أهداف تجمع الأمازيغ', icon: 'fas fa-bullseye' },
+      { text: 'لغات تجمع موقعنا', icon: 'fas fa-language' },
+      { text: 'نبذة أهمية تراث الأمازيغ', icon: 'fas fa-landmark' },
+      { text: 'برنامج أو تور تيجة الأمازيغية', icon: 'fas fa-route' }
+    ]
+  },
+  { 
+    title: 'تحميل تطبيقاتنا', 
+    icon: 'fas fa-download',
+    items: [
+      { text: 'تحميل تطبيق للهاتف الذكي', icon: 'fas fa-mobile-alt' },
+      { text: 'تحميل ملف أيقونات للهاتف الذكي', icon: 'fas fa-icons' },
+      { text: 'تحميل تطبيق لجهاز الكمبيوتر', icon: 'fas fa-desktop' },
+      { text: 'مدونة الأمازيغ', icon: 'fas fa-blog' }
+    ]
+  },
+  { 
+    title: 'للتواصل معنا', 
+    icon: 'fas fa-envelope',
+    items: [
+      { text: 'تواصل معنا عبر تليجرام', icon: 'fab fa-telegram' },
+      { text: 'تواصل معنا عبر الواتس آب', icon: 'fab fa-whatsapp' },
+      { text: 'تواصل معنا عبر الفيسبوك', icon: 'fab fa-facebook' },
+      { text: 'دليل موقع تجمع الأمازيغ', icon: 'fas fa-map' }
+    ]
+  },
+  { 
+    title: 'شعار تجمع الأمازيغ', 
+    icon: 'fas fa-flag',
+    items: [
+      { text: 'الأمازيغية وحدتنا', icon: 'fas fa-unity' }
+    ]
+  },
 ];
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white" dir="rtl">
+      {/* FontAwesome CDN */}
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+      
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Introduction */}
       
@@ -133,14 +151,14 @@ export default function HomePage() {
             الأوّل - سلام - تعريف بمنصة تجمع الامازيغ
           </h2>
           <p className="text-blue-700 font-bold leading-loose text-2xl">
-            تَجمُّع الامازيغ ... هي منصة تواصل اجتماعيّ تعرف بالهويّة الأمازيغية تاريخيّاً، وحضاريّاً، وثقافيّاً، وعلميّاً، وفنيّاً متنوّعاً في الماضي والحاضر ...
+            تَجمُّع الامازيغ ... هي منصة تواصل اجتماعيّ تعرف بالهويّة الأمازيغية تاريخيّاً، وحضاريّاً، وثقافيّاً، وعلميّاً، وفنيّاً متنوّعاً في الماضي والحاضر ...
             مع التعريف بالقبائل والعائلات الأمازيغية وأصولهم ... وأماكن تواجدها في شمال أفريقيا والعالم.
-            كما يقوم هذا التّجمُّع الأمازيغي بإحياء، وتعليم اللغة الأمازيغية بحروفها الأصليّة ومراحل تطورها عبر الزمن ...
+            كما يقوم هذا التّجمُّع الأمازيغي بإحياء، وتعليم اللغة الأمازيغية بحروفها الأصليّة ومراحل تطورها عبر الزمن ...
             وندعو جميع أبناء وبنات الأمّة الأمازيغية الأفريقية حول العالم ...
-            المساهمة والمشاركة معنا في إنجاح هذا التّجمُّع الأمازيغي الأفريقي العالمي على شبكة الانترنت ...
-            من خلال الانضمام لهذا التّجمُّع الأمازيغي ...
+            المساهمة والمشاركة معنا في إنجاح هذا التّجمُّع الأمازيغي الأفريقي العالمي على شبكة الانترنت ...
+            من خلال الانضمام لهذا التّجمُّع الأمازيغي ...
             ونشر كل ما يتعلق بالامة الامازيغية الافريقية في الماضي والحاضر ...
-            ودعوة الأهل والأقارب للانضمام الى هذا التّجمُّع الأمازيغي ...
+            ودعوة الأهل والأقارب للانضمام الى هذا التّجمُّع الأمازيغي ...
             للاستفادة من محتواه الامازيغي المتنوع والجميل ...
             ويكون هذا التجمّع قاعدة بيانات ومعلومات لجميع الأمازيغ الأحرار حول العالم ...
             ولمن يُريد التعرّف على الهويّة الامازيغية الافريقية في الماضي والحاضر من اصدقاء الأمازيغ المغتربين حول العالم ...
@@ -152,7 +170,7 @@ export default function HomePage() {
           </p>
 
           <div className="mt-6 flex   gap-2 text-blue-700 font-bold text-3xl">
-            <Map size={32} />
+            <i className="fas fa-map text-2xl"></i>
             <a href="#" className="hover:underline">خريطة منصة تجمع الامازيغ</a>
           </div>
         </section>
@@ -160,14 +178,13 @@ export default function HomePage() {
         {/* Quick-Action Buttons */}
         <section className="grid grid-cols-4 gap-4 mb-8">
           {features.slice(0, 4).map((feat, idx) => {
-            const Icon = feat.icon;
             return (
               <div
                 key={idx}
                 className="flex flex-row gap-1  items-center bg-gray-50 border border-gray-200 shadow-sm rounded-lg px-2 hover:shadow-md transition-all"
               >
                 <div className="w-10 h-10  rounded-md flex items-center justify-center  mb-2">
-                  <Icon className="w-6 h-6" style={{ color: feat.color }} />
+                  <i className={`${feat.icon} text-lg`} style={{ color: feat.color }}></i>
                 </div>
                 <span className="text-base font-semibold" style={{ color: feat.color }}>
                   {feat.title}
@@ -180,7 +197,6 @@ export default function HomePage() {
         {/* Features Grid */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           {features.slice(4).map((feat, idx) => {
-            const Icon = feat.icon;
             return (
               <div
                 key={idx}
@@ -188,7 +204,7 @@ export default function HomePage() {
               >
                 <div className="flex items-center justify-start mb-2 space-x-reverse space-x-2">
                   <div className="w-8 h-8  rounded-md flex items-center justify-center ">
-                    <Icon className="w-5 h-5" style={{ color: feat.color }} />
+                    <i className={`${feat.icon} text-base`} style={{ color: feat.color }}></i>
                   </div>
                   <h3 className="text-base font-semibold" style={{ color: feat.color }}>
                     {feat.title}
@@ -218,11 +234,17 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
           {footerLinks.map((col, idx) => (
             <div key={idx}>
-              <h3 className="text-lg font-bold mb-4">{col.title}</h3>
+              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+                <i className={col.icon}></i>
+                {col.title}
+              </h3>
               <ul className="space-y-2 text-sm">
                 {col.items.map((item, i) => (
                   <li key={i}>
-                    <a href="#" className="hover:text-green-200 transition-colors">{item}</a>
+                    <a href="#" className="hover:text-green-200 transition-colors flex items-center gap-2">
+                      <i className={item.icon}></i>
+                      {item.text}
+                    </a>
                   </li>
                 ))}
               </ul>
@@ -234,16 +256,29 @@ export default function HomePage() {
       {/* Bottom Bar */}
       <div className="bg-yellow-400 text-gray-800 py-4">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-sm">
-          <span className="bg-green-600 text-white px-3 py-1 rounded text-xs">
+          <span className="bg-green-600 text-white px-3 py-1 rounded text-xs flex items-center gap-1">
+            <i className="fas fa-copyright"></i>
             حقوق الطبع والنشر محفوظة © تجمع الأمازيغ للتصميم والبرمجة 2025 - 2026
           </span>
           <div className="flex items-center space-x-reverse space-x-4 mt-2 md:mt-0">
-            <a href="#" className="hover:text-gray-600">سياسة الخصوصية</a>
-            <a href="#" className="hover:text-gray-600">سياسة الاستخدام</a>
-            <a href="#" className="hover:text-gray-600">المساعدة</a>
+            <a href="#" className="hover:text-gray-600 flex items-center gap-1">
+              <i className="fas fa-shield-alt"></i>
+              سياسة الخصوصية
+            </a>
+            <a href="#" className="hover:text-gray-600 flex items-center gap-1">
+              <i className="fas fa-file-contract"></i>
+              سياسة الاستخدام
+            </a>
+            <a href="#" className="hover:text-gray-600 flex items-center gap-1">
+              <i className="fas fa-question-circle"></i>
+              المساعدة
+            </a>
           </div>
           <div className="flex items-center space-x-reverse space-x-2 text-xs mt-2 md:mt-0">
-            <span>ⵜⵉⴼⵉⵏⴰⵖ</span>
+            <span className="flex items-center gap-1">
+              <i className="fas fa-language"></i>
+              ⵜⵉⴼⵉⵏⴰⵖ
+            </span>
             <span>Tamazight</span>
             <span>عربي</span>
             <span>English</span>
