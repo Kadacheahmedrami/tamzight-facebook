@@ -184,9 +184,9 @@ export default function HomePage() {
                 className="flex flex-row gap-1  items-center bg-gray-50 border border-gray-200 shadow-sm rounded-lg px-2 hover:shadow-md transition-all"
               >
                 <div className="w-10 h-10  rounded-md flex items-center justify-center  mb-2">
-                  <i className={`${feat.icon} text-lg`} style={{ color: feat.color }}></i>
+                  <i className={`${feat.icon} text-xl md:text-2xl`} style={{ color: feat.color }}></i>
                 </div>
-                <span className="text-base font-semibold" style={{ color: feat.color }}>
+                <span className="text-base md:text-lg font-semibold" style={{ color: feat.color }}>
                   {feat.title}
                 </span>
               </div>
@@ -204,13 +204,13 @@ export default function HomePage() {
               >
                 <div className="flex items-center justify-start mb-2 space-x-reverse space-x-2">
                   <div className="w-8 h-8  rounded-md flex items-center justify-center ">
-                    <i className={`${feat.icon} text-base`} style={{ color: feat.color }}></i>
+                    <i className={`${feat.icon} text-lg md:text-xl`} style={{ color: feat.color }}></i>
                   </div>
-                  <h3 className="text-base font-semibold" style={{ color: feat.color }}>
+                  <h3 className="text-base md:text-lg font-semibold" style={{ color: feat.color }}>
                     {feat.title}
                   </h3>
                 </div>
-                <p className="text-gray-700 text-sm leading-relaxed text-right">
+                <p className="text-gray-700 text-sm md:text-base leading-relaxed text-right">
                   {feat.description}
                 </p>
               </div>
@@ -220,10 +220,10 @@ export default function HomePage() {
 
         {/* Call to Action */}
         <section className="bg-blue-600 flex flex-row justify-center items-center text-white p-2 rounded-md text-center mb-8">
-          <h2 className="text-xl">
+          <h2 className="text-lg md:text-xl">
             سجل دخولك للتجمع مجاناً، وأستفيد من محتوياته الامازيغية المتنوعة، وادعو اهلك واصدقائك الامازيغ للانضمام لهذا التجمع للتواصل الاجتماعي الامازيغي
           </h2>
-          <button className="bg-white my-auto text-blue-600 px-2 mx-3 rounded-[5px] hover:bg-gray-50 transition-colors">
+          <button className="bg-white my-auto text-blue-600 px-2 mx-3 rounded-[5px] hover:bg-gray-50 transition-colors text-sm md:text-base">
             انضم إلينا
           </button>
         </section>
@@ -234,11 +234,11 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
           {footerLinks.map((col, idx) => (
             <div key={idx}>
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <h3 className="text-lg md:text-xl font-bold mb-4 flex items-center gap-2">
                 <i className={col.icon}></i>
                 {col.title}
               </h3>
-              <ul className="space-y-2 text-sm">
+              <ul className="space-y-2 text-sm md:text-base">
                 {col.items.map((item, i) => (
                   <li key={i}>
                     <a href="#" className="hover:text-green-200 transition-colors flex items-center gap-2">
