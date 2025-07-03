@@ -10,22 +10,69 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+
+model Account {
+  id                 Int       @id @default(autoincrement())
+  userId             Int
+  type               String
+  provider           String
+  providerAccountId  String
+  refresh_token      String?   @map("refreshToken")
+  access_token       String?   @map("accessToken")
+  expires_at         Int?      @map("expiresAt")
+  token_type         String?   @map("tokenType")
+  scope              String?
+  id_token           String?   @map("idToken")
+  session_state      String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           Int      @id @default(autoincrement())
+  sessionToken String   @unique
+  userId       Int
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
 // User model - Main user entity
 model User {
-  id          Int      @id @default(autoincrement())
-  email       String   @unique
-  password    String
-  firstName   String
-  lastName    String
-  role        String   @default("user") // admin, user, moderator
-  location    String?
-  occupation  String?
-  bio         String?
-  avatar      String?
-  coverImage  String?
-  joinDate    DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             Int       @id @default(autoincrement())
+  email          String    @unique
+  emailVerified  DateTime?               // ← required by NextAuth.js
+  password       String
+  firstName      String
+  lastName       String
+  role           String    @default("user") // admin, user, moderator
+  location       String?
+  occupation     String?
+  bio            String?
+  avatar         String?                 // your existing avatar field
+  image          String?                 // ← NextAuth.js uses this for profile pics
+  coverImage     String?
+  joinDate       DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // NextAuth relations
+  accounts       Account[]               // ← add this for NextAuth
+  sessions       Session[]               // ← add this for NextAuth
 
   // Relations - User can create many content types
   posts         Post[]
@@ -37,27 +84,28 @@ model User {
   questions     Question[]
   ads           Ad[]
   products      Product[]
-  
+
   // User interactions
   likes         Like[]
   comments      Comment[]
   shares        Share[]
-  
+
   // Friend system
   sentFriendRequests     FriendRequest[] @relation("SentRequests")
   receivedFriendRequests FriendRequest[] @relation("ReceivedRequests")
-  friendships           Friendship[]    @relation("UserFriendships")
-  friendOf              Friendship[]    @relation("FriendOfUser")
-  
+  friendships            Friendship[]    @relation("UserFriendships")
+  friendOf               Friendship[]    @relation("FriendOfUser")
+
   // Messages and notifications
-  sentMessages     GroupMessage[]
-  notifications    Notification[]
-  
+  sentMessages  GroupMessage[]
+  notifications Notification[]
+
   // User badges
-  badges UserBadge[]
+  badges        UserBadge[]
 
   @@map("users")
 }
+
 
 // Friend Request model
 model FriendRequest {
