@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
-import { useAuthContext } from "@/components/auth-provider"
 import UserActions from "./UserActions"
 
 interface SearchResult {
@@ -16,14 +15,22 @@ interface SearchResult {
   url: string
 }
 
-export default function Header() {
-  const { user, loading } = useAuthContext()
+interface User {
+  id?: string
+  name?: string | null
+  email?: string | null
+  image?: string | null
+}
+
+interface ClientHeaderProps {
+  user: User | null
+}
+
+export default function ClientHeader({ user }: ClientHeaderProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [showResults, setShowResults] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
-  const [loginEmail, setLoginEmail] = useState("")
-  const [loginPassword, setLoginPassword] = useState("")
   const searchRef = useRef<HTMLDivElement>(null)
 
   // Handle search
@@ -68,52 +75,12 @@ export default function Header() {
     setShowResults(false)
   }
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault()
-    // Add your login logic here
-    console.log("Login attempt:", { email: loginEmail, password: loginPassword })
-  }
-
-  if (loading) {
-    return (
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-2 sm:px-4">
-          <div className="flex items-center justify-between h-14 sm:h-16">
-            {/* Logo - Left */}
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gray-200 rounded animate-pulse"></div>
-              <div className="w-24 h-6 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-            
-            {/* Search Bar - Center */}
-            <div className="flex-1 max-w-md mx-4 sm:mx-8">
-              <div className="h-8 sm:h-10 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-            
-            {/* Right Section */}
-            <div className="flex items-center gap-2">
-              <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
-              <div className="w-16 h-8 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-          </div>
-        </div>
-      </header>
-    )
-  }
-
   return (
     <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
       <div className="max-w-7xl mx-auto px-2 sm:px-4">
         <div className="flex items-center justify-between h-14 sm:h-16">
           {/* User Actions - Right Section */}
-          <UserActions 
-            user={user}
-            loginEmail={loginEmail}
-            setLoginEmail={setLoginEmail}
-            loginPassword={loginPassword}
-            setLoginPassword={setLoginPassword}
-            handleLogin={handleLogin}
-          />
+          <UserActions user={user} />
 
           {/* Search Bar - Center */}
           <div className="flex-1 max-w-md mx-4 sm:mx-8 relative" ref={searchRef}>
@@ -174,7 +141,7 @@ export default function Header() {
 
           {/* Logo and Site Name - Left */}
           <div className="flex items-center gap-2">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/main" className="flex items-center gap-2">
               <img src="/logo-tamazight.png" alt="Tamazight Logo" className="h-8 sm:h-10 w-auto" />
             </Link>
           </div>
