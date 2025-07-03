@@ -51,7 +51,7 @@ export default function LatestPostsPage() {
   const fetchPosts = async (category = "all") => {
     setLoading(true)
     try {
-      const url = category === "all" ? "/api/posts" : `/api/posts?category=${category}`
+      const url = category === "all" ? "/api/main/posts" : `/api/main/posts?category=${category}`
       const response = await fetch(url)
       const data = await response.json()
       setPosts(data)
@@ -65,7 +65,7 @@ export default function LatestPostsPage() {
  
   const fetchTrendingTopics = async () => {
     try {
-      const response = await fetch("/api/trending")
+      const response = await fetch("/api/main/trending")
       const data = await response.json()
       setTrendingTopics(data)
     } catch (error) {
