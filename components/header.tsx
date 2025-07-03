@@ -129,7 +129,7 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
             <UserActions user={user} />
 
             {/* Search Bar - Center (Desktop Only) */}
-            <div className="hidden md:flex  flex-row  justify-center items-center  md:w-[700px]">
+            <div className="hidden md:flex  flex-row  justify-center items-center  lg:w-[700px]">
               <div className={`flex-1 mx-4 relative ${isAuthenticated ? 'max-w-2xl' : 'max-w-md'}`} ref={searchRef}>
                 <div className="relative flex">
                   <Input
