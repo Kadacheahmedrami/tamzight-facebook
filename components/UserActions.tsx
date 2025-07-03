@@ -1,11 +1,13 @@
 "use client"
 
 import { useState } from "react"
+import { signOut, signIn } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { CircleUserRoundIcon, MessageCircle, BellRing, Users, LogOut } from "lucide-react"
+import { CircleUserRoundIcon, MessageCircle, BellRing, Users, LogOut, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useAuthContext } from "@/components/auth-provider"
+import { toast } from "@/components/ui/use-toast"
 import MobileUserMenu from "./MobileUserMenu"
 
 interface Notification {
@@ -28,26 +30,19 @@ interface Message {
 
 interface UserActionsProps {
   user: any
-  loginEmail: string
-  setLoginEmail: (email: string) => void
-  loginPassword: string
-  setLoginPassword: (password: string) => void
-  handleLogin: (e: React.FormEvent) => void
 }
 
-export default function UserActions({ 
-  user, 
-  loginEmail, 
-  setLoginEmail, 
-  loginPassword, 
-  setLoginPassword, 
-  handleLogin 
-}: UserActionsProps) {
-  const { logout } = useAuthContext()
+export default function UserActions({ user }: UserActionsProps) {
+  const router = useRouter()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [messages, setMessages] = useState<Message[]>([])
   const [notificationsLoading, setNotificationsLoading] = useState(false)
   const [messagesLoading, setMessagesLoading] = useState(false)
+  
+  // Login form state
+  const [loginEmail, setLoginEmail] = useState("")
+  const [loginPassword, setLoginPassword] = useState("")
+  const [isLoggingIn, setIsLoggingIn] = useState(false)
 
   // Fetch notifications
   const fetchNotifications = async () => {
@@ -79,8 +74,66 @@ export default function UserActions({
     }
   }
 
-  const handleLogout = async () => {
-    await logout()
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoggingIn(true)
+    
+    try {
+      const result = await signIn("credentials", {
+        email: loginEmail,
+        password: loginPassword,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        toast({
+          title: "خطأ في تسجيل الدخول",
+          description: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+          variant: "destructive",
+        })
+      } else if (result?.ok) {
+        toast({
+          title: "تم تسجيل الدخول بنجاح",
+          description: "مرحباً بك مرة أخرى",
+        })
+        // Clear form
+        setLoginEmail("")
+        setLoginPassword("")
+        
+        // Force a full page refresh to update server components
+        // This is the most reliable way to ensure the header updates
+        window.location.href = "/main"
+        
+        // Alternative: Use router.refresh() then navigate (less reliable)
+        // router.refresh()
+        // router.push("/main")
+      }
+    } catch (error) {
+      console.error("Sign in error:", error)
+      toast({
+        title: "خطأ في الاتصال",
+        description: "حدث خطأ أثناء محاولة تسجيل الدخول",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoggingIn(false)
+    }
+  }
+  
+  // Handle sign out
+  const handleSignOut = async () => {
+    try {
+      await signOut({ 
+        callbackUrl: "/",
+        redirect: true // This ensures a full page refresh
+      })
+      toast({
+        title: "تم تسجيل الخروج",
+        description: "تم تسجيل خروجك بنجاح",
+      })
+    } catch (error) {
+      console.error("Sign out error:", error)
+    }
   }
 
   const unreadNotifications = notifications.filter((n) => !n.read).length
@@ -117,18 +170,18 @@ export default function UserActions({
                     </div>
                     <div>
                       <p className="font-medium">
-                        {user.firstName} {user.lastName}
+                        {user.name || user.email}
                       </p>
                       <p className="text-sm text-blue-100">{user.email}</p>
                     </div>
                   </div>
                 </div>
                 <div className="py-2">
-                  <Link href="/member" className="block px-4 py-2 text-sm hover:bg-gray-50 transition-colors">متابعتك</Link>
+                  <Link href="/main/member" className="block px-4 py-2 text-sm hover:bg-gray-50 transition-colors">متابعتك</Link>
                   <div className="px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer transition-colors">محفوظاتك</div>
                   <div className="px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer transition-colors">كُن شريك التجمع</div>
                   <div className="px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer transition-colors">انضم لفريق التجمع</div>
-                  <div onClick={handleLogout} className="px-4 py-2 text-sm text-red-600 hover:bg-gray-50 cursor-pointer transition-colors flex items-center">
+                  <div onClick={handleSignOut} className="px-4 py-2 text-sm text-red-600 hover:bg-gray-50 cursor-pointer transition-colors flex items-center">
                     <LogOut className="h-4 w-4 ml-2" />
                     تسجيل خروج
                   </div>
@@ -251,7 +304,7 @@ export default function UserActions({
                   <p className="text-sm">يوجد 10 أصدقاء جديد</p>
                 </div>
                 <div className="p-2">
-                  <Link href="/friends" className="block w-full p-2 text-sm text-center hover:bg-gray-50 rounded transition-colors">
+                  <Link href="/main/friends" className="block w-full p-2 text-sm text-center hover:bg-gray-50 rounded transition-colors">
                     عرض جميع الأصدقاء
                   </Link>
                 </div>
@@ -284,7 +337,7 @@ export default function UserActions({
         <div className="flex items-center gap-2">
           {/* Desktop Login Form */}
           <div className="hidden md:flex items-center gap-2">
-            <form onSubmit={handleLogin} className="flex items-center gap-2">
+            <form onSubmit={handleSignIn} className="flex items-center gap-2">
               <Input
                 type="email"
                 placeholder="البريد الإلكتروني"
@@ -292,6 +345,7 @@ export default function UserActions({
                 onChange={(e) => setLoginEmail(e.target.value)}
                 className="w-40 h-8 text-sm text-right"
                 required
+                disabled={isLoggingIn}
               />
               <Input
                 type="password"
@@ -300,25 +354,38 @@ export default function UserActions({
                 onChange={(e) => setLoginPassword(e.target.value)}
                 className="w-32 h-8 text-sm text-right"
                 required
+                disabled={isLoggingIn}
               />
+              
               <Button 
                 type="submit" 
                 size="sm" 
                 className="bg-blue-600 hover:bg-blue-700 text-white px-4 h-8"
+                disabled={isLoggingIn}
               >
-                دخول
+                {isLoggingIn ? (
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                    جاري...
+                  </div>
+                ) : (
+                  <>
+                    <LogIn className="h-3 w-3 ml-1" />
+                    دخول
+                  </>
+                )}
               </Button>
             </form>
           </div>
 
           {/* Mobile Login Buttons */}
           <div className="md:hidden flex items-center gap-1">
-            <Link href="/login">
+            <Link href="/auth/login">
               <Button variant="outline" size="sm" className="text-xs px-2 h-8">
                 دخول
               </Button>
             </Link>
-            <Link href="/register">
+            <Link href="auth/register">
               <Button size="sm" className="text-xs px-2 h-8 bg-blue-600 hover:bg-blue-700">
                 تسجيل
               </Button>
