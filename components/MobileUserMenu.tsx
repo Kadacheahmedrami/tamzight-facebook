@@ -72,39 +72,39 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
   }
 
   const sidebarLinks = [
-    { href: "/home", icon: Home, label: "الصفحة الرئيسية", badge: null },
-    { href: "/", icon: Rss, label: "آخر المنشورات", badge: "جديد" },
-    { href: "/posts", icon: Edit, label: "منشورات امازيغية", badge: stats?.sections.posts?.toString() || "0" },
-    { href: "/truth", icon: Sun, label: "حقيقة امازيغية", badge: stats?.sections.truth?.toString() || "0" },
+    { href: "/main/home", icon: Home, label: "الصفحة الرئيسية", badge: null },
+    { href: "/main/", icon: Rss, label: "آخر المنشورات", badge: "جديد" },
+    { href: "/main/posts", icon: Edit, label: "منشورات امازيغية", badge: stats?.sections.posts?.toString() || "0" },
+    { href: "/main/truth", icon: Sun, label: "حقيقة امازيغية", badge: stats?.sections.truth?.toString() || "0" },
     {
-      href: "/questions",
+      href: "/main/questions",
       icon: HelpCircle,
       label: "اسئلة امازيغية",
       badge: stats?.sections.questions?.toString() || "0",
     },
-    { href: "/books", icon: Book, label: "كُتب امازيغية", badge: stats?.sections.books?.toString() || "0" },
-    { href: "/images", icon: ImageIcon, label: "صور امازيغية", badge: stats?.sections.images?.toString() || "0" },
-    { href: "/videos", icon: Video, label: "فيديوهات امازيغية", badge: stats?.sections.videos?.toString() || "0" },
-    { href: "/ads", icon: Megaphone, label: "اعلانات امازيغية", badge: stats?.sections.ads?.toString() || "0" },
-    { href: "/shop", icon: Store, label: "تسوق منتجات امازيغية", badge: stats?.sections.shop?.toString() || "0" },
+    { href: "/main/books", icon: Book, label: "كُتب امازيغية", badge: stats?.sections.books?.toString() || "0" },
+    { href: "/main/images", icon: ImageIcon, label: "صور امازيغية", badge: stats?.sections.images?.toString() || "0" },
+    { href: "/main/videos", icon: Video, label: "فيديوهات امازيغية", badge: stats?.sections.videos?.toString() || "0" },
+    { href: "/main/ads", icon: Megaphone, label: "اعلانات امازيغية", badge: stats?.sections.ads?.toString() || "0" },
+    { href: "/main/shop", icon: Store, label: "تسوق منتجات امازيغية", badge: stats?.sections.shop?.toString() || "0" },
     {
-      href: "/ideas",
+      href: "/main/ideas",
       icon: Lightbulb,
       label: "اقتراحات لتطوير المنصة",
       badge: stats?.sections.ideas?.toString() || "0",
     },
-    { href: "/support", icon: Archive, label: "صندوق دعم الامازيغ", badge: stats?.sections.support?.toString() || "0" },
+    { href: "/main/support", icon: Archive, label: "صندوق دعم الامازيغ", badge: stats?.sections.support?.toString() || "0" },
   ]
 
   const userLinks = [
-    { href: "/member", icon: CircleUserRoundIcon, label: "ملفي الشخصي" },
+    { href: "/main/member", icon: CircleUserRoundIcon, label: "ملفي الشخصي" },
     { 
-      href: "/messages", 
+      href: "/main/messages", 
       icon: MessageCircle, 
       label: "الرسائل",
       badge: unreadMessages > 0 ? unreadMessages.toString() : null
     },
-    { href: "/friends", icon: Users, label: "الأصدقاء" },
+    { href: "/main/friends", icon: Users, label: "الأصدقاء" },
   ]
 
   const isActiveLink = (href: string) => {
@@ -236,11 +236,11 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                   <h4 className="text-sm font-medium text-gray-500 mb-3">روابط مهمة</h4>
                   <div className="space-y-2">
                     {[
-                      { href: "/policy", label: "الشروط" },
-                      { href: "/privacy", label: "الخصوصية" },
-                      { href: "/cookies", label: "ملفات تعريف الارتباط" },
-                      { href: "/help", label: "المساعدة" },
-                      { href: "/contact", label: "تواصل معنا" },
+                      { href: "/main/policy", label: "الشروط" },
+                      { href: "/main/privacy", label: "الخصوصية" },
+                      { href: "/main/cookies", label: "ملفات تعريف الارتباط" },
+                      { href: "/main/help", label: "المساعدة" },
+                      { href: "/main/contact", label: "تواصل معنا" },
                     ].map((link) => (
                       <Link 
                         key={link.href}
@@ -297,7 +297,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                 <h4 className="font-semibold mb-2">روابط مهمة</h4>
                 <div className="space-y-2 text-gray-600">
                   <Link 
-                    href="/policy" 
+                    href="/main/policy" 
                     className={`block transition-colors duration-200 ${
                       pathname === "/policy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
@@ -305,7 +305,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                     الشروط
                   </Link>
                   <Link 
-                    href="/privacy" 
+                    href="/main/privacy" 
                     className={`block transition-colors duration-200 ${
                       pathname === "/privacy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
@@ -313,7 +313,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                     الخصوصية
                   </Link>
                   <Link 
-                    href="/cookies" 
+                    href="/main/cookies" 
                     className={`block transition-colors duration-200 ${
                       pathname === "/cookies" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
@@ -321,7 +321,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                     ملفات تعريف الارتباط
                   </Link>
                   <Link 
-                    href="/help" 
+                    href="/main/help" 
                     className={`block transition-colors duration-200 ${
                       pathname === "/help" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
@@ -329,7 +329,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                     المساعدة
                   </Link>
                   <Link 
-                    href="/contact" 
+                    href="/main/contact" 
                     className={`block transition-colors duration-200 ${
                       pathname === "/contact" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
