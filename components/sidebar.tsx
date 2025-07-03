@@ -133,7 +133,7 @@ export default function Sidebar() {
                   الشروط
                 </Link>
                 <Link 
-                  href="/privacy" 
+                  href="/main/privacy" 
                   className={`block transition-colors duration-200 ${
                     pathname === "/privacy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                   }`}
@@ -141,7 +141,7 @@ export default function Sidebar() {
                   الخصوصية
                 </Link>
                 <Link 
-                  href="/cookies" 
+                  href="/main/cookies" 
                   className={`block transition-colors duration-200 ${
                     pathname === "/cookies" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                   }`}
@@ -149,7 +149,7 @@ export default function Sidebar() {
                   ملفات تعريف الارتباط
                 </Link>
                 <Link 
-                  href="/help" 
+                  href="/main/help" 
                   className={`block transition-colors duration-200 ${
                     pathname === "/help" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                   }`}
@@ -157,7 +157,7 @@ export default function Sidebar() {
                   المساعدة
                 </Link>
                 <Link 
-                  href="/contact" 
+                  href="/main/contact" 
                   className={`block transition-colors duration-200 ${
                     pathname === "/contact" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                   }`}
