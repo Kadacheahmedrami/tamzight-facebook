@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
+import { signOut } from "next-auth/react"
 import Link from "next/link"
 import {
   CircleUserRoundIcon,
@@ -48,6 +49,7 @@ interface UnifiedNavigationProps {
 export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }: UnifiedNavigationProps) {
   const [stats, setStats] = useState<SidebarStats | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
   const pathname = usePathname()
 
   useEffect(() => {
@@ -65,10 +67,26 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
   }, [])
 
   const handleLogout = async () => {
-    if (onLogout) {
-      await onLogout()
+    try {
+      setIsLoggingOut(true)
+      
+      // Call custom logout function if provided
+      if (onLogout) {
+        await onLogout()
+      }
+      
+      // Use NextAuth signOut
+      await signOut({
+        callbackUrl: "/", // Redirect to home page after logout
+        redirect: true
+      })
+      
+      setMobileMenuOpen(false)
+    } catch (error) {
+      console.error("Error during logout:", error)
+    } finally {
+      setIsLoggingOut(false)
     }
-    setMobileMenuOpen(false)
   }
 
   const sidebarLinks = [
@@ -264,10 +282,15 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                 <div className="p-4 border-t">
                   <button
                     onClick={handleLogout}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2 text-red-600 border border-red-300 rounded-lg hover:bg-red-50 transition-colors"
+                    disabled={isLoggingOut}
+                    className={`w-full flex items-center justify-center gap-2 px-4 py-2 text-red-600 border border-red-300 rounded-lg transition-colors ${
+                      isLoggingOut 
+                        ? "opacity-50 cursor-not-allowed" 
+                        : "hover:bg-red-50"
+                    }`}
                   >
                     <LogOut className="h-4 w-4" />
-                    تسجيل خروج
+                    {isLoggingOut ? "جاري تسجيل الخروج..." : "تسجيل خروج"}
                   </button>
                 </div>
               )}
