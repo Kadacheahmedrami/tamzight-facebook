@@ -2,14 +2,17 @@ import React from 'react';
 
 const features = [
   // quick‑action buttons (no change)
-  { icon: 'fas fa-users', color: '#4531fc', title: 'أصدقاء من الأمازيغ',         description: '' },
+  { icon: 'fas fa-user-circle', color: '#4531fc', title: 'ملف شخصي على التجمع',       description: '' },
+  { icon: 'fas fa-comments', color: '#4531fc', title: 'مراسلات بين الأعضاء',        description: '' },
   { icon: 'fas fa-bell', color: '#4531fc', title: 'إشعارات أقسام التجمع',     description: '' },
-  { icon: 'fas fa-comment', color: '#4531fc', title: 'مراسلات بين الأعضاء',        description: '' },
-  { icon: 'fas fa-user', color: '#4531fc', title: 'ملف شخصي على التجمع',       description: '' },
+  { icon: 'fas fa-user-friends ', color: '#4531fc', title: 'أصدقاء من الأمازيغ',         description: '' },
+
+ 
+
 
   // 1. حقائق ثابتة حول الأمازيغي
   {
-    icon: 'fas fa-cog',
+    icon: 'fas fa-sun',
     color: '#4531fc',
     title: 'حقائق ثابتة حول الأمازيغي',
     description: `يمكنك في هذا القسم الاطلاع على الكثير من الحقائق المُهمة حول حقيقة الأُمة الأمازيغية الأفريقية من جميع النواحي، 
@@ -31,7 +34,7 @@ const features = [
 
   // 3. كتب أمازيغية متنوعة
   {
-    icon: 'fas fa-book-open',
+    icon: 'fas fa-book',
     color: '#4531fc',
     title: 'كتب أمازيغية متنوعة',
     description: `يحتوي هذا القسم على الكثير من الكُتب الأمازيغية وبأكثر من لغة، وهي كتب لتعليم اللغة الأمازيغية، 
@@ -43,7 +46,7 @@ const features = [
 
   // 4. فيديوهات أمازيغية متنوعة
   {
-    icon: 'fas fa-desktop',
+    icon: 'fas fa-tv',
     color: '#4531fc',
     title: 'فيديوهات أمازيغية متنوعة',
     description: `يعرض هذا القسم الأمازيغي فيديوهات تتعلق بكل شيء حول الحياة والمعيشة اليومية للأُمة الأمازيغية الأفريقية، 
@@ -65,7 +68,7 @@ const features = [
 
   // 6. تسوق صناعات أمازيغية
   {
-    icon: 'fas fa-shopping-cart',
+    icon: 'fas fa-store',
     color: '#4531fc',
     title: 'تسوق صناعات أمازيغية',
     description: `هذا القسم خاص بتسويق الصناعات الأمازيغية التقليدية فقط، 
@@ -170,7 +173,7 @@ export default function HomePage() {
           </p>
 
           <div className="mt-6 flex   gap-2 text-blue-700 font-bold text-3xl">
-            <i className="fas fa-map text-2xl"></i>
+            <i className="fas fa-sitemap ml-2 text-4xl"></i>
             <a href="#" className="hover:underline">خريطة منصة تجمع الامازيغ</a>
           </div>
         </section>
@@ -230,7 +233,7 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <footer className="bg-green-600 text-white py-12">
+      <footer className="bg-[#008000] text-white py-12">
         <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
           {footerLinks.map((col, idx) => (
             <div key={idx}>
@@ -254,9 +257,9 @@ export default function HomePage() {
       </footer>
 
       {/* Bottom Bar */}
-      <div className="bg-yellow-400 text-gray-800 py-4">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-sm">
-          <span className="bg-green-600 text-white px-3 py-1 rounded text-xs flex items-center gap-1">
+      <div className="bg-yellow-400  text-gray-800 py-4">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row md:flex-row-reverse justify-between items-center text-sm">
+          <span className="bg-[#008000] text-white px-3 py-1 rounded text-xs flex items-center gap-1">
             <i className="fas fa-copyright"></i>
             حقوق الطبع والنشر محفوظة © تجمع الأمازيغ للتصميم والبرمجة 2025 - 2026
           </span>
