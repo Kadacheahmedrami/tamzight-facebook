@@ -1,14 +1,80 @@
-import Header from "@/components/header"
+
 import Sidebar from "@/components/sidebar"
 import { Button } from "@/components/ui/button"
 
 export default function MessagesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+     
       <div className="max-w-7xl mx-auto flex">
-        {/* Left Content - Messaging Settings */}
-        <div className="w-64 p-4">
+
+            {/* Right Sidebar - Main Navigation */}
+            <Sidebar />
+     
+
+        {/* Main Content - Messaging Area */}
+        <div className="flex-1 p-4">
+          <div className="max-w-2xl mx-auto">
+            {/* Breadcrumb */}
+            <nav className="mb-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>مراسلتك مع الاعضاء</span>
+              </div>
+            </nav>
+
+            {/* Messaging Area */}
+            <div className="bg-white rounded-lg p-4 border">
+              <div className="flex flex-col h-96 overflow-y-auto">
+                {/* Sample Message */}
+                <div className="mb-2">
+                  <div className="flex items-start">
+                    <img
+                      src="/placeholder.svg?height=30&width=30"
+                      alt="User Avatar"
+                      className="w-8 h-8 rounded-full mr-2"
+                    />
+                    <div>
+                      <span className="text-sm font-medium">اسم المستخدم</span>
+                      <p className="text-gray-700 text-sm">مرحبا، كيف حالك؟</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-500">منذ 5 دقائق</span>
+                </div>
+                {/* Sample Message */}
+                <div className="mb-2 self-end">
+                  <div className="flex items-start flex-row-reverse">
+                    <img
+                      src="/placeholder.svg?height=30&width=30"
+                      alt="User Avatar"
+                      className="w-8 h-8 rounded-full ml-2"
+                    />
+                    <div>
+                      <span className="text-sm font-medium">اسم المستخدم</span>
+                      <p className="text-gray-700 text-sm">بخير، شكرا لك</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-gray-500">منذ 2 دقائق</span>
+                </div>
+              </div>
+
+              {/* Message Input */}
+              <div className="mt-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="اكتب رسالتك هنا"
+                    className="pr-10 text-right w-full border rounded-md py-2 px-3"
+                  />
+                  <Button size="sm" className="absolute left-1 top-1/2 -translate-y-1/2">
+                    ارسل
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+   {/* Left Content - Messaging Settings */}
+   <div className="w-64 p-4">
           <div className="bg-white rounded-lg p-4 border">
             <h3 className="font-semibold mb-2">اعدادات المراسلة</h3>
             <fieldset className="space-y-2">
@@ -104,71 +170,7 @@ export default function MessagesPage() {
             <Button size="sm">حفظ الاعدادات</Button>
           </div>
         </div>
-
-        {/* Main Content - Messaging Area */}
-        <div className="flex-1 p-4">
-          <div className="max-w-2xl mx-auto">
-            {/* Breadcrumb */}
-            <nav className="mb-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>مراسلتك مع الاعضاء</span>
-              </div>
-            </nav>
-
-            {/* Messaging Area */}
-            <div className="bg-white rounded-lg p-4 border">
-              <div className="flex flex-col h-96 overflow-y-auto">
-                {/* Sample Message */}
-                <div className="mb-2">
-                  <div className="flex items-start">
-                    <img
-                      src="/placeholder.svg?height=30&width=30"
-                      alt="User Avatar"
-                      className="w-8 h-8 rounded-full mr-2"
-                    />
-                    <div>
-                      <span className="text-sm font-medium">اسم المستخدم</span>
-                      <p className="text-gray-700 text-sm">مرحبا، كيف حالك؟</p>
-                    </div>
-                  </div>
-                  <span className="text-xs text-gray-500">منذ 5 دقائق</span>
-                </div>
-                {/* Sample Message */}
-                <div className="mb-2 self-end">
-                  <div className="flex items-start flex-row-reverse">
-                    <img
-                      src="/placeholder.svg?height=30&width=30"
-                      alt="User Avatar"
-                      className="w-8 h-8 rounded-full ml-2"
-                    />
-                    <div>
-                      <span className="text-sm font-medium">اسم المستخدم</span>
-                      <p className="text-gray-700 text-sm">بخير، شكرا لك</p>
-                    </div>
-                  </div>
-                  <span className="text-xs text-gray-500">منذ 2 دقائق</span>
-                </div>
-              </div>
-
-              {/* Message Input */}
-              <div className="mt-4">
-                <div className="relative">
-                  <input
-                    type="text"
-                    placeholder="اكتب رسالتك هنا"
-                    className="pr-10 text-right w-full border rounded-md py-2 px-3"
-                  />
-                  <Button size="sm" className="absolute left-1 top-1/2 -translate-y-1/2">
-                    ارسل
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Sidebar - Main Navigation */}
-        <Sidebar />
+    
       </div>
     </div>
   )

@@ -4,7 +4,6 @@ import { useState } from "react"
 import { signOut, signIn } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { CircleUserRoundIcon, MessageCircle, BellRing, Users, LogOut, LogIn } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/use-toast"
@@ -151,22 +150,22 @@ export default function UserActions({ user }: UserActionsProps) {
           {/* Desktop Icons */}
           <div className="hidden md:flex items-center gap-3">
             {/* Profile Icon */}
-            <div className="group relative">
+            <Link href={"/main/member"} className="group relative">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-blue-600 hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
               >
-                <CircleUserRoundIcon className="h-6 w-6" />
+                <i className="fas fa-user-circle text-xl"></i>
               </Button>
               
               {/* Hover Dropdown for Profile */}
               <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="p-4 bg-blue-600 text-white rounded-t-lg">
+                <div className="p-4 bg-[#4531fc] text-white rounded-t-lg">
                   <h3 className="font-semibold mb-2">ملف بياناتك الشخصية</h3>
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                      <CircleUserRoundIcon className="h-6 w-6" />
+                      <i className="fas fa-user-circle text-xl"></i>
                     </div>
                     <div>
                       <p className="font-medium">
@@ -182,23 +181,23 @@ export default function UserActions({ user }: UserActionsProps) {
                   <div className="px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer transition-colors">كُن شريك التجمع</div>
                   <div className="px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer transition-colors">انضم لفريق التجمع</div>
                   <div onClick={handleSignOut} className="px-4 py-2 text-sm text-red-600 hover:bg-gray-50 cursor-pointer transition-colors flex items-center">
-                    <LogOut className="h-4 w-4 ml-2" />
+                    <i className="fas fa-sign-out-alt mr-2"></i>
                     تسجيل خروج
                   </div>
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Messages Icon */}
-            <div className="group relative" onMouseEnter={fetchMessages}>
+            <Link href={"/main/messages"} className="group relative" onMouseEnter={fetchMessages}>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-blue-600 hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
               >
-                <MessageCircle className="h-6 w-6 fill-current" />
+                <i className="fas fa-comments text-lg"></i>
                 {unreadMessages > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {unreadMessages}
                   </span>
                 )}
@@ -235,18 +234,18 @@ export default function UserActions({ user }: UserActionsProps) {
                   )}
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Notifications Icon */}
-            <div className="group relative" onMouseEnter={fetchNotifications}>
+            <Link href={"/main/notifications"} className="group relative" onMouseEnter={fetchNotifications}>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-blue-600 hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
               >
-                <BellRing className="h-6 w-6 fill-current" />
+                <i className="fas fa-bell text-lg"></i>
                 {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                  <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                     {unreadNotifications}
                   </span>
                 )}
@@ -282,24 +281,25 @@ export default function UserActions({ user }: UserActionsProps) {
                   )}
                 </div>
               </div>
-            </div>
+            </Link>
 
             {/* Friends Icon */}
-            <div className="group relative">
+            <Link href={"/main/friends"} className="group relative">
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-blue-600 hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
               >
-                <Users className="h-6 w-6 fill-current" />
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+               <i className="fas fa-user-friends text-lg"></i>
+
+                <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   9
                 </span>
               </Button>
               
               {/* Hover Dropdown for Friends */}
               <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="p-4 bg-blue-600 text-white rounded-t-lg">
+                <div className="p-4 bg-[#4531fc] text-white rounded-t-lg">
                   <h3 className="font-semibold mb-2">أصدقاء أمازيغ</h3>
                   <p className="text-sm">يوجد 10 أصدقاء جديد</p>
                 </div>
@@ -309,23 +309,23 @@ export default function UserActions({ user }: UserActionsProps) {
                   </Link>
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
 
           {/* Mobile Icons */}
           <div className="md:hidden flex items-center gap-1">
-            <Button variant="ghost" size="sm" className="relative p-2 text-blue-600 hover:bg-blue-50">
-              <BellRing className="h-4 w-4 fill-current" />
+            <Button variant="ghost" size="sm" className="relative p-2 text-[#4531fc] hover:bg-blue-50">
+              <i className="fas fa-bell text-sm"></i>
               {unreadNotifications > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                   {unreadNotifications}
                 </span>
               )}
             </Button>
-            <Button variant="ghost" size="sm" className="relative p-2 text-blue-600 hover:bg-blue-50">
-              <MessageCircle className="h-4 w-4 fill-current" />
+            <Button variant="ghost" size="sm" className="relative p-2 text-[#4531fc] hover:bg-blue-50">
+              <i className="fas fa-comments text-sm"></i>
               {unreadMessages > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
                   {unreadMessages}
                 </span>
               )}
@@ -360,7 +360,7 @@ export default function UserActions({ user }: UserActionsProps) {
               <Button 
                 type="submit" 
                 size="sm" 
-                className="bg-blue-600 hover:bg-blue-700 text-white px-4 h-8"
+                className="bg-[#4531fc] hover:bg-blue-700 text-white px-4 h-8"
                 disabled={isLoggingIn}
               >
                 {isLoggingIn ? (
@@ -370,7 +370,7 @@ export default function UserActions({ user }: UserActionsProps) {
                   </div>
                 ) : (
                   <>
-                    <LogIn className="h-3 w-3 ml-1" />
+                    <i className="fas fa-sign-in-alt mr-1"></i>
                     دخول
                   </>
                 )}
@@ -386,7 +386,7 @@ export default function UserActions({ user }: UserActionsProps) {
               </Button>
             </Link>
             <Link href="auth/register">
-              <Button size="sm" className="text-xs px-2 h-8 bg-blue-600 hover:bg-blue-700">
+              <Button size="sm" className="text-xs px-2 h-8 bg-[#4531fc] hover:bg-blue-700">
                 تسجيل
               </Button>
             </Link>
