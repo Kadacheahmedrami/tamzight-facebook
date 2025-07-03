@@ -43,7 +43,7 @@ export default function ImagesPage() {
         params.append("search", search.trim())
       }
 
-      const url = `/api/images${params.toString() ? `?${params.toString()}` : ""}`
+      const url = `/api/main/images${params.toString() ? `?${params.toString()}` : ""}`
       const response = await fetch(url)
       const data = await response.json()
       setImages(data)

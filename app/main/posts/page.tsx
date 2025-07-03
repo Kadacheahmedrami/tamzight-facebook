@@ -34,7 +34,7 @@ export default function PostsPage() {
   const fetchPosts = async (category = "all") => {
     setLoading(true)
     try {
-      const url = category === "all" ? "/api/posts" : `/api/posts?category=${category}`
+      const url = category === "all" ? "/api/main/posts" : `/api/main/posts?category=${category}`
       const response = await fetch(url)
       const data = await response.json()
       setPosts(data)

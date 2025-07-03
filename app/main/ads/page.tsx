@@ -62,7 +62,7 @@ export default function AdsPage() {
   const fetchAds = async (category = "all") => {
     setLoading(true)
     try {
-      const url = category === "all" ? "/api/ads" : `/api/ads?category=${category}`
+      const url = category === "all" ? "/api/main/ads" : `/api/main/ads?category=${category}`
       const response = await fetch(url)
       const data = await response.json()
       setAds(data)

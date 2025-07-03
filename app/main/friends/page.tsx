@@ -30,7 +30,7 @@ export default function FriendsPage() {
   const fetchFriends = async () => {
     setLoading(true)
     try {
-      const response = await fetch("/api/friends")
+      const response = await fetch("/api/main/friends")
       const data = await response.json()
       setFriendsData(data)
     } catch (error) {

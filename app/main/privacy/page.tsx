@@ -1,11 +1,11 @@
-import Header from "@/components/header"
+
 import Sidebar from "@/components/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default function PrivacyPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+
       <div className="max-w-7xl mx-auto flex">
         {/* Left Sidebar - Main Navigation */}
         <Sidebar />

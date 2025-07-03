@@ -35,7 +35,7 @@ export default function ShopPage() {
   const fetchProducts = async (category = "all") => {
     setLoading(true)
     try {
-      const url = category === "all" ? "/api/products" : `/api/products?category=${category}`
+      const url = category === "all" ? "/api/main/products" : `/api/main/products?category=${category}`
       const response = await fetch(url)
       const data = await response.json()
       setProducts(data)

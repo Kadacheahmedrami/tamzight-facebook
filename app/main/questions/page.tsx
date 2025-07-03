@@ -32,7 +32,7 @@ export default function QuestionsPage() {
   const fetchQuestions = async (type = "all") => {
     setLoading(true)
     try {
-      const url = type === "all" ? "/api/questions" : `/api/questions?type=${type}`
+      const url = type === "all" ? "/api/main/questions" : `/api/main/questions?type=${type}`
       const response = await fetch(url)
       const data = await response.json()
       setQuestions(data)

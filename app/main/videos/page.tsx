@@ -42,7 +42,7 @@ export default function VideosPage() {
   const fetchVideos = async (category = "all") => {
     setLoading(true)
     try {
-      const url = category === "all" ? "/api/videos" : `/api/videos?category=${category}`
+      const url = category === "all" ? "/api/main/videos" : `/api/main/videos?category=${category}`
       const response = await fetch(url)
       const data = await response.json()
       setVideos(data)

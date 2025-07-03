@@ -37,7 +37,7 @@ export default function BooksPage() {
   const fetchBooks = async (category = "all") => {
     setLoading(true)
     try {
-      const url = category === "all" ? "/api/books" : `/api/books?category=${category}`
+      const url = category === "all" ? "/api/main/books" : `/api/main/books?category=${category}`
       const response = await fetch(url)
       const data = await response.json()
       setBooks(data)

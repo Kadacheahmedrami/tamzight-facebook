@@ -32,7 +32,7 @@ export default function IdeasPage() {
   const fetchIdeas = async (category = "all") => {
     setLoading(true)
     try {
-      const url = category === "all" ? "/api/ideas" : `/api/ideas?category=${category}`
+      const url = category === "all" ? "/api/main/ideas" : `/api/main/ideas?category=${category}`
       const response = await fetch(url)
       const data = await response.json()
       setIdeas(data)
