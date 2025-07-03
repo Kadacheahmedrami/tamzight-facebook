@@ -16,6 +16,7 @@ import {
   Lightbulb,
   Archive,
   Rss,
+  Users, MessageCircle, Settings
 } from "lucide-react"
 
 interface SidebarStats {
@@ -30,6 +31,8 @@ interface SidebarStats {
     shop: number
     ideas: number
     support: number
+    friends: number
+    messages: number
   }
 }
 
@@ -74,6 +77,9 @@ export default function Sidebar() {
       badge: stats?.sections.ideas?.toString() || "0",
     },
     { href: "/main/support", icon: Archive, label: "صندوق دعم الامازيغ", badge: stats?.sections.support?.toString() || "0" },
+    { href: "/main/friends", icon: Users, label: "الأصدقاء", badge: stats?.sections.friends?.toString() || "0" },
+    { href: "/main/messages", icon: MessageCircle, label: "الرسائل", badge: stats?.sections.messages?.toString() || "0" },
+    { href: "/main/settings", icon: Settings, label: "الإعدادات" },
   ]
 
   const isActiveLink = (href: string) => {

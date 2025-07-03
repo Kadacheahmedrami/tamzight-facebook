@@ -23,6 +23,7 @@ import {
   Lightbulb,
   Archive,
   Rss,
+  Settings,
 } from "lucide-react"
 
 interface SidebarStats {
@@ -37,6 +38,8 @@ interface SidebarStats {
     shop: number
     ideas: number
     support: number
+    friends: number
+    messages: number
   }
 }
 
@@ -120,9 +123,15 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
       href: "/main/messages", 
       icon: MessageCircle, 
       label: "الرسائل",
-      badge: unreadMessages > 0 ? unreadMessages.toString() : null
+      badge: unreadMessages > 0 ? unreadMessages.toString() : (stats?.sections.messages?.toString() || "0")
     },
-    { href: "/main/friends", icon: Users, label: "الأصدقاء" },
+    { 
+      href: "/main/friends", 
+      icon: Users, 
+      label: "الأصدقاء",
+      badge: stats?.sections.friends?.toString() || "0"
+    },
+    { href: "/main/settings", icon: Settings, label: "الإعدادات" },
   ]
 
   const isActiveLink = (href: string) => {
@@ -232,7 +241,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                         <link.icon className="h-5 w-5" />
                         <span className="flex-1">{link.label}</span>
                         {link.badge && (
-                          <span className="bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
                             {link.badge}
                           </span>
                         )}
@@ -310,6 +319,42 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
       {/* Desktop Sidebar */}
       <aside className="hidden lg:block w-64 bg-white border-l border-gray-200 h-screen sticky top-16 overflow-y-auto">
         <div className="p-4">
+          {/* User Links Section (if user exists) */}
+          {user && (
+            <div className="mb-6 pb-6 border-b border-gray-200">
+              <h3 className="text-sm font-medium text-gray-500 mb-3">حسابي</h3>
+              <div className="space-y-1">
+                {userLinks.map((link) => {
+                  const isActive = isActiveLink(link.href)
+                  return (
+                    <Link 
+                      key={link.href}
+                      href={link.href}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
+                        isActive 
+                          ? "bg-blue-50 text-blue-700 border-r-4 border-blue-700"
+                          : "hover:bg-gray-50 text-gray-700"
+                      }`}
+                    >
+                      <link.icon className={`h-5 w-5 ${isActive ? "text-blue-700" : "text-gray-500"}`} />
+                      <span className="flex-1">{link.label}</span>
+                      {link.badge && (
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          isActive
+                            ? "bg-blue-200 text-blue-900"
+                            : "bg-blue-100 text-blue-800"
+                        }`}>
+                          {link.badge}
+                        </span>
+                      )}
+                    </Link>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Main Navigation */}
           <nav className="space-y-2">
             <NavigationLinks />
           </nav>
@@ -322,7 +367,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                   <Link 
                     href="/main/policy" 
                     className={`block transition-colors duration-200 ${
-                      pathname === "/policy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
+                      pathname === "/main/policy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
                   >
                     الشروط
@@ -330,7 +375,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                   <Link 
                     href="/main/privacy" 
                     className={`block transition-colors duration-200 ${
-                      pathname === "/privacy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
+                      pathname === "/main/privacy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
                   >
                     الخصوصية
@@ -338,7 +383,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                   <Link 
                     href="/main/cookies" 
                     className={`block transition-colors duration-200 ${
-                      pathname === "/cookies" ? "text-blue-600 font-medium" : "hover:text-blue-600"
+                      pathname === "/main/cookies" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
                   >
                     ملفات تعريف الارتباط
@@ -346,7 +391,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                   <Link 
                     href="/main/help" 
                     className={`block transition-colors duration-200 ${
-                      pathname === "/help" ? "text-blue-600 font-medium" : "hover:text-blue-600"
+                      pathname === "/main/help" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
                   >
                     المساعدة
@@ -354,7 +399,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                   <Link 
                     href="/main/contact" 
                     className={`block transition-colors duration-200 ${
-                      pathname === "/contact" ? "text-blue-600 font-medium" : "hover:text-blue-600"
+                      pathname === "/main/contact" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
                   >
                     تواصل معنا

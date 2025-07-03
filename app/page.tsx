@@ -258,7 +258,7 @@ export default function HomePage() {
 
       {/* Bottom Bar */}
       <div className="bg-yellow-400  text-gray-800 py-4">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row md:flex-row-reverse justify-between items-center text-sm">
+        <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-sm">
           <span className="bg-[#008000] text-white px-3 py-1 rounded text-xs flex items-center gap-1">
             <i className="fas fa-copyright"></i>
             حقوق الطبع والنشر محفوظة © تجمع الأمازيغ للتصميم والبرمجة 2025 - 2026
