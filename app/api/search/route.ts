@@ -1,87 +1,71 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { prisma } from "@/lib/prisma"  // singleton PrismaClient
+import type { Prisma } from "@prisma/client"
 
-// Import all data from other endpoints (in a real app, this would be from a database)
-const allContent = [
-  // Posts
-  {
-    id: "post-1",
-    title: "تعريف بالامة الامازيغية واصلها",
-    content: "تجمع الأُمة الأمازيغية المُتحدة في شمال افريقيا والعالم",
-    author: "سيبتموس سيفوروس",
-    type: "منشور",
-    url: "/posts",
-  },
-  {
-    id: "post-2",
-    title: "الحضارة الأمازيغية عبر التاريخ",
-    content: "استكشاف للإنجازات الحضارية العظيمة للشعب الأمازيغي",
-    author: "سيبتموس سيفوروس",
-    type: "منشور",
-    url: "/posts",
-  },
-  // Questions
-  {
-    id: "question-1",
-    title: "في أي سنة تم ذكر الامازيغ في تاريخ البشرية؟",
-    content: "سؤال مهم حول أول ذكر تاريخي للشعب الأمازيغي",
-    author: "سيبتموس سيفوروس",
-    type: "سؤال",
-    url: "/questions",
-  },
-  // Truths
-  {
-    id: "truth-1",
-    title: "هويتنا امازيغية افريقية",
-    content: "الامازيغية هويتُنا *** الامازيغية ثقافتُنا",
-    author: "سيبتموس سيفوروس",
-    type: "حقيقة",
-    url: "/truth",
-  },
-  // Books
-  {
-    id: "book-1",
-    title: "السهل والميسر في تعلم اللغة الامازيغية",
-    content: "كتاب شامل لتعليم اللغة الامازيغية",
-    author: "ابوبكر هارون",
-    type: "كتاب",
-    url: "/books",
-  },
-  // Videos
-  {
-    id: "video-1",
-    title: "تعلم الاعداد في اللغة الامازيغية",
-    content: "فيديو تعليمي شامل لتعلم الاعداد",
-    author: "سيبتموس سيفوروس",
-    type: "فيديو",
-    url: "/videos",
-  },
-  // Images
-  {
-    id: "image-1",
-    title: "صور تراثية امازيغية من الأطلس",
-    content: "مجموعة من الصور التراثية الأمازيغية",
-    author: "سيبتموس سيفوروس",
-    type: "صورة",
-    url: "/images",
-  },
-]
+export async function GET(req: NextRequest) {
+  try {
+    const url = new URL(req.url)
+    const query = url.searchParams.get('q')
+    const page = parseInt(url.searchParams.get('page') ?? '1', 10)
+    const pageSize = 10
+    const skip = (page - 1) * pageSize
 
-export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const query = searchParams.get("q")
+    if (!query) {
+      return NextResponse.json({ data: [], total: 0 }, { status: 200 })
+    }
 
-  if (!query) {
-    return NextResponse.json([])
+    const searchTerm = query
+
+    // Build typed filter
+    const where: Prisma.UserWhereInput = {
+      OR: [
+        { firstName: { contains: searchTerm, mode: 'insensitive' } },
+        { lastName:  { contains: searchTerm, mode: 'insensitive' } },
+        { email:     { contains: searchTerm, mode: 'insensitive' } }
+      ]
+    }
+
+    // Fetch matching users with pagination
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          email: true,
+          avatar: true,
+          role: true,
+          createdAt: true
+        },
+        skip,
+        take: pageSize,
+        orderBy: { createdAt: 'desc' }
+      }),
+      prisma.user.count({ where })
+    ])
+
+    const result = users.map(user => ({
+      id: user.id,
+      name: `${user.firstName} ${user.lastName}`.trim(),
+      email: user.email,
+      avatar: user.avatar,
+      role: user.role,
+      joined: user.createdAt.toISOString()
+    }))
+
+    return NextResponse.json({ data: result, total }, {
+      status: 200,
+      headers: {
+        'X-Total-Count': total.toString(),
+        'X-Page': page.toString(),
+        'X-Page-Size': pageSize.toString(),
+        'Cache-Control': 'public, max-age=60'
+      }
+    })
+  } catch (error) {
+    console.error('[User Search API] Error:', error)
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
-
-  const searchTerm = query.toLowerCase()
-  const results = allContent.filter(
-    (item) =>
-      item.title.toLowerCase().includes(searchTerm) ||
-      item.content.toLowerCase().includes(searchTerm) ||
-      item.author.toLowerCase().includes(searchTerm),
-  )
-
-  return NextResponse.json(results.slice(0, 10)) // Limit to 10 results
 }
