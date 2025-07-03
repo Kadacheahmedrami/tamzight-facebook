@@ -5,10 +5,49 @@ import { Button } from "@/components/ui/button"
 export default function SettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
+      
       <div className="max-w-7xl mx-auto flex">
-        {/* Left Content - Settings Options */}
-        <div className="w-64 p-4">
+      
+
+            {/* Right Sidebar - Main Navigation */}
+            <Sidebar />
+
+        {/* Main Content - Settings Area */}
+        <div className="flex-1 p-4">
+          <div className="max-w-2xl mx-auto">
+            {/* Breadcrumb */}
+            <nav className="mb-4">
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>اعدادات ملفي الشخصي</span>
+              </div>
+            </nav>
+
+            {/* Settings Area */}
+            <div className="bg-white rounded-lg p-4 border">
+              <h3 className="text-[#4531fc] font-semibold mb-2">تعديل الاسم</h3>
+              <input type="text" placeholder="اسمك الجديد" className="w-full border rounded-md py-2 px-3 mb-4" />
+
+              <h3 className="text-[#4531fc] font-semibold mb-2">تعديل كلمة المرور</h3>
+              <input
+                type="password"
+                placeholder="كلمة المرور القديمة"
+                className="w-full border rounded-md py-2 px-3 mb-2"
+              />
+              <input
+                type="password"
+                placeholder="كلمة المرور الجديدة"
+                className="w-full border rounded-md py-2 px-3 mb-4"
+              />
+
+              <Button className="bg-[#4531fc]">حفظ التغييرات</Button>
+            </div>
+          </div>
+        </div>
+
+
+
+          {/* left Content - Settings Options */}
+          <div className="w-64 p-4">
           <div className="bg-white rounded-lg p-4 border">
             <h3 className="font-semibold mb-2">اعدادات ملفي الشخصي</h3>
             <div className="space-y-2">
@@ -33,41 +72,6 @@ export default function SettingsPage() {
             </div>
           </div>
         </div>
-
-        {/* Main Content - Settings Area */}
-        <div className="flex-1 p-4">
-          <div className="max-w-2xl mx-auto">
-            {/* Breadcrumb */}
-            <nav className="mb-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>اعدادات ملفي الشخصي</span>
-              </div>
-            </nav>
-
-            {/* Settings Area */}
-            <div className="bg-white rounded-lg p-4 border">
-              <h3 className="font-semibold mb-2">تعديل الاسم</h3>
-              <input type="text" placeholder="اسمك الجديد" className="w-full border rounded-md py-2 px-3 mb-4" />
-
-              <h3 className="font-semibold mb-2">تعديل كلمة المرور</h3>
-              <input
-                type="password"
-                placeholder="كلمة المرور القديمة"
-                className="w-full border rounded-md py-2 px-3 mb-2"
-              />
-              <input
-                type="password"
-                placeholder="كلمة المرور الجديدة"
-                className="w-full border rounded-md py-2 px-3 mb-4"
-              />
-
-              <Button>حفظ التغييرات</Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Sidebar - Main Navigation */}
-        <Sidebar />
       </div>
     </div>
   )
