@@ -43,7 +43,7 @@ interface TrendingTopic {
 
 export default function LatestPostsPage() {
   const [posts, setPosts] = useState<Post[]>([])
-  const [stats, setStats] = useState<Stats>({ totalPosts: 0, todayPosts: 0, trendingPosts: 0 })
+ 
   const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState("all")

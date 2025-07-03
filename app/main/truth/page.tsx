@@ -8,62 +8,80 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
 import {
-  Book,
-  Download,
+  Heart,
+  MessageCircle,
+  Share2,
   Eye,
-  Star,
+  Search,
+  User,
+  Clock
 } from "lucide-react"
 
-interface BookData {
+interface TruthData {
   id: number
   title: string
+  content: string
   author: string
-  description: string
+  timestamp: string
   category: string
-  language: string
-  pages: number
-  publishYear: string
+  subcategory: string
   image: string
-  downloadUrl: string
-  rating: number
-  downloads: number
-  fileSize: string
+  stats: {
+    views: number
+    likes: number
+    comments: number
+    shares: number
+  }
 }
 
-export default function BooksPage() {
-  const [books, setBooks] = useState<BookData[]>([])
+export default function TruthsPage() {
+  const [truths, setTruths] = useState<TruthData[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedCategory, setSelectedCategory] = useState("all")
+  const [searchTerm, setSearchTerm] = useState("")
 
-  const fetchBooks = async (category = "all") => {
+  const fetchTruths = async (category = "all", search = "") => {
     setLoading(true)
     try {
-      const url = category === "all" ? "/api/main/books" : `/api/main/books?category=${category}`
+      const params = new URLSearchParams()
+      if (category !== "all") params.append("category", category)
+      if (search) params.append("search", search)
+      
+      const url = `/api/main/truth${params.toString() ? `?${params.toString()}` : ""}`
       const response = await fetch(url)
       const data = await response.json()
-      setBooks(data)
+      setTruths(data)
     } catch (error) {
-      console.error("Error fetching books:", error)
+      console.error("Error fetching truths:", error)
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    fetchBooks()
+    fetchTruths()
   }, [])
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category)
-    fetchBooks(category)
+    fetchTruths(category, searchTerm)
+  }
+
+  const handleSearch = () => {
+    fetchTruths(selectedCategory, searchTerm)
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleSearch()
+    }
   }
 
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-       
-  
         <div className="max-w-7xl mx-auto flex">
           <div className="hidden lg:block">
             <Sidebar />
@@ -86,10 +104,6 @@ export default function BooksPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-
-
-   
-
       <div className="max-w-7xl mx-auto flex">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block">
@@ -102,99 +116,129 @@ export default function BooksPage() {
             {/* Breadcrumb - Hidden on mobile */}
             <nav className="mb-4 hidden lg:block">
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>كُتب امازيغية متنوعة</span>
+                <span>حقائق امازيغية متنوعة</span>
               </div>
             </nav>
 
-            {/* Filter */}
+            {/* Filter and Search */}
             <div className="bg-white rounded-lg p-4 mb-4 border">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <label className="text-sm font-medium whitespace-nowrap">اعرض كتب:</label>
-                <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="اختار قسم الكتب" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">الجميع</SelectItem>
-                    <SelectItem value="language">تعليم اللغة</SelectItem>
-                    <SelectItem value="history">تاريخية</SelectItem>
-                    <SelectItem value="culture">ثقافية</SelectItem>
-                    <SelectItem value="literature">أدبية</SelectItem>
-                    <SelectItem value="children">أطفال</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button size="sm" onClick={() => fetchBooks(selectedCategory)} className="bg-[#4531fc] w-full sm:w-auto">
-                  اعرض الكتب
-                </Button>
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                  <label className="text-sm font-medium whitespace-nowrap">اعرض حقائق:</label>
+                  <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <SelectValue placeholder="اختار قسم الحقائق" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">الجميع</SelectItem>
+                      <SelectItem value="history">تاريخية</SelectItem>
+                      <SelectItem value="culture">ثقافية</SelectItem>
+                      <SelectItem value="language">لغوية</SelectItem>
+                      <SelectItem value="geography">جغرافية</SelectItem>
+                      <SelectItem value="traditions">تقاليد</SelectItem>
+                      <SelectItem value="personalities">شخصيات</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button 
+                    size="sm" 
+                    onClick={() => fetchTruths(selectedCategory, searchTerm)} 
+                    className="bg-[#4531fc] w-full sm:w-auto"
+                  >
+                    اعرض الحقائق
+                  </Button>
+                </div>
+                
+                {/* Search Bar */}
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      placeholder="ابحث في الحقائق..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      className="pl-10"
+                    />
+                  </div>
+                  <Button onClick={handleSearch} size="sm" className="bg-[#4531fc]">
+                    بحث
+                  </Button>
+                </div>
               </div>
             </div>
 
-            {/* Books Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {books.length > 0 ? (
-                books.map((book) => (
-                  <Card key={book.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+            {/* Truths Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
+              {truths.length > 0 ? (
+                truths.map((truth) => (
+                  <Card key={truth.id} className="overflow-hidden hover:shadow-lg transition-shadow">
                     <div className="relative">
                       <img
-                        src={book.image || "/placeholder.svg?height=200&width=150"}
-                        alt={book.title}
+                        src={truth.image || "/placeholder.svg?height=200&width=600"}
+                        alt={truth.title}
                         className="w-full h-48 object-cover"
                       />
                       <Badge className="absolute top-2 right-2" variant="secondary">
-                        {book.category}
+                        {truth.subcategory}
                       </Badge>
-                      <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
-                        {book.fileSize}
-                      </div>
                     </div>
+                    
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm leading-tight line-clamp-2">{book.title}</CardTitle>
-                      <CardDescription className="text-xs">بقلم: {book.author}</CardDescription>
+                      <CardTitle className="text-lg leading-tight line-clamp-2">{truth.title}</CardTitle>
+                      <CardDescription className="flex items-center gap-2 text-sm">
+                        <User className="h-4 w-4" />
+                        <span>بقلم: {truth.author}</span>
+                      </CardDescription>
                     </CardHeader>
+                    
                     <CardContent className="pt-0">
-                      <p className="text-xs text-gray-600 mb-3 line-clamp-2">{book.description}</p>
+                      <p className="text-sm text-gray-600 mb-4 line-clamp-3">{truth.content}</p>
 
-                      <div className="space-y-1 text-xs text-gray-500 mb-3">
-                        <div className="flex justify-between">
-                          <span>اللغة:</span>
-                          <span>{book.language}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>الصفحات:</span>
-                          <span>{book.pages}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>سنة النشر:</span>
-                          <span>{book.publishYear}</span>
-                        </div>
+                      <div className="flex items-center gap-2 text-xs text-gray-500 mb-4">
+                        <Clock className="h-3 w-3" />
+                        <span>{truth.timestamp}</span>
                       </div>
 
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-1">
-                          <Star className="h-3 w-3 text-yellow-400 fill-current" />
-                          <span className="text-xs text-gray-600">{book.rating}</span>
-                        </div>
-                        <div className="flex items-center gap-1 text-xs text-gray-500">
-                          <Download className="h-3 w-3" />
-                          <span>{book.downloads}</span>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-1">
+                            <Eye className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-600">{truth.stats.views}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Heart className="h-4 w-4 text-red-400" />
+                            <span className="text-sm text-gray-600">{truth.stats.likes}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <MessageCircle className="h-4 w-4 text-blue-400" />
+                            <span className="text-sm text-gray-600">{truth.stats.comments}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Share2 className="h-4 w-4 text-green-400" />
+                            <span className="text-sm text-gray-600">{truth.stats.shares}</span>
+                          </div>
                         </div>
                       </div>
 
                       <div className="flex gap-2">
-                        <Button size="sm" variant="outline" className=" flex-1 bg-transparent">
+                        <Button size="sm" variant="outline" className="flex-1 bg-transparent">
                           <Eye className="h-3 w-3 mr-1" />
-                          معاينة
+                          قراءة المزيد
                         </Button>
-                        <Button size="sm" className="flex-1 bg-[#4531fc] hover:bg-blue-800 ">
-                          <Download className="h-3 w-3 mr-1" />
-                          تحميل
+                        <Button size="sm" className="flex-1 bg-[#4531fc] hover:bg-blue-800">
+                          <Heart className="h-3 w-3 mr-1" />
+                          إعجاب
+                        </Button>
+                        <Button size="sm" variant="outline" className="flex-1 bg-transparent">
+                          <Share2 className="h-3 w-3 mr-1" />
+                          مشاركة
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
                 ))
               ) : (
-                <div className="col-span-3 text-center py-8 text-gray-500">لا توجد كتب في هذا القسم</div>
+                <div className="col-span-full text-center py-8 text-gray-500">لا توجد حقائق في هذا القسم</div>
               )}
             </div>
           </div>

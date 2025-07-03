@@ -43,7 +43,7 @@ export default function Sidebar() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const response = await fetch("/api/stats")
+        const response = await fetch("/api/main/stats")
         const data = await response.json()
         setStats(data)
       } catch (error) {

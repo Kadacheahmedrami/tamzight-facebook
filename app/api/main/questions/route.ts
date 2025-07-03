@@ -1,83 +1,128 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-
-const allQuestions = [
-  {
-    id: 1,
-    title: "في أي سنة تم ذكر الامازيغ في تاريخ البشرية؟",
-    content: "سؤال مهم حول أول ذكر تاريخي للشعب الأمازيغي في المصادر التاريخية القديمة",
-    author: "سيبتموس سيفوروس",
-    timestamp: "طرح سؤال بتاريخ 01-04-2023 الساعة 12:35 مساء",
-    category: "سؤال",
-    type: "answer",
-    answered: false,
-    image: "/placeholder.svg?height=300&width=600",
-    stats: { views: 250, likes: 1605, comments: 154, shares: 10 },
-  },
-  {
-    id: 2,
-    title: "ما هو اصل الامازيغ الحقيقي؟",
-    content: "استفسار حول الأصول الجغرافية والعرقية للشعب الأمازيغي",
-    author: "سيبتموس سيفوروس",
-    timestamp: "طرح سؤال بتاريخ 01-04-2023 الساعة 12:35 مساء",
-    category: "سؤال",
-    type: "vote",
-    answered: true,
-    image: "/placeholder.svg?height=300&width=600",
-    stats: { views: 320, likes: 1200, comments: 89, shares: 15 },
-  },
-  {
-    id: 3,
-    title: "كيف انتشرت اللغة الأمازيغية عبر شمال أفريقيا؟",
-    content: "سؤال حول تاريخ انتشار اللغة الأمازيغية وتطورها عبر المناطق المختلفة",
-    author: "سيبتموس سيفوروس",
-    timestamp: "طرح سؤال بتاريخ 01-04-2023 الساعة 12:35 مساء",
-    category: "سؤال",
-    type: "answer",
-    answered: false,
-    image: "/placeholder.svg?height=300&width=600",
-    stats: { views: 180, likes: 890, comments: 67, shares: 8 },
-  },
-  {
-    id: 4,
-    title: "ما هي أهم المعالم الأثرية الأمازيغية؟",
-    content: "سؤال حول المعالم والمواقع الأثرية المهمة في التاريخ الأمازيغي",
-    author: "باحث أثري",
-    timestamp: "طرح سؤال بتاريخ 02-04-2023 الساعة 14:20 مساء",
-    category: "سؤال",
-    type: "vote",
-    answered: true,
-    image: "/placeholder.svg?height=300&width=600",
-    stats: { views: 290, likes: 950, comments: 45, shares: 12 },
-  },
-]
+import { prisma } from "@/lib/prisma"
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const type = searchParams.get("type")
-  const search = searchParams.get("search")
+  try {
+    const { searchParams } = new URL(request.url)
+    const type = searchParams.get("type")
+    const search = searchParams.get("search")
 
-  let filteredQuestions = [...allQuestions]
+    // Build the where clause for filtering
+    const whereClause: any = {}
 
-  // Filter by type
-  if (type && type !== "all") {
-    if (type === "answer") {
-      filteredQuestions = filteredQuestions.filter((q) => !q.answered)
-    } else if (type === "vote") {
-      filteredQuestions = filteredQuestions.filter((q) => q.answered)
+    // Filter by type (answered/unanswered)
+    if (type && type !== "all") {
+      if (type === "answer") {
+        whereClause.answered = false
+      } else if (type === "vote") {
+        whereClause.answered = true
+      }
     }
-  }
 
-  // Search functionality
-  if (search) {
-    const searchTerm = search.toLowerCase()
-    filteredQuestions = filteredQuestions.filter(
-      (question) =>
-        question.title.toLowerCase().includes(searchTerm) ||
-        question.content.toLowerCase().includes(searchTerm) ||
-        question.author.toLowerCase().includes(searchTerm),
+    // Search functionality
+    if (search) {
+      const searchTerm = search.toLowerCase()
+      whereClause.OR = [
+        {
+          title: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          content: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          author: {
+            OR: [
+              {
+                firstName: {
+                  contains: searchTerm,
+                  mode: 'insensitive'
+                }
+              },
+              {
+                lastName: {
+                  contains: searchTerm,
+                  mode: 'insensitive'
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+
+    // Fetch questions from database
+    const questions = await prisma.question.findMany({
+      where: whereClause,
+      include: {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatar: true
+          }
+        },
+        likes: {
+          select: {
+            id: true,
+            emoji: true
+          }
+        },
+        comments: {
+          select: {
+            id: true
+          }
+        },
+        shares: {
+          select: {
+            id: true
+          }
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+            shares: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    // Transform the data to match your frontend format
+    const transformedQuestions = questions.map(question => ({
+      id: question.id,
+      title: question.title,
+      content: question.content,
+      author: `${question.author.firstName} ${question.author.lastName}`,
+      timestamp: `طرح سؤال بتاريخ ${question.createdAt.toLocaleDateString('ar-EG')} الساعة ${question.createdAt.toLocaleTimeString('ar-EG')}`,
+      category: question.category,
+      type: question.type,
+      answered: question.answered,
+      image: question.image || "/placeholder.svg?height=300&width=600",
+      stats: {
+        views: question.views,
+        likes: question._count.likes,
+        comments: question._count.comments,
+        shares: question._count.shares
+      }
+    }))
+
+    return NextResponse.json(transformedQuestions)
+  } catch (error) {
+    console.error("Error fetching questions:", error)
+    return NextResponse.json(
+      { error: "Failed to fetch questions" },
+      { status: 500 }
     )
   }
-
-  return NextResponse.json(filteredQuestions)
 }

@@ -1,87 +1,123 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-
-const allPosts = [
-  {
-    id: 1,
-    title: "تعريف بالامة الامازيغية واصلها",
-    content:
-      "تجمع الأُمة الأمازيغية المُتحدة في شمال افريقيا والعالم ... هو تجمع تاريخي وحضاري وثقافي وتعليمي متنوع ... يُعرف بتاريخ وحضارة وثقافة الأُمة الأمازيغية المُتحدة في الماضي والحاضر",
-    author: "سيبتموس سيفوروس",
-    timestamp: "نشر بتاريخ 01-04-2023 الساعة 12:35 مساء",
-    category: "منشور",
-    subcategory: "nation",
-    image: "/placeholder.svg?height=300&width=600",
-    stats: { views: 250, likes: 1605, comments: 154, shares: 10 },
-  },
-  {
-    id: 2,
-    title: "الحضارة الأمازيغية عبر التاريخ",
-    content: "استكشاف للإنجازات الحضارية العظيمة للشعب الأمازيغي عبر العصور المختلفة",
-    author: "سيبتموس سيفوروس",
-    timestamp: "نشر بتاريخ 01-04-2023 الساعة 12:35 مساء",
-    category: "منشور",
-    subcategory: "civilization",
-    image: "/placeholder.svg?height=300&width=600",
-    stats: { views: 320, likes: 1200, comments: 89, shares: 15 },
-  },
-  {
-    id: 3,
-    title: "التراث الشعبي الأمازيغي",
-    content: "نظرة على التراث الغني والمتنوع للشعب الأمازيغي من فنون وحرف وتقاليد",
-    author: "سيبتموس سيفوروس",
-    timestamp: "نشر بتاريخ 01-04-2023 الساعة 12:35 مساء",
-    category: "منشور",
-    subcategory: "art",
-    image: "/placeholder.svg?height=300&width=600",
-    stats: { views: 180, likes: 890, comments: 67, shares: 8 },
-  },
-  {
-    id: 4,
-    title: "اللغة الأمازيغية ولهجاتها المتنوعة",
-    content: "دراسة شاملة للهجات الأمازيغية المختلفة عبر شمال أفريقيا",
-    author: "د. أمازيغ اللغوي",
-    timestamp: "نشر بتاريخ 02-04-2023 الساعة 10:20 صباحاً",
-    category: "منشور",
-    subcategory: "language",
-    image: "/placeholder.svg?height=300&width=600",
-    stats: { views: 420, likes: 1350, comments: 95, shares: 22 },
-  },
-  {
-    id: 5,
-    title: "شخصيات أمازيغية مؤثرة في التاريخ",
-    content: "تعرف على أهم الشخصيات الأمازيغية التي أثرت في مجرى التاريخ",
-    author: "مؤرخ أمازيغي",
-    timestamp: "نشر بتاريخ 03-04-2023 الساعة 15:45 مساء",
-    category: "منشور",
-    subcategory: "personalities",
-    image: "/placeholder.svg?height=300&width=600",
-    stats: { views: 380, likes: 1150, comments: 78, shares: 18 },
-  },
-]
+import { prisma } from "@/lib/prisma"
 
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url)
-  const category = searchParams.get("category")
-  const search = searchParams.get("search")
+  try {
+    const { searchParams } = new URL(request.url)
+    const category = searchParams.get("category")
+    const search = searchParams.get("search")
 
-  let filteredPosts = [...allPosts]
+    // Build the where clause for filtering
+    const whereClause: any = {}
 
-  // Filter by category
-  if (category && category !== "all") {
-    filteredPosts = filteredPosts.filter((post) => post.subcategory === category)
-  }
+    // Filter by subcategory
+    if (category && category !== "all") {
+      whereClause.subcategory = category
+    }
 
-  // Search functionality
-  if (search) {
-    const searchTerm = search.toLowerCase()
-    filteredPosts = filteredPosts.filter(
-      (post) =>
-        post.title.toLowerCase().includes(searchTerm) ||
-        post.content.toLowerCase().includes(searchTerm) ||
-        post.author.toLowerCase().includes(searchTerm),
+    // Search functionality
+    if (search) {
+      const searchTerm = search.toLowerCase()
+      whereClause.OR = [
+        {
+          title: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          content: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          author: {
+            OR: [
+              {
+                firstName: {
+                  contains: searchTerm,
+                  mode: 'insensitive'
+                }
+              },
+              {
+                lastName: {
+                  contains: searchTerm,
+                  mode: 'insensitive'
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+
+    // Fetch posts from database
+    const posts = await prisma.post.findMany({
+      where: whereClause,
+      include: {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            avatar: true
+          }
+        },
+        likes: {
+          select: {
+            id: true,
+            emoji: true
+          }
+        },
+        comments: {
+          select: {
+            id: true
+          }
+        },
+        shares: {
+          select: {
+            id: true
+          }
+        },
+        _count: {
+          select: {
+            likes: true,
+            comments: true,
+            shares: true
+          }
+        }
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    })
+
+    // Transform the data to match your frontend format
+    const transformedPosts = posts.map(post => ({
+      id: post.id,
+      title: post.title,
+      content: post.content,
+      author: `${post.author.firstName} ${post.author.lastName}`,
+      timestamp: `نشر بتاريخ ${post.createdAt.toLocaleDateString('ar-EG')} الساعة ${post.createdAt.toLocaleTimeString('ar-EG')}`,
+      category: post.category,
+      subcategory: post.subcategory,
+      image: post.image || "/placeholder.svg?height=300&width=600",
+      stats: {
+        views: post.views,
+        likes: post._count.likes,
+        comments: post._count.comments,
+        shares: post._count.shares
+      }
+    }))
+
+    return NextResponse.json(transformedPosts)
+  } catch (error) {
+    console.error("Error fetching posts:", error)
+    return NextResponse.json(
+      { error: "Failed to fetch posts" },
+      { status: 500 }
     )
   }
-
-  return NextResponse.json(filteredPosts)
 }
