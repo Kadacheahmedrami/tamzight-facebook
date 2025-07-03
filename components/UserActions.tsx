@@ -48,7 +48,7 @@ export default function UserActions({ user }: UserActionsProps) {
     if (!user) return
     setNotificationsLoading(true)
     try {
-      const response = await fetch("/api/notifications")
+      const response = await fetch("/api/main/notifications")
       const data = await response.json()
       setNotifications(data)
     } catch (error) {
@@ -63,7 +63,7 @@ export default function UserActions({ user }: UserActionsProps) {
     if (!user) return
     setMessagesLoading(true)
     try {
-      const response = await fetch("/api/messages")
+      const response = await fetch("/api/main/messages")
       const data = await response.json()
       setMessages(data)
     } catch (error) {
