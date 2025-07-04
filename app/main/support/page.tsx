@@ -164,35 +164,7 @@ export default function SupportPage() {
           </div>
         </div>
 
-        {/* Right Sidebar - Desktop Only */}
-        <div className="hidden lg:block w-64 p-4">
-          <div className="bg-white rounded-lg p-4 border mb-4">
-            <h3 className="font-semibold mb-2">ساحة اعلانات</h3>
-            <div className="h-32 bg-gray-100 rounded-lg mb-2"></div>
-            <Button variant="link" size="sm" className="p-0 h-auto">
-              شاهد جميع الاعلانات
-            </Button>
-          </div>
-
-          {/* Support Stats */}
-          <div className="bg-white rounded-lg p-4 border">
-            <h3 className="font-semibold mb-3 text-center">إحصائيات الدعم</h3>
-            <div className="space-y-3">
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <div className="text-2xl font-bold text-[#4531fc]">2,736</div>
-                <div className="text-sm text-gray-600">إجمالي المستفيدين</div>
-              </div>
-              <div className="text-center p-3 bg-green-50 rounded-lg">
-                <div className="text-2xl font-bold text-green-600">847</div>
-                <div className="text-sm text-gray-600">مشروع مُنجز</div>
-              </div>
-              <div className="text-center p-3 bg-purple-50 rounded-lg">
-                <div className="text-2xl font-bold text-[#4531fc]">1.2M</div>
-                <div className="text-sm text-gray-600">إجمالي التبرعات</div>
-              </div>
-            </div>
-          </div>
-        </div>
+       
       </div>
     </div>
   )
