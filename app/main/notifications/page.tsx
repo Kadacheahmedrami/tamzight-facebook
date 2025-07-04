@@ -56,7 +56,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="flex h-[80svh] md:h-[90%] bg-gray-50">
+    <div className="max-w-3xl  mx-2 flex h-[80svh] md:h-[90%] bg-gray-50">
       {/* Sidebar on larger screens */}
       <div className="hidden md:flex flex-col w-1/3 border-r bg-white shadow-lg">
         <div className="p-4 border-b bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold text-xl">

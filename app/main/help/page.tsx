@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 export default function HelpPage() {
   return (
 
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-3xl  mx-2">
             {/* Breadcrumb */}
             <nav className="mb-6">
               <div className="flex items-center gap-2 text-sm text-gray-600">

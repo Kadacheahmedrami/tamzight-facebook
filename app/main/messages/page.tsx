@@ -36,7 +36,7 @@ export default function MessagesListPage() {
   )
 
   return (
-    <div className="flex h-full flex-col md:flex-row">
+    <div className="flex h-full  flex-col max-w-3xl  mx-2 md:flex-row">
       {/* Sidebar on md+, full width on mobile */}
       <aside className="w-full md:w-1/3 border-r border-gray-200 p-4">
         <div className="flex items-center mb-4 gap-2">

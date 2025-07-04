@@ -90,7 +90,7 @@ export default function TruthsPage() {
 
   return (
   
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-3xl  mx-2">
             {/* Breadcrumb - Hidden on mobile */}
             <nav className="mb-4 hidden lg:block">
               <div className="flex items-center gap-2 text-sm text-gray-600">

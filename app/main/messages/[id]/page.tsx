@@ -57,7 +57,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="flex h-[80svh]  md:h-[90%] flex-col md:flex-row">
+    <div className="flex max-w-3xl  mx-2 h-[80svh]  md:h-[90%] flex-col md:flex-row">
       {/* Back link on mobile */}
       <div className="md:hidden mb-2">
         <Button variant="link" onClick={() => router.back()}>

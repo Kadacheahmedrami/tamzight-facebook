@@ -32,7 +32,7 @@ export default function ContactPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-3xl  mx-2">
       {/* Breadcrumb - Hidden on mobile since we have the mobile header */}
       <nav className="mb-6 hidden lg:block">
         <div className="flex items-center gap-2 text-sm text-gray-600">

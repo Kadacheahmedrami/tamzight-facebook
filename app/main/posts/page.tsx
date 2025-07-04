@@ -64,7 +64,7 @@ export default function PostsPage() {
 
   return (
 
-          <div className="max-w-2xl mx-auto">
+          <div className="max-w-3xl  mx-2">
             {/* Breadcrumb */}
             <nav className="mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">

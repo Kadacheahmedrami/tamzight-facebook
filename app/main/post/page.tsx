@@ -11,7 +11,7 @@ export default function PostPage() {
 
   return (
   
-          <div className="max-w-3xl mx-auto bg-white rounded-lg border p-6">
+          <div className="max-w-3xl  mx-2 bg-white rounded-lg border p-6">
             {/* Breadcrumb */}
             <nav className="mb-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">

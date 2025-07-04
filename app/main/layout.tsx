@@ -30,7 +30,7 @@ export default function MainLayout({
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-4">
+        <div className="flex-1 py-4">
           {children}
         </div>
 
