@@ -175,11 +175,25 @@
     min-height: 44px;
   }
 
-  /* Better mobile typography */
-  body {
-    font-size: 14px;
-    line-height: 1.5;
+   
+  /* Global overflow prevention */
+  html {
+    overflow-x: hidden;
   }
+  
+  body {
+    @apply bg-background text-foreground;
+    overflow-x: hidden;
+    width: 100%;
+    position: relative;
+  }
+  
+  /* Prevent all elements from causing horizontal overflow */
+  * {
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  
 
   /* Optimize mobile spacing */
   .container {

@@ -149,11 +149,11 @@ export default function HomePage() {
       <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Introduction */}
       
-        <section className="bg-white px-6 py-12">
-          <h2 className="text-green-700 text-2xl font-bold mb-6">
-            الأوّل - سلام - تعريف بمنصة تجمع الامازيغ
+        <section className="bg-white px-3 sm:px-6 py-6 sm:py-12">
+          <h2 className="text-green-700 text-lg sm:text-xl md:text-2xl font-bold mb-4 sm:mb-6">
+          أزول - سلام - تعريف بمنصة تجمع الامازيغ 
           </h2>
-          <p className="text-blue-700 font-bold leading-loose text-2xl">
+          <p className="text-blue-700 font-bold leading-relaxed sm:leading-loose text-sm sm:text-lg md:text-xl lg:text-2xl">
             تَجمُّع الامازيغ ... هي منصة تواصل اجتماعيّ تعرف بالهويّة الأمازيغية تاريخيّاً، وحضاريّاً، وثقافيّاً، وعلميّاً، وفنيّاً متنوّعاً في الماضي والحاضر ...
             مع التعريف بالقبائل والعائلات الأمازيغية وأصولهم ... وأماكن تواجدها في شمال أفريقيا والعالم.
             كما يقوم هذا التّجمُّع الأمازيغي بإحياء، وتعليم اللغة الأمازيغية بحروفها الأصليّة ومراحل تطورها عبر الزمن ...
@@ -168,25 +168,25 @@ export default function HomePage() {
             بإذن وتوفيق الله وحده في ذلك إن شاء الله.
           </p>
 
-          <p className="text-red-600 font-bold text-3xl mt-2">
+          <p className="text-red-600 font-bold text-lg sm:text-xl md:text-2xl lg:text-3xl mt-2 sm:mt-4">
             الأمازيغ باقون ولن نزول إن شاء الله
           </p>
 
-          <div className="mt-6 flex   gap-2 text-blue-700 font-bold text-3xl">
-            <i className="fas fa-sitemap ml-2 text-4xl"></i>
+          <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row items-start sm:items-center gap-2 text-blue-700 font-bold text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl">
+            <i className="fas fa-sitemap text-xl sm:text-2xl md:text-3xl lg:text-4xl"></i>
             <a href="#" className="hover:underline">خريطة منصة تجمع الامازيغ</a>
           </div>
         </section>
 
         {/* Quick-Action Buttons */}
-        <section className="grid grid-cols-4 gap-4 mb-8">
+        <section className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {features.slice(0, 4).map((feat, idx) => {
             return (
               <div
                 key={idx}
-                className="flex flex-row gap-1  items-center bg-gray-50 border border-gray-200 shadow-sm rounded-lg px-2 hover:shadow-md transition-all"
+                className="flex flex-row gap-3 items-center bg-gray-50 border border-gray-200 shadow-sm rounded-lg p-3 hover:shadow-md transition-all"
               >
-                <div className="w-10 h-10  rounded-md flex items-center justify-center  mb-2">
+                <div className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0">
                   <i className={`${feat.icon} text-xl md:text-2xl`} style={{ color: feat.color }}></i>
                 </div>
                 <span className="text-base md:text-lg font-semibold" style={{ color: feat.color }}>

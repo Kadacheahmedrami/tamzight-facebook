@@ -2,10 +2,13 @@
 
 import { useState, useEffect, useRef } from "react"
 import Link from "next/link"
+import { usePathname } from "next/navigation"
 import { Search, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
 import UserActions from "./UserActions"
 import MobileUserMenu from "./MobileUserMenu"
+
 interface SearchResult {
   id: string
   title: string
@@ -42,9 +45,13 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
   const [searchLoading, setSearchLoading] = useState(false)
   const [currentLogoIndex, setCurrentLogoIndex] = useState(0)
   const searchRef = useRef<HTMLDivElement>(null)
- const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
+  const pathname = usePathname()
+  
   // Check if user is authenticated
   const isAuthenticated = user && user.id
+  // Check if we're on the landing page
+  const isLandingPage = pathname === "/"
 
   // Logo rotation array
   const logos = [
@@ -129,89 +136,130 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
     setShowResults(false)
   }
 
-
   const unreadMessages = messages.filter((m) => !m.read).length
 
   return (
     <>
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl  mx-auto px-2 sm:px-4">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4">
           <div className="flex items-center justify-between h-14 sm:h-16">
-            {/* User Actions - Right Section */}
-
-            <UserActions user={user} />
-
-            {/* Search Bar - Center (Desktop Only) */}
-            <div className="hidden  md:flex  flex-row  justify-center items-center  lg:w-[700px]">
-              <div className={`flex-1 mx-4 relative ${isAuthenticated ? 'max-w-2xl' : 'max-w-md'}`} ref={searchRef}>
-                <div className="relative flex">
-                  <Input
-                    type="text"
-                    placeholder="أبحث في الامازيغية هويتنا"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    className={`pl-4 pr-10 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-blue-500 placeholder:text-gray-500 rounded-[8px] mr-1 ${isAuthenticated ? 'h-10' : 'h-8'}`}
-                  />
-                  {searchQuery && (
-                    <button
-                      onClick={clearSearch}
-                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
-                    >
-                      <X className={`${isAuthenticated ? 'h-4 w-4' : 'h-3 w-3'}`} />
-                    </button>
-                  )}
-                </div>
-                
-                {/* Search Results Dropdown */}
-                {showResults && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">
-                    {searchLoading ? (
-                      <div className="p-4 text-center text-gray-600 text-sm">جاري البحث...</div>
-                    ) : searchResults.length > 0 ? (
-                      <div className="py-2">
-                        {searchResults.map((result) => (
-                          <Link
-                            key={result.id}
-                            href={result.url}
-                            onClick={() => setShowResults(false)}
-                            className="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
-                          >
-                            <div className="flex items-start gap-3">
-                              <div className="flex-1">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
-                                    {result.type}
-                                  </span>
-                                </div>
-                                <h4 className="font-medium text-sm line-clamp-1 mb-1 text-gray-900">{result.title}</h4>
-                                <p className="text-xs text-gray-600 line-clamp-2 mb-1">{result.content}</p>
-                                <p className="text-xs text-gray-500">بواسطة {result.author}</p>
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="p-4 text-center text-gray-600 text-sm">لا توجد نتائج للبحث</div>
-                    )}
+            {/* Left Section - Authentication Status */}
+            <div className="flex items-center gap-4">
+              {isLandingPage && isAuthenticated ? (
+                // Landing page + authenticated - show welcome + button only
+                <div className="flex  items-center gap-4">
+                  <div className=" sm:flex items-center gap-2 text-sm text-gray-600">
+                   
+                    <span className="font-medium text-gray-900">{user.name}</span>
                   </div>
-                )}
-              </div>
-              
-              {/* Search Button - Now functional */}
-              <button 
-                onClick={handleSearchClick}
-                className={`bg-gray-200 hover:bg-gray-300 active:bg-gray-400 transition-colors flex justify-center items-center rounded-l-[4px] border  border-r-0 ${isAuthenticated ? 'h-[37px] w-[37px]' : 'h-[30px] w-[30px]'}`}
-              >
-                <Search className={`text-[#4531fc] font-extrabold ${isAuthenticated ? 'h-6 w-6' : 'h-4 w-4'}`} />
-              </button>
+                  <Link href="/main">
+                    <Button variant="outline" size="sm" className="text-base px-2 h-8 bg-blue-500 text-white border-blue-500 hover:bg-blue-600">
+                      دخول
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                // All other cases - show UserActions
+                <UserActions user={user} />
+              )}
             </div>
 
-            {/* Logo and Site Name - Left */}
+            {/* Center Section - Search Bar or Marquee Text */}
+            <div className="hidden md:flex flex-row justify-center items-center lg:w-[700px]">
+              {!isLandingPage ? (
+                // Search Bar for non-landing pages
+                <div className={`flex-1 mx-4 relative ${isAuthenticated ? 'max-w-2xl' : 'max-w-md'}`} ref={searchRef}>
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      placeholder="أبحث في الامازيغية هويتنا"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      className={`pl-12 pr-4 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-blue-500 placeholder:text-gray-500 rounded-lg ${isAuthenticated ? 'h-10' : 'h-8'}`}
+                    />
+                    
+                    {/* Search Button - Inside Input */}
+                    <button 
+                      onClick={handleSearchClick}
+                      className={`absolute left-1 top-1/2 transform -translate-y-1/2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 transition-colors flex justify-center items-center rounded-md ${isAuthenticated ? 'h-8 w-8' : 'h-6 w-6'}`}
+                    >
+                      <Search className={`text-white ${isAuthenticated ? 'h-4 w-4' : 'h-3 w-3'}`} />
+                    </button>
+                    
+                    {/* Clear Button */}
+                    {searchQuery && (
+                      <button
+                        onClick={clearSearch}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                      >
+                        <X className={`${isAuthenticated ? 'h-4 w-4' : 'h-3 w-3'}`} />
+                      </button>
+                    )}
+                  </div>
+                  
+                  {/* Search Results Dropdown */}
+                  {showResults && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">
+                      {searchLoading ? (
+                        <div className="p-4 text-center text-gray-600 text-sm">جاري البحث...</div>
+                      ) : searchResults.length > 0 ? (
+                        <div className="py-2">
+                          {searchResults.map((result) => (
+                            <Link
+                              key={result.id}
+                              href={result.url}
+                              onClick={() => setShowResults(false)}
+                              className="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                            >
+                              <div className="flex items-start gap-3">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-base bg-blue-500 text-white px-2 py-1 rounded-full">
+                                      {result.type}
+                                    </span>
+                                  </div>
+                                  <h4 className="font-medium text-sm line-clamp-1 mb-1 text-gray-900">{result.title}</h4>
+                                  <p className="text-base text-gray-600 line-clamp-2 mb-1">{result.content}</p>
+                                  <p className="text-base text-gray-500">بواسطة {result.author}</p>
+                                </div>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-4 text-center text-gray-600 text-sm">لا توجد نتائج للبحث</div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                // Marquee Text for landing page
+                <div className="flex-1 mx-4 max-w-xl">
+                  <div className="overflow-hidden whitespace-nowrap py-1 text-3xl  rounded-lg  ">
+                    <div className="inline-block animate-marquee-ltr">
+                      <span className="text-green-600 font-bold text-base px-6">
+                        امازيغ الخلود *** امازيغ لن نزول *** ازول ولن نزول *** وتحيا الامازيغ الاحرار الشُرفاء أينما يكونون
+                      </span>
+                      <span className="text-green-600 font-bold text-base px-6">
+                        امازيغ احرار *** خُلقنا احرار *** ونعيش احرار *** ونموت احرار
+                      </span>
+                      <span className="text-green-600 font-bold text-base px-6">
+                        امازيغ باقون *** وبحضارتُنا مُستمرون *** وبثقافتُنا مُتمسكون *** وبعادتُنا مُعتزون *** وبتقاليدُنا نعيشون *** وبأمازيغيتُنا نفتخرون
+                      </span>
+                      <span className="text-green-600 font-bold text-base px-6">
+                        الامازيغية هويتُنا *** الامازيغية ثقافتُنا *** الامازيغية حضارتُنا *** الامازيغية وحدتُنا *** الامازيغية قوتُنا *** الامازيغية دمُنا
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Logo and Site Name - Right */}
             <div className="flex items-center gap-2">
               <Link href={isAuthenticated ? "/main" : "/"} className="flex items-center gap-2">
-                <h1 className="text-[#4531fc]  text-xl  md:text-3xl font-extrabold">
+                <h1 className="text-[#4531fc] hidden md:block text-xl md:text-3xl font-extrabold">
                   TAMAZIGHT
                 </h1>
                 <img 
@@ -225,79 +273,127 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
         </div>
       </header>
 
-      {/* Mobile Search Bar - Below Header */}
-      <div className= "md:hidden bg-white w-full  border-b border-gray-200 shadow-sm">
-        <div className="px-4 py-4 ">
-          <div className="relative w-full  flex flex-row" ref={searchRef}>
-                    {/* Mobile Menu */}
-                      <div className= "md:hidden ml-2">
-                        <MobileUserMenu user={user} unreadMessages={unreadMessages} />
-                      </div>
-            
-            <div className="relative flex gap-2 flex-row w-full  ">
-              <Input
-                type="text"
-                placeholder="أبحث في الامازيغية هويتنا"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className={`pl-4  ml-4 pr-12 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-blue-500 placeholder:text-gray-500 rounded-r-[12px]  text-base ${isAuthenticated ? 'h-12' : 'h-10'}`}
-              />
-              {searchQuery && (
-                <button
-                  onClick={clearSearch}
-                  className="absolute left-14 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+      {/* Mobile Search Bar - Below Header - Hide on Landing Page */}
+      {!isLandingPage && (
+        <div className="md:hidden bg-white w-full border-b border-gray-200 shadow-sm">
+          <div className="px-4 py-4">
+            <div className="relative w-full flex flex-row items-center gap-2" ref={searchRef}>
+              {/* Mobile Menu */}
+              <div className="md:hidden">
+                <MobileUserMenu user={user} unreadMessages={unreadMessages} />
+              </div>
+              
+              {/* Mobile Search Input */}
+              <div className="relative flex-1">
+                <Input
+                  type="text"
+                  placeholder="أبحث في الامازيغية هويتنا"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  className={`pl-12 pr-4 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-blue-500 placeholder:text-gray-500 rounded-lg text-base ${isAuthenticated ? 'h-12' : 'h-10'}`}
+                />
+                
+                {/* Mobile Search Button - Inside Input */}
+                <button 
+                  onClick={handleSearchClick}
+                  className={`absolute left-1 top-1/2 transform -translate-y-1/2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 transition-colors flex justify-center items-center rounded-md ${isAuthenticated ? 'h-10 w-10' : 'h-8 w-8'}`}
                 >
-                  <X className={`${isAuthenticated ? 'h-5 w-5' : 'h-4 w-4'}`} />
+                  <Search className={`text-white ${isAuthenticated ? 'h-5 w-5' : 'h-4 w-4'}`} />
                 </button>
-              )}
-            </div>
-            
-            {/* Search Button - Mobile */}
-            <button 
-              onClick={handleSearchClick}
-              className={` left-0 top-0 bg-gray-200 hover:bg-gray-300 active:bg-gray-400 transition-colors flex justify-center items-center rounded-l-[8px] border border-gray-300 border-r-0 ${isAuthenticated ? 'h-12 w-12' : 'h-10 w-10'}`}
-            >
-              <Search className={`text-[#4531fc] font-extrabold ${isAuthenticated ? 'h-6 w-6' : 'h-5 w-5'}`} />
-            </button>
-            
-            {/* Mobile Search Results Dropdown */}
-            {showResults && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-y-auto z-50">
-                {searchLoading ? (
-                  <div className="p-6 text-center text-gray-600">جاري البحث...</div>
-                ) : searchResults.length > 0 ? (
-                  <div className="py-2">
-                    {searchResults.map((result) => (
-                      <Link
-                        key={result.id}
-                        href={result.url}
-                        onClick={() => setShowResults(false)}
-                        className="block px-4 py-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-2">
-                              <span className="text-xs bg-blue-500 text-white px-2 py-1 rounded-full">
-                                {result.type}
-                              </span>
-                            </div>
-                            <h4 className="font-medium text-base line-clamp-1 mb-2 text-gray-900">{result.title}</h4>
-                            <p className="text-sm text-gray-600 line-clamp-2 mb-2">{result.content}</p>
-                            <p className="text-sm text-gray-500">بواسطة {result.author}</p>
-                          </div>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-6 text-center text-gray-600">لا توجد نتائج للبحث</div>
+                
+                {/* Mobile Clear Button */}
+                {searchQuery && (
+                  <button
+                    onClick={clearSearch}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 z-10"
+                  >
+                    <X className={`${isAuthenticated ? 'h-5 w-5' : 'h-4 w-4'}`} />
+                  </button>
                 )}
               </div>
-            )}
+              
+              {/* Mobile Search Results Dropdown */}
+              {showResults && (
+                <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-xl max-h-80 overflow-y-auto z-50">
+                  {searchLoading ? (
+                    <div className="p-6 text-center text-gray-600">جاري البحث...</div>
+                  ) : searchResults.length > 0 ? (
+                    <div className="py-2">
+                      {searchResults.map((result) => (
+                        <Link
+                          key={result.id}
+                          href={result.url}
+                          onClick={() => setShowResults(false)}
+                          className="block px-4 py-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0 transition-colors"
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <span className="text-base bg-blue-500 text-white px-2 py-1 rounded-full">
+                                  {result.type}
+                                </span>
+                              </div>
+                              <h4 className="font-medium text-base line-clamp-1 mb-2 text-gray-900">{result.title}</h4>
+                              <p className="text-sm text-gray-600 line-clamp-2 mb-2">{result.content}</p>
+                              <p className="text-sm text-gray-500">بواسطة {result.author}</p>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="p-6 text-center text-gray-600">لا توجد نتائج للبحث</div>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
+
+      {/* Mobile Marquee for Landing Page */}
+      {isLandingPage && (
+        <div className="md:hidden bg-white border-b border-gray-200 shadow-sm">
+          <div className="px-4 py-2">
+            <div className="overflow-hidden whitespace-nowrap py-1  rounded-lg ">
+              <div className="inline-block animate-marquee-ltr">
+                <span className="text-green-600 font-medium text-base px-4">
+                  امازيغ الخلود *** امازيغ لن نزول *** ازول ولن نزول *** وتحيا الامازيغ الاحرار الشُرفاء أينما يكونون
+                </span>
+                <span className="text-green-600 font-medium text-base px-4">
+                  امازيغ احرار *** خُلقنا احرار *** ونعيش احرار *** ونموت احرار
+                </span>
+                <span className="text-green-600 font-medium text-base px-4">
+                  امازيغ باقون *** وبحضارتُنا مُستمرون *** وبثقافتُنا مُتمسكون *** وبعادتُنا مُعتزون *** وبتقاليدُنا نعيشون *** وبأمازيغيتُنا نفتخرون
+                </span>
+                <span className="text-green-600 font-medium text-base px-4">
+                  الامازيغية هويتُنا *** الامازيغية ثقافتُنا *** الامازيغية حضارتُنا *** الامازيغية وحدتُنا *** الامازيغية قوتُنا *** الامازيغية دمُنا
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes marquee-ltr {
+          0% {
+            transform: translateX(-100%);
+          }
+          100% {
+            transform: translateX(100%);
+          }
+        }
+        
+        .animate-marquee-ltr {
+          animation: marquee-ltr 25s linear infinite;
+        }
+        
+        .animate-marquee-ltr:hover {
+          animation-play-state: paused;
+        }
+      `}</style>
     </>
   )
 }

@@ -72,7 +72,7 @@ export default function Sidebar() {
   }
 
   return (
-    <aside className="hidden lg:block w-64 bg-white border-l border-gray-200 h-screen sticky top-16 overflow-y-auto">
+    <aside className="hidden lg:block w-[230px] bg-white border-l border-gray-200 h-screen sticky top-16 overflow-y-auto">
       <div className="p-4">
         <nav className="space-y-2">
           {sidebarLinks.map((link) => {
