@@ -1,6 +1,5 @@
 "use client"
 import { useState } from "react"
-import Sidebar from "@/components/sidebar"
 import PostCard from "@/components/post-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -28,19 +27,7 @@ export default function MemberPage() {
 
 
   return (
-    <div className="min-h-screen bg-gray-50">
-
-      <div className="max-w-7xl mx-auto flex relative">
-     
-
-        {/* Left Sidebar - Main Navigation */}
-  
-          <div className=" lg:pt-0">
-            <Sidebar />
-          </div>
-     
-        {/* Main Content */}
-        <div className="flex-1 min-w-0 lg:p-4 p-2">
+ 
           <div className="max-w-4xl mx-auto">
             {/* Breadcrumb */}
             <nav className="mb-4 lg:mb-6 pt-16 lg:pt-0">
@@ -147,25 +134,6 @@ export default function MemberPage() {
               </TabsContent>
             </Tabs>
           </div>
-        </div>
-
-        {/* Right Sidebar - Ads (Hidden on mobile and tablet) */}
-        <div className="hidden xl:block w-64 p-4 flex-shrink-0">
-          <div className="sticky top-20">
-            <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
-              <h3 className="font-semibold mb-4 text-gray-900">ساحة اعلانات</h3>
-              <div className="space-y-4">
-                <div className="h-32 bg-gradient-to-r from-blue-100 to-purple-100 rounded-lg flex items-center justify-center">
-                  <span className="text-gray-600 text-sm">إعلان 1</span>
-                </div>
-                <div className="h-32 bg-gradient-to-r from-green-100 to-blue-100 rounded-lg flex items-center justify-center">
-                  <span className="text-gray-600 text-sm">إعلان 2</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+     
   )
 }

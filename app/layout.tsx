@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
+import Sidebar from "@/components/sidebar"
 
 import Header from "@/components/header"
 
@@ -67,6 +68,7 @@ export default async function RootLayout({
       <body className={inter.className}>
         <Header user={session?.user || null} />
         <main>
+          
           {children}
         </main>
       </body>

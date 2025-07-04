@@ -4,7 +4,6 @@
 
 import { useState } from "react"
 
-import Sidebar from "@/components/sidebar"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -33,10 +32,7 @@ export default function SupportPage() {
 
 
       <div className="max-w-7xl mx-auto flex">
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block">
-          <Sidebar />
-        </div>
+   
 
         {/* Main Content */}
         <div className="flex-1 p-4">

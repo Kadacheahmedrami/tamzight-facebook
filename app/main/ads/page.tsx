@@ -2,12 +2,11 @@
 
 import { useEffect, useState } from "react"
 
-import Sidebar from "@/components/sidebar"
+
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Eye, Heart, MessageCircle, Share2, Calendar, MapPin, DollarSign } from "lucide-react"
 import {
   Menu,
@@ -150,38 +149,16 @@ export default function AdsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto flex">
-          <Sidebar />
-          <div className="flex-1 p-4">
+
             <div className="max-w-4xl mx-auto">
               <div className="text-center py-8">جاري التحميل...</div>
             </div>
-          </div>
-          <div className="w-64 p-4">
-            <div className="bg-white rounded-lg p-4 border">
-              <h3 className="font-semibold mb-2">ساحة اعلانات</h3>
-              <div className="h-32 bg-gray-100 rounded-lg mb-2"></div>
-            </div>
-          </div>
-        </div>
-      </div>
+         
     )
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
 
-    
-
-      <div className="max-w-7xl mx-auto flex">
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block">
-          <Sidebar />
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-4">
           <div className="max-w-4xl mx-auto">
             {/* Breadcrumb */}
             <nav className="mb-4">
@@ -350,19 +327,6 @@ export default function AdsPage() {
               )}
             </div>
           </div>
-        </div>
-
-        {/* Right Sidebar - Desktop Only */}
-        <div className="hidden lg:block w-64 p-4">
-          <div className="bg-white rounded-lg p-4 border">
-            <h3 className="font-semibold mb-2">ساحة اعلانات</h3>
-            <div className="h-32 bg-gray-100 rounded-lg mb-2"></div>
-            <Button variant="link" size="sm" className="p-0 h-auto">
-              شاهد جميع الاعلانات
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
+ 
   )
 }

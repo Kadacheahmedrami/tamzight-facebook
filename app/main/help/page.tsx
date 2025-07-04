@@ -7,13 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 
 export default function HelpPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto flex">
-        {/* Left Sidebar - Main Navigation */}
-        <Sidebar />
 
-        {/* Main Content */}
-        <div className="flex-1 p-4">
           <div className="max-w-4xl mx-auto">
             {/* Breadcrumb */}
             <nav className="mb-6">
@@ -157,16 +151,8 @@ export default function HelpPage() {
               </Card>
             </div>
           </div>
-        </div>
+  
 
-        {/* Right Sidebar - Ads */}
-        <div className="w-64 p-4">
-          <div className="bg-white rounded-lg p-4 border">
-            <h3 className="font-semibold mb-2">ساحة اعلانات</h3>
-            <div className="h-32 bg-gray-100 rounded-lg mb-2"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+    
   )
 }

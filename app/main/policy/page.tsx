@@ -2,24 +2,12 @@
 
 "use client"
 
-import Sidebar from "@/components/sidebar"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
 
 export default function PolicyPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
 
-
-
-      <div className="max-w-7xl mx-auto flex">
-        {/* Desktop Sidebar */}
-        <div className="hidden lg:block">
-          <Sidebar />
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-4">
           <div className="max-w-4xl mx-auto">
             {/* Breadcrumb */}
             <nav className="mb-6">
@@ -118,19 +106,6 @@ export default function PolicyPage() {
               </Accordion>
             </div>
           </div>
-        </div>
-
-        {/* Right Sidebar - Ads */}
-        <div className="hidden lg:block w-64 p-4">
-          <div className="bg-white rounded-lg p-4 border">
-            <h3 className="font-semibold mb-2">ساحة اعلانات</h3>
-            <div className="h-32 bg-gray-100 rounded-lg mb-2"></div>
-            <Button variant="link" size="sm" className="p-0 h-auto">
-              شاهد جميع الاعلانات
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
+ 
   )
 }

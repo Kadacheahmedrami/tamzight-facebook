@@ -1,4 +1,3 @@
-import Sidebar from "@/components/sidebar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,18 +6,7 @@ import { Mail, Phone, MapPin, Clock } from "lucide-react"
 
 export default function ContactPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      
-
-
-      <div className="max-w-7xl mx-auto flex">
-        {/* Left Sidebar - Main Navigation - Hidden on mobile */}
-        <div className="hidden lg:block">
-          <Sidebar />
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 p-4">
+  
           <div className="max-w-4xl mx-auto">
             {/* Breadcrumb - Hidden on mobile since we have the mobile header */}
             <nav className="mb-6 hidden lg:block">
@@ -158,16 +146,6 @@ export default function ContactPage() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Right Sidebar - Ads - Hidden on mobile */}
-        <div className="hidden lg:block w-64 p-4">
-          <div className="bg-white rounded-lg p-4 border">
-            <h3 className="font-semibold mb-2">ساحة اعلانات</h3>
-            <div className="h-32 bg-gray-100 rounded-lg mb-2"></div>
-          </div>
-        </div>
-      </div>
-    </div>
+   
   )
 }
