@@ -153,7 +153,7 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
                     <span className="font-medium text-gray-900">{user.name}</span>
                   </div>
                   <Link href="/main">
-                    <Button variant="outline" size="sm" className="text-base px-2 h-8 bg-blue-500 text-white border-blue-500 hover:bg-blue-600">
+                    <Button variant="outline" size="sm" className="text-base px-2 h-8 bg-[#4531fc] text-white border-[#4531fc] hover:bg-blue-600">
                       دخول
                     </Button>
                   </Link>
@@ -176,13 +176,13 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      className={`pl-12 pr-4 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-blue-500 placeholder:text-gray-500 rounded-lg ${isAuthenticated ? 'h-10' : 'h-8'}`}
+                      className={`pl-12 pr-4 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-[#4531fc] placeholder:text-gray-500 rounded-lg ${isAuthenticated ? 'h-10' : 'h-8'}`}
                     />
                     
                     {/* Search Button - Inside Input */}
                     <button 
                       onClick={handleSearchClick}
-                      className={`absolute left-1 top-1/2 transform -translate-y-1/2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 transition-colors flex justify-center items-center rounded-md ${isAuthenticated ? 'h-8 w-8' : 'h-6 w-6'}`}
+                      className={`absolute left-1 top-1/2 transform -translate-y-1/2 bg-[#4531fc] hover:bg-blue-600 active:bg-blue-700 transition-colors flex justify-center items-center rounded-md ${isAuthenticated ? 'h-8 w-8' : 'h-6 w-6'}`}
                     >
                       <Search className={`text-white ${isAuthenticated ? 'h-4 w-4' : 'h-3 w-3'}`} />
                     </button>
@@ -215,7 +215,7 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
                               <div className="flex items-start gap-3">
                                 <div className="flex-1">
                                   <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-base bg-blue-500 text-white px-2 py-1 rounded-full">
+                                    <span className="text-base bg-[#4531fc] text-white px-2 py-1 rounded-full">
                                       {result.type}
                                     </span>
                                   </div>
@@ -291,13 +291,13 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className={`pl-12 pr-4 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-blue-500 placeholder:text-gray-500 rounded-lg text-base ${isAuthenticated ? 'h-12' : 'h-10'}`}
+                  className={`pl-12 pr-4 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-[#4531fc] placeholder:text-gray-500 rounded-lg text-base ${isAuthenticated ? 'h-12' : 'h-10'}`}
                 />
                 
                 {/* Mobile Search Button - Inside Input */}
                 <button 
                   onClick={handleSearchClick}
-                  className={`absolute left-1 top-1/2 transform -translate-y-1/2 bg-blue-500 hover:bg-blue-600 active:bg-blue-700 transition-colors flex justify-center items-center rounded-md ${isAuthenticated ? 'h-10 w-10' : 'h-8 w-8'}`}
+                  className={`absolute left-1 top-1/2 transform -translate-y-1/2 bg-[#4531fc] hover:bg-blue-600 active:bg-blue-700 transition-colors flex justify-center items-center rounded-md ${isAuthenticated ? 'h-10 w-10' : 'h-8 w-8'}`}
                 >
                   <Search className={`text-white ${isAuthenticated ? 'h-5 w-5' : 'h-4 w-4'}`} />
                 </button>
@@ -330,7 +330,7 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
                           <div className="flex items-start gap-3">
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-2">
-                                <span className="text-base bg-blue-500 text-white px-2 py-1 rounded-full">
+                                <span className="text-base bg-[#4531fc] text-white px-2 py-1 rounded-full">
                                   {result.type}
                                 </span>
                               </div>
