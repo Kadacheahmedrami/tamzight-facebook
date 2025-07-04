@@ -4,27 +4,6 @@ import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
-import {
-  CircleUserRoundIcon,
-  MessageCircle,
-  Users,
-  X,
-  LogOut,
-  Menu,
-  Home,
-  Edit,
-  Sun,
-  HelpCircle,
-  Book,
-  ImageIcon,
-  Video,
-  Megaphone,
-  Store,
-  Lightbulb,
-  Archive,
-  Rss,
-  Settings,
-} from "lucide-react"
 
 interface SidebarStats {
   sections: {
@@ -93,28 +72,28 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
   }
 
   const sidebarLinks = [
-    { href: "/main/home", icon: Home, label: "الصفحة الرئيسية", badge: null },
-    { href: "/main/", icon: Rss, label: "آخر المنشورات", badge: "جديد" },
-    { href: "/main/posts", icon: Edit, label: "منشورات امازيغية", badge: stats?.sections.posts?.toString() || "0" },
-    { href: "/main/truth", icon: Sun, label: "حقيقة امازيغية", badge: stats?.sections.truth?.toString() || "0" },
+    { href: "/main/home", icon: "fa-home", label: "الصفحة الرئيسية", badge: null },
+    { href: "/main/", icon: "fa-rss", label: "آخر المنشورات", badge: "جديد" },
+    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: stats?.sections.posts?.toString() || "0" },
+    { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: stats?.sections.truth?.toString() || "0" },
     {
       href: "/main/questions",
-      icon: HelpCircle,
+      icon: "fa-question-circle",
       label: "اسئلة امازيغية",
       badge: stats?.sections.questions?.toString() || "0",
     },
-    { href: "/main/books", icon: Book, label: "كُتب امازيغية", badge: stats?.sections.books?.toString() || "0" },
-    { href: "/main/images", icon: ImageIcon, label: "صور امازيغية", badge: stats?.sections.images?.toString() || "0" },
-    { href: "/main/videos", icon: Video, label: "فيديوهات امازيغية", badge: stats?.sections.videos?.toString() || "0" },
-    { href: "/main/ads", icon: Megaphone, label: "اعلانات امازيغية", badge: stats?.sections.ads?.toString() || "0" },
-    { href: "/main/shop", icon: Store, label: "تسوق منتجات امازيغية", badge: stats?.sections.shop?.toString() || "0" },
+    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: stats?.sections.books?.toString() || "0" },
+    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: stats?.sections.images?.toString() || "0" },
+    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: stats?.sections.videos?.toString() || "0" },
+    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: stats?.sections.ads?.toString() || "0" },
+    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: stats?.sections.shop?.toString() || "0" },
     {
       href: "/main/ideas",
-      icon: Lightbulb,
+      icon: "fa-lightbulb",
       label: "اقتراحات لتطوير المنصة",
       badge: stats?.sections.ideas?.toString() || "0",
     },
-    { href: "/main/support", icon: Archive, label: "صندوق دعم الامازيغ", badge: stats?.sections.support?.toString() || "0" },
+    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: stats?.sections.support?.toString() || "0" },
   ]
 
   const isActiveLink = (href: string) => {
@@ -142,7 +121,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                   : "hover:bg-gray-50"
             }`}
           >
-            <link.icon className={`h-5 w-5 ${isActive ? "text-blue-700" : "text-gray-500"}`} />
+            <i className={`fa ${link.icon} h-5 w-5 ${isActive ? "text-blue-700" : "text-gray-500"}`}></i>
             <span className="flex-1">{link.label}</span>
             {link.badge && (
               <span
@@ -171,7 +150,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
           onClick={() => setMobileMenuOpen(true)}
           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
         >
-          <Menu className="h-6 w-6" />
+          <i className="fa fa-bars h-6 w-6"></i>
         </button>
       </div>
 
@@ -188,16 +167,16 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                   onClick={() => setMobileMenuOpen(false)}
                   className="h-8 w-8 p-0 rounded-full hover:bg-gray-100 flex items-center justify-center"
                 >
-                  <X className="h-4 w-4" />
+                  <i className="fa fa-times h-4 w-4"></i>
                 </button>
               </div>
 
               {/* User Profile Section (if user exists) */}
               {user && (
-                <div className="p-4 border-b bg-blue-600 text-white">
+                <div className="p-4 border-b bg-[#4531fc] text-white">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                      <CircleUserRoundIcon className="h-6 w-6" />
+                      <i className="fa fa-user-circle "></i>
                     </div>
                     <div>
                       <p className="font-medium">
@@ -221,22 +200,23 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                   <h4 className="text-sm font-medium text-gray-500 mb-3">روابط مهمة</h4>
                   <div className="space-y-2">
                     {[
-                      { href: "/main/policy", label: "الشروط" },
-                      { href: "/main/privacy", label: "الخصوصية" },
-                      { href: "/main/cookies", label: "ملفات تعريف الارتباط" },
-                      { href: "/main/help", label: "المساعدة" },
-                      { href: "/main/contact", label: "تواصل معنا" },
+                      { href: "/main/policy", label: "الشروط", icon: "fa-file-contract" },
+                      { href: "/main/privacy", label: "الخصوصية", icon: "fa-shield-alt" },
+                      { href: "/main/cookies", label: "ملفات تعريف الارتباط", icon: "fa-cookie-bite" },
+                      { href: "/main/help", label: "المساعدة", icon: "fa-question-circle" },
+                      { href: "/main/contact", label: "تواصل معنا", icon: "fa-envelope" },
                     ].map((link) => (
                       <Link 
                         key={link.href}
                         href={link.href}
                         onClick={() => setMobileMenuOpen(false)}
-                        className={`block px-3 py-2 rounded-lg transition-colors ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg transition-colors ${
                           pathname === link.href 
                             ? "text-blue-600 bg-blue-50 font-medium" 
                             : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
                         }`}
                       >
+                        <i className={`fa ${link.icon} text-sm`}></i>
                         {link.label}
                       </Link>
                     ))}
@@ -256,7 +236,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                         : "hover:bg-red-50"
                     }`}
                   >
-                    <LogOut className="h-4 w-4" />
+                    <i className="fa fa-sign-out-alt h-4 w-4"></i>
                     {isLoggingOut ? "جاري تسجيل الخروج..." : "تسجيل خروج"}
                   </button>
                 </div>
@@ -289,42 +269,47 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                 <div className="space-y-2 text-gray-600">
                   <Link 
                     href="/main/policy" 
-                    className={`block transition-colors duration-200 ${
+                    className={`flex items-center gap-2 transition-colors duration-200 ${
                       pathname === "/main/policy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
                   >
+                    <i className="fa fa-file-contract text-sm"></i>
                     الشروط
                   </Link>
                   <Link 
                     href="/main/privacy" 
-                    className={`block transition-colors duration-200 ${
+                    className={`flex items-center gap-2 transition-colors duration-200 ${
                       pathname === "/main/privacy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
                   >
+                    <i className="fa fa-shield-alt text-sm"></i>
                     الخصوصية
                   </Link>
                   <Link 
                     href="/main/cookies" 
-                    className={`block transition-colors duration-200 ${
+                    className={`flex items-center gap-2 transition-colors duration-200 ${
                       pathname === "/main/cookies" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
                   >
+                    <i className="fa fa-cookie-bite text-sm"></i>
                     ملفات تعريف الارتباط
                   </Link>
                   <Link 
                     href="/main/help" 
-                    className={`block transition-colors duration-200 ${
+                    className={`flex items-center gap-2 transition-colors duration-200 ${
                       pathname === "/main/help" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
                   >
+                    <i className="fa fa-question-circle text-sm"></i>
                     المساعدة
                   </Link>
                   <Link 
                     href="/main/contact" 
-                    className={`block transition-colors duration-200 ${
+                    className={`flex items-center gap-2 transition-colors duration-200 ${
                       pathname === "/main/contact" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
                   >
+                    <i className="fa fa-envelope text-sm"></i>
                     تواصل معنا
                   </Link>
                 </div>

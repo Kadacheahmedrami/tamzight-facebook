@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ImageIcon, FileUp, Video } from "lucide-react"
 
 export default function CreatePostModal() {
   const [isOpen, setIsOpen] = useState(false)
@@ -104,15 +103,15 @@ export default function CreatePostModal() {
             <span className="text-sm font-medium">أضف لمنشورك:</span>
             <div className="flex flex-wrap gap-2">
               <Button type="button" variant="ghost" size="sm" className="text-xs sm:text-sm bg-transparent">
-                <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                <i className="fa fa-image text-xs sm:text-sm mr-1"></i>
                 صورة
               </Button>
               <Button type="button" variant="ghost" size="sm" className="text-xs sm:text-sm bg-transparent">
-                <FileUp className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                <i className="fa fa-file-upload text-xs sm:text-sm mr-1"></i>
                 ملف
               </Button>
               <Button type="button" variant="ghost" size="sm" className="text-xs sm:text-sm bg-transparent">
-                <Video className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                <i className="fa fa-video text-xs sm:text-sm mr-1"></i>
                 فيديو
               </Button>
             </div>

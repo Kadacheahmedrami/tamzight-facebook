@@ -1,4 +1,3 @@
-import { Heart, MessageCircle, Share2, Eye, Fingerprint } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 
@@ -53,26 +52,26 @@ export default function PostCard({ title, content, author, timestamp, category, 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-3 border-t border-gray-100 gap-3">
         <div className="flex items-center gap-2 sm:gap-4">
           <Button variant="ghost" size="sm" className="text-gray-500 hover:text-red-500 p-1 sm:p-2">
-            <Heart className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+            <i className="fa fa-heart text-xs sm:text-sm mr-1"></i>
             <span className="text-xs sm:text-sm">{stats.likes}</span>
           </Button>
           <Button variant="ghost" size="sm" className="text-gray-500 hover:text-blue-500 p-1 sm:p-2">
-            <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+            <i className="fa fa-comment text-xs sm:text-sm mr-1"></i>
             <span className="text-xs sm:text-sm">{stats.comments}</span>
           </Button>
           <Button variant="ghost" size="sm" className="text-gray-500 hover:text-green-500 p-1 sm:p-2">
-            <Share2 className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+            <i className="fa fa-share text-xs sm:text-sm mr-1"></i>
             <span className="text-xs sm:text-sm">{stats.shares}</span>
           </Button>
         </div>
 
         <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
           <span className="flex items-center gap-1">
-            <Eye className="h-3 w-3 sm:h-4 sm:w-4" />
+            <i className="fa fa-eye text-xs sm:text-sm"></i>
             {stats.views}
           </span>
           <span className="flex items-center gap-1">
-            <Fingerprint className="h-3 w-3 sm:h-4 sm:w-4" />
+            <i className="fa fa-fingerprint text-xs sm:text-sm"></i>
             بصمة
           </span>
         </div>

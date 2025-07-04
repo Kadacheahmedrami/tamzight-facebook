@@ -3,21 +3,7 @@
 import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import {
-  Home,
-  Edit,
-  Sun,
-  HelpCircle,
-  Book,
-  ImageIcon,
-  Video,
-  Megaphone,
-  Store,
-  Lightbulb,
-  Archive,
-  Rss,
-  Users, MessageCircle, Settings
-} from "lucide-react"
+// Using Font Awesome icons instead of Lucide React
 
 interface SidebarStats {
   sections: {
@@ -55,31 +41,27 @@ export default function Sidebar() {
   }, [])
 
   const sidebarLinks = [
-   
-    { href: "/main", icon: Rss, label: "آخر المنشورات", badge: "جديد" },
-    { href: "/main/posts", icon: Edit, label: "منشورات امازيغية", badge: stats?.sections.posts?.toString() || "0" },
-    { href: "/main/truth", icon: Sun, label: "حقيقة امازيغية", badge: stats?.sections.truth?.toString() || "0" },
+    { href: "/main", icon: "fa-home", label: "الصفحة الرئيسية", badge: null },
+    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: stats?.sections.posts?.toString() || "05" },
+    { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: stats?.sections.truth?.toString() || "05" },
     {
       href: "/main/questions",
-      icon: HelpCircle,
+      icon: "fa-question-circle",
       label: "اسئلة امازيغية",
-      badge: stats?.sections.questions?.toString() || "0",
+      badge: stats?.sections.questions?.toString() || "05",
     },
-    { href: "/main/books", icon: Book, label: "كُتب امازيغية", badge: stats?.sections.books?.toString() || "0" },
-    { href: "/main/images", icon: ImageIcon, label: "صور امازيغية", badge: stats?.sections.images?.toString() || "0" },
-    { href: "/main/videos", icon: Video, label: "فيديوهات امازيغية", badge: stats?.sections.videos?.toString() || "0" },
-    { href: "/main/ads", icon: Megaphone, label: "اعلانات امازيغية", badge: stats?.sections.ads?.toString() || "0" },
-    { href: "/main/shop", icon: Store, label: "تسوق منتجات امازيغية", badge: stats?.sections.shop?.toString() || "0" },
+    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: stats?.sections.books?.toString() || "05" },
+    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: stats?.sections.images?.toString() || "05" },
+    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: stats?.sections.videos?.toString() || "05" },
+    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: stats?.sections.ads?.toString() || "05" },
+    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: stats?.sections.shop?.toString() || "05" },
     {
       href: "/main/ideas",
-      icon: Lightbulb,
+      icon: "fa-lightbulb",
       label: "اقتراحات لتطوير المنصة",
-      badge: stats?.sections.ideas?.toString() || "0",
+      badge: stats?.sections.ideas?.toString() || "05",
     },
-    { href: "/main/support", icon: Archive, label: "صندوق دعم الامازيغ", badge: stats?.sections.support?.toString() || "0" },
-    { href: "/main/friends", icon: Users, label: "الأصدقاء", badge: stats?.sections.friends?.toString() || "0" },
-    { href: "/main/messages", icon: MessageCircle, label: "الرسائل", badge: stats?.sections.messages?.toString() || "0" },
-    { href: "/main/settings", icon: Settings, label: "الإعدادات" },
+    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: stats?.sections.support?.toString() || "05" },
   ]
 
   const isActiveLink = (href: string) => {
@@ -105,16 +87,14 @@ export default function Sidebar() {
                     : "hover:bg-gray-50"
                 }`}
               >
-                <link.icon className={`h-5 w-5 ${isActive ? "text-[#4531fc]" : "text-gray-500"}`} />
+                <i className={`fa ${link.icon} h-5 w-5 ${isActive ? "text-[#4531fc]" : "text-gray-500"}`}></i>
                 <span className="flex-1">{link.label}</span>
                 {link.badge && (
                   <span
                     className={`text-xs px-2 py-1 rounded-full ${
-                      link.badge === "جديد" 
-                        ? "bg-green-100 text-green-800" 
-                        : isActive
-                          ? "bg-blue-200 text-blue-900"
-                          : "bg-blue-100 text-blue-800"
+                      isActive
+                        ? "bg-blue-200 text-blue-900"
+                        : "bg-blue-100 text-blue-800"
                     }`}
                   >
                     {link.badge}
@@ -132,42 +112,47 @@ export default function Sidebar() {
               <div className="space-y-2 text-gray-600">
                 <Link 
                   href="/main/policy" 
-                  className={`block transition-colors duration-200 ${
-                    pathname === "/policy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
+                  className={`flex items-center gap-2 transition-colors duration-200 ${
+                    pathname === "/main/policy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                   }`}
                 >
+                  <i className="fa fa-file-contract text-sm"></i>
                   الشروط
                 </Link>
                 <Link 
                   href="/main/privacy" 
-                  className={`block transition-colors duration-200 ${
-                    pathname === "/privacy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
+                  className={`flex items-center gap-2 transition-colors duration-200 ${
+                    pathname === "/main/privacy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                   }`}
                 >
+                  <i className="fa fa-shield-alt text-sm"></i>
                   الخصوصية
                 </Link>
                 <Link 
                   href="/main/cookies" 
-                  className={`block transition-colors duration-200 ${
-                    pathname === "/cookies" ? "text-blue-600 font-medium" : "hover:text-blue-600"
+                  className={`flex items-center gap-2 transition-colors duration-200 ${
+                    pathname === "/main/cookies" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                   }`}
                 >
+                  <i className="fa fa-cookie-bite text-sm"></i>
                   ملفات تعريف الارتباط
                 </Link>
                 <Link 
                   href="/main/help" 
-                  className={`block transition-colors duration-200 ${
-                    pathname === "/help" ? "text-blue-600 font-medium" : "hover:text-blue-600"
+                  className={`flex items-center gap-2 transition-colors duration-200 ${
+                    pathname === "/main/help" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                   }`}
                 >
+                  <i className="fa fa-question-circle text-sm"></i>
                   المساعدة
                 </Link>
                 <Link 
                   href="/main/contact" 
-                  className={`block transition-colors duration-200 ${
-                    pathname === "/contact" ? "text-blue-600 font-medium" : "hover:text-blue-600"
+                  className={`flex items-center gap-2 transition-colors duration-200 ${
+                    pathname === "/main/contact" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                   }`}
                 >
+                  <i className="fa fa-envelope text-sm"></i>
                   تواصل معنا
                 </Link>
               </div>
