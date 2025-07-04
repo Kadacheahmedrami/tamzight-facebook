@@ -1,6 +1,6 @@
+"use client"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
-import { Card } from "@/components/ui/card"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
