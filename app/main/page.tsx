@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef, useCallback } from "react"
 import PostCard from "@/components/post-card"
 import CreatePostModal from "@/components/create-post-modal"
 import { Button } from "@/components/ui/button"
@@ -36,179 +36,315 @@ interface Post {
   }
 }
 
-interface Stats {
-  totalPosts: number
-  todayPosts: number
-  trendingPosts: number
-}
-
-interface TrendingTopic {
-  id: number
-  hashtag: string
-  count: number
-  color: string
+interface ApiResponse {
+  error: string
+  success: boolean
+  data: any[]
+  meta: {
+    total: number
+    limit: number
+    offset: number
+    hasMore: boolean
+    type: string
+  }
 }
 
 export default function LatestPostsPage() {
   const [posts, setPosts] = useState<Post[]>([])
-  const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([])
   const [loading, setLoading] = useState(true)
-  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [loadingMore, setLoadingMore] = useState(false)
+  const [selectedType, setSelectedType] = useState("all")
+  const [hasMore, setHasMore] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [pagination, setPagination] = useState({
+    limit: 20,
+    offset: 0,
+    total: 0
+  })
 
-  const fetchPosts = async (category = "all") => {
-    setLoading(true)
+  // Refs for intersection observer
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
+  const isLoadingRef = useRef(false) // Prevent multiple simultaneous requests
+  const abortControllerRef = useRef<AbortController | null>(null) // For request cancellation
+
+  // Transform API data to match PostCard format
+  const transformPost = useCallback((item: any): Post => ({
+    id: item.id?.toString() || Math.random().toString(36).substr(2, 9),
+    title: item.title || 'بدون عنوان',
+    content: item.content || item.description || '',
+    author: item.author ? `${item.author.firstName} ${item.author.lastName}` : 'مجهول',
+    authorId: item.author?.id?.toString() || 'unknown',
+    timestamp: formatTimestamp(item.timestamp),
+    category: item.type || 'عام',
+    subCategory: item.category || undefined,
+    media: [],
+    image: item.image || undefined,
+    images: item.images || [],
+    stats: {
+      views: item.views || Math.floor(Math.random() * 1000) + 100,
+      likes: item._count?.likes || 0,
+      comments: item._count?.comments || 0,
+      shares: item._count?.shares || 0
+    }
+  }), [])
+
+  const fetchPosts = useCallback(async (type = "all", offset = 0, isLoadMore = false) => {
+    // Prevent multiple simultaneous requests
+    if (isLoadingRef.current) {
+      console.log('Request already in progress, skipping...')
+      return
+    }
+
+    // Cancel any existing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // Create new abort controller
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    isLoadingRef.current = true
+
+    if (isLoadMore) {
+      setLoadingMore(true)
+    } else {
+      setLoading(true)
+    }
+    
+    setError(null)
+
     try {
-      const url = category === "all" ? "/api/main/posts" : `/api/main/posts?category=${category}`
-      const response = await fetch(url)
-      const data = await response.json()
+      const params = new URLSearchParams({
+        limit: pagination.limit.toString(),
+        offset: offset.toString()
+      })
       
-      // Transform the data to match PostCard expected format
-      const transformedPosts = data.map((post: any) => ({
-        ...post,
-        id: post.id?.toString() || Math.random().toString(36).substr(2, 9),
-        authorId: post.authorId || post.author?.toLowerCase().replace(/\s+/g, '_') || 'unknown',
-        subCategory: post.subCategory || undefined,
-        media: post.media || [],
-        images: post.images || []
-      }))
+      if (type !== "all") {
+        params.append('type', type)
+      }
+
+      const url = `/api/main/latest?${params.toString()}`
+      console.log(`Fetching: ${url}`)
       
-      setPosts(transformedPosts)
-    } catch (error) {
-      console.error("Error fetching posts:", error)
-      // Fallback sample data with proper structure
-      const samplePosts: Post[] = [
-        {
-          id: "1",
-          title: "تاريخ الأمازيغ في شمال أفريقيا",
-          content: "الأمازيغ هم السكان الأصليون لشمال أفريقيا، وتمتد جذورهم التاريخية إلى آلاف السنين. لقد شكلوا حضارة عريقة وثقافة غنية تميزت بالتنوع اللغوي والثقافي والفني. من الجبال الأطلسية إلى واحات الصحراء الكبرى، انتشرت القبائل الأمازيغية وأسست ممالك وإمارات قوية. تتميز الثقافة الأمازيغية بنظام اجتماعي متين يقوم على التضامن والتعاون المجتمعي.",
-          author: "أحمد أمازيغ",
-          authorId: "ahmed_amazigh",
-          timestamp: "منذ ساعتين",
-          category: "الأمة الأمازيغية",
-          subCategory: "التاريخ",
-          image: "https://images.unsplash.com/photo-1547036967-23d11aacaee0?w=800&h=400&fit=crop",
-          stats: {
-            views: 1250,
-            likes: 89,
-            comments: 23,
-            shares: 15
-          }
-        },
-        {
-          id: "2",
-          title: "تعلم اللغة الأمازيغية - الأساسيات",
-          content: "اللغة الأمازيغية (تمازيغت) هي لغة أفريقية أصيلة تنتمي إلى عائلة اللغات الأفريقية الآسيوية. تتنوع اللهجات الأمازيغية عبر المناطق الجغرافية المختلفة، من الريف في المغرب إلى الطوارق في الصحراء. تتميز بنظام كتابة فريد يسمى تيفيناغ، وهو أحد أقدم أنظمة الكتابة في العالم.",
-          author: "فاطمة تمازيغت",
-          authorId: "fatima_tamazight",
-          timestamp: "منذ 3 ساعات",
-          category: "اللغة الأمازيغية",
-          subCategory: "التعليم",
-          images: [
-            "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=400&h=300&fit=crop",
-            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=300&fit=crop"
-          ],
-          stats: {
-            views: 890,
-            likes: 67,
-            comments: 18,
-            shares: 12
-          }
-        },
-        {
-          id: "3",
-          title: "شخصيات أمازيغية مؤثرة عبر التاريخ",
-          content: "عبر التاريخ، برزت شخصيات أمازيغية عظيمة تركت بصمات لا تمحى في التاريخ. من الملكة ديهيا (الكاهنة) التي قادت المقاومة، إلى القائد طارق بن زياد الذي فتح الأندلس، وصولاً إلى المفكرين والأدباء المعاصرين. هؤلاء الأبطال يمثلون روح الأمة الأمازيغية وقوتها.",
-          author: "يوسف أزنكاد",
-          authorId: "youssef_azenkad",
-          timestamp: "منذ 5 ساعات",
-          category: "شخصيات امازيغية",
-          media: [
-            {
-              id: "vid1",
-              type: "video",
-              url: "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-              thumbnail: "https://images.unsplash.com/photo-1579952363873-27d3bfad9c0d?w=400&h=300&fit=crop",
-              duration: "5:30",
-              alt: "فيديو عن الشخصيات الأمازيغية"
-            },
-            {
-              id: "img1",
-              type: "image",
-              url: "https://images.unsplash.com/photo-1541746972996-4e0b0f93e586?w=400&h=300&fit=crop",
-              alt: "صورة تاريخية"
-            }
-          ],
-          stats: {
-            views: 2100,
-            likes: 156,
-            comments: 42,
-            shares: 28
-          }
-        },
-        {
-          id: "4",
-          title: "الفنون الأمازيغية التقليدية",
-          content: "تتميز الفنون الأمازيغية بالغنى والتنوع، من الموسيقى التقليدية إلى الحرف اليدوية والرقص الفولكلوري. السجاد الأمازيغي، والفضيات، والخزف، كلها تعكس هوية ثقافية عميقة متجذرة في التاريخ.",
-          author: "أمينة تافراوت",
-          authorId: "amina_tafraoute",
-          timestamp: "منذ يوم",
-          category: "الفن الأمازيغي",
-          subCategory: "التراث",
-          images: [
-            "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop",
-            "https://images.unsplash.com/photo-1582555172866-f73bb12a2ab3?w=400&h=300&fit=crop",
-            "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=300&fit=crop",
-            "https://images.unsplash.com/photo-1561131668-5b0c56c23b88?w=400&h=300&fit=crop"
-          ],
-          stats: {
-            views: 1450,
-            likes: 98,
-            comments: 31,
-            shares: 19
-          }
+      const response = await fetch(url, {
+        signal: abortController.signal
+      })
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
+      const data: ApiResponse = await response.json()
+      
+      if (data.success) {
+        const transformedPosts = data.data.map(transformPost)
+        
+        if (isLoadMore) {
+          // Append new posts to existing ones
+          setPosts(prev => {
+            // Prevent duplicates
+            const existingIds = new Set(prev.map(p => p.id))
+            const newPosts = transformedPosts.filter(p => !existingIds.has(p.id))
+            console.log(`Adding ${newPosts.length} new posts to existing ${prev.length} posts`)
+            return [...prev, ...newPosts]
+          })
+        } else {
+          // Replace posts for new type/filter
+          setPosts(transformedPosts)
+          console.log(`Replaced with ${transformedPosts.length} posts`)
         }
-      ]
-      setPosts(samplePosts)
+        
+        // Update pagination state with current offset
+        setPagination({
+          limit: data.meta.limit,
+          offset: data.meta.offset,
+          total: data.meta.total
+        })
+        
+        // Update hasMore based on API response
+        setHasMore(data.meta.hasMore)
+        
+        console.log(`Loaded ${transformedPosts.length} posts, hasMore: ${data.meta.hasMore}, offset: ${data.meta.offset}`)
+      } else {
+        throw new Error(data.error || 'Failed to fetch posts')
+      }
+    } catch (error) {
+      // Don't show error if request was aborted
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Request was aborted')
+        return
+      }
+      
+      console.error("Error fetching posts:", error)
+      setError(error instanceof Error ? error.message : 'حدث خطأ في تحميل المنشورات')
+      
+      if (!isLoadMore) {
+        setPosts([])
+      }
+      setHasMore(false)
     } finally {
       setLoading(false)
+      setLoadingMore(false)
+      isLoadingRef.current = false
+      
+      // Clean up abort controller
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null
+      }
     }
-  }
+  }, [pagination.limit, transformPost])
 
-  const fetchTrendingTopics = async () => {
-    try {
-      const response = await fetch("/api/main/trending")
-      const data = await response.json()
-      setTrendingTopics(data)
-    } catch (error) {
-      console.error("Error fetching trending topics:", error)
-      // Fallback sample data
-      const sampleTopics = [
-        { id: 1, hashtag: "#الأمازيغية", count: 125, color: "blue" },
-        { id: 2, hashtag: "#تافيناغ", count: 89, color: "green" },
-        { id: 3, hashtag: "#التراث_الأمازيغي", count: 67, color: "yellow" },
-        { id: 4, hashtag: "#شمال_أفريقيا", count: 45, color: "red" },
-      ]
-      setTrendingTopics(sampleTopics)
-    }
-  }
-
-  useEffect(() => {
-    fetchPosts()
-    fetchTrendingTopics()
+  const formatTimestamp = useCallback((timestamp: string | Date) => {
+    if (!timestamp) return 'منذ وقت قصير'
+    
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffInMs = now.getTime() - date.getTime()
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+    const diffInDays = Math.floor(diffInHours / 24)
+    
+    if (diffInHours < 1) return 'منذ وقت قصير'
+    if (diffInHours < 24) return `منذ ${diffInHours} ساعة${diffInHours > 1 ? '' : ''}`
+    if (diffInDays < 7) return `منذ ${diffInDays} يوم${diffInDays > 1 ? '' : ''}`
+    
+    return date.toLocaleDateString('ar-SA', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    })
   }, [])
 
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category)
-    fetchPosts(category)
-  }
+  // Load more posts when intersection observer triggers
+  const loadMore = useCallback(() => {
+    if (!loadingMore && !isLoadingRef.current && hasMore && posts.length > 0) {
+      // Use the next offset from pagination state
+      const nextOffset = pagination.offset + pagination.limit
+      console.log(`Loading more posts with offset: ${nextOffset}, current posts: ${posts.length}`)
+      fetchPosts(selectedType, nextOffset, true)
+    }
+  }, [loadingMore, hasMore, posts.length, selectedType, fetchPosts, pagination.offset, pagination.limit])
+
+  // Handle type change
+  const handleTypeChange = useCallback((type: string) => {
+    console.log(`Changing type to: ${type}`)
+    setSelectedType(type)
+    setHasMore(true)
+    setPagination(prev => ({ ...prev, offset: 0 }))
+    fetchPosts(type, 0, false)
+  }, [fetchPosts])
+
+  // Refresh posts
+  const refreshPosts = useCallback(() => {
+    console.log('Refreshing posts')
+    setHasMore(true)
+    setPagination(prev => ({ ...prev, offset: 0 }))
+    fetchPosts(selectedType, 0, false)
+  }, [selectedType, fetchPosts])
+
+  // Set up intersection observer
+  useEffect(() => {
+    // Clean up previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+
+    if (!hasMore || loadingMore || isLoadingRef.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const target = entries[0]
+        if (target.isIntersecting && !isLoadingRef.current && hasMore) {
+          console.log('Intersection observer triggered')
+          loadMore()
+        }
+      },
+      {
+        root: null,
+        rootMargin: '200px',
+        threshold: 0.1
+      }
+    )
+
+    const currentRef = loadMoreRef.current
+    if (currentRef) {
+      observer.observe(currentRef)
+    }
+
+    observerRef.current = observer
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [hasMore, loadingMore, loadMore])
+
+  // Initial load
+  useEffect(() => {
+    fetchPosts()
+  }, [])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [])
+
+  // Loading skeleton component
+  const LoadingSkeleton = () => (
+    <div className="space-y-4">
+      {[...Array(3)].map((_, i) => (
+        <div key={i} className="bg-white rounded-lg p-4 border animate-pulse">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+            <div className="flex-1">
+              <div className="h-4 bg-gray-200 rounded w-1/3 mb-1"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/4"></div>
+            </div>
+          </div>
+          <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
+          <div className="h-32 bg-gray-200 rounded mb-3"></div>
+          <div className="flex gap-4">
+            <div className="h-3 bg-gray-200 rounded w-12"></div>
+            <div className="h-3 bg-gray-200 rounded w-12"></div>
+            <div className="h-3 bg-gray-200 rounded w-12"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  // Error component
+  const ErrorDisplay = () => (
+    <div className="text-center py-8">
+      <div className="bg-red-50 rounded-lg p-8">
+        <div className="text-red-400 text-6xl mb-4">⚠️</div>
+        <p className="text-red-600 text-lg mb-2">حدث خطأ في تحميل المنشورات</p>
+        <p className="text-red-500 text-sm mb-4">{error}</p>
+        <Button 
+          onClick={refreshPosts}
+          variant="outline"
+          className="border-red-300 text-red-600 hover:bg-red-50"
+        >
+          إعادة المحاولة
+        </Button>
+      </div>
+    </div>
+  )
 
   if (loading) {
     return (
       <div className="max-w-2xl mx-auto">
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">جاري التحميل...</p>
-        </div>
+        <LoadingSkeleton />
       </div>
     )
   }
@@ -226,25 +362,30 @@ export default function LatestPostsPage() {
       <div className="bg-white rounded-lg p-4 mb-4 border">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <label className="text-sm font-medium whitespace-nowrap">اعرض اخر منشورات حول:</label>
-          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+          <Select value={selectedType} onValueChange={handleTypeChange}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="اختار قسم لعرضه" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">الجميع</SelectItem>
-              <SelectItem value="nation">الأمة الأمازيغية</SelectItem>
-              <SelectItem value="language">اللغة الأمازيغية</SelectItem>
-              <SelectItem value="personalities">شخصيات امازيغية</SelectItem>
-              <SelectItem value="civilization">الحضارة الأمازيغية</SelectItem>
-              <SelectItem value="art">الفن الأمازيغي</SelectItem>
+              <SelectItem value="post">المنشورات</SelectItem>
+              <SelectItem value="book">الكتب</SelectItem>
+              <SelectItem value="idea">الأفكار</SelectItem>
+              <SelectItem value="image">الصور</SelectItem>
+              <SelectItem value="video">الفيديوهات</SelectItem>
+              <SelectItem value="truth">الحقائق</SelectItem>
+              <SelectItem value="question">الأسئلة</SelectItem>
+              <SelectItem value="ad">الإعلانات</SelectItem>
+              <SelectItem value="product">المنتجات</SelectItem>
             </SelectContent>
           </Select>
           <Button 
             size="sm" 
-            onClick={() => fetchPosts(selectedCategory)} 
+            onClick={refreshPosts} 
             className="bg-[#4531fc] hover:bg-blue-800 w-full sm:w-auto"
+            disabled={loading}
           >
-            اعرض
+            {loading ? 'جاري التحميل...' : 'اعرض'}
           </Button>
         </div>
       </div>
@@ -252,28 +393,59 @@ export default function LatestPostsPage() {
       {/* Create Post */}
       <CreatePostModal />
 
+      {/* Error Display */}
+      {error && posts.length === 0 && <ErrorDisplay />}
+
       {/* Posts Feed */}
       <div className="space-y-4">
         {posts.length > 0 ? (
-          posts.map((post) => (
-            <PostCard 
-              key={post.id} 
-              id={post.id}
-              title={post.title}
-              content={post.content}
-              author={post.author}
-              authorId={post.authorId}
-              timestamp={post.timestamp}
-              category={post.category}
-              subCategory={post.subCategory}
-              media={post.media}
-              image={post.image}
-              images={post.images}
-              baseRoute="/main/posts"
-              stats={post.stats}
-            />
-          ))
-        ) : (
+          <>
+            {posts.map((post, index) => (
+              <PostCard 
+                key={`${post.id}-${index}`}
+                id={post.id}
+                title={post.title}
+                content={post.content}
+                author={post.author}
+                authorId={post.authorId}
+                timestamp={post.timestamp}
+                category={post.category}
+                subCategory={post.subCategory}
+                media={post.media}
+                image={post.image}
+                images={post.images}
+                baseRoute="/main/posts"
+                stats={post.stats}
+              />
+            ))}
+            
+            {/* Infinite scroll trigger */}
+            {hasMore && (
+              <div 
+                ref={loadMoreRef}
+                className="h-20 flex items-center justify-center"
+              >
+                {loadingMore && (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-sm">جاري تحميل المزيد...</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* End of posts indicator */}
+            {!hasMore && posts.length > 0 && (
+              <div className="text-center py-8">
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="text-gray-400 text-4xl mb-2">🎉</div>
+                  <p className="text-gray-600 text-sm">تم عرض جميع المنشورات</p>
+                  <p className="text-gray-500 text-xs mt-1">المجموع: {posts.length} منشور</p>
+                </div>
+              </div>
+            )}
+          </>
+        ) : !loading && !error && (
           <div className="text-center py-8">
             <div className="bg-gray-50 rounded-lg p-8">
               <div className="text-gray-400 text-6xl mb-4">📝</div>

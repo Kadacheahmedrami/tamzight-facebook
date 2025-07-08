@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { PrismaClient } from "@prisma/client"
+import { prisma } from "@/lib/prisma"
 
-const prisma = new PrismaClient()
 
 export async function GET(req: NextRequest) {
   // استخراج معلمات الفئة والكلمة المفتاحية من رابط الطلب
