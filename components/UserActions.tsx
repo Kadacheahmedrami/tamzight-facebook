@@ -99,12 +99,7 @@ export default function UserActions({ user }: UserActionsProps) {
         setLoginPassword("")
         
         // Force a full page refresh to update server components
-        // This is the most reliable way to ensure the header updates
         window.location.href = "/main"
-        
-        // Alternative: Use router.refresh() then navigate (less reliable)
-        // router.refresh()
-        // router.push("/main")
       }
     } catch (error) {
       console.error("Sign in error:", error)
@@ -123,7 +118,7 @@ export default function UserActions({ user }: UserActionsProps) {
     try {
       await signOut({ 
         callbackUrl: "/",
-        redirect: true // This ensures a full page refresh
+        redirect: true
       })
       toast({
         title: "تم تسجيل الخروج",
@@ -144,166 +139,248 @@ export default function UserActions({ user }: UserActionsProps) {
           {/* Desktop Icons */}
           <div className="hidden md:flex items-center gap-3">
             {/* Profile Icon */}
-            <Link href={"/main/member"} className="group relative">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
-              >
-                <i className="fas fa-user-circle text-xl"></i>
-              </Button>
+            <div className="group relative">
+              <Link href={"/main/member"}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                >
+                  <i className="fas fa-user-circle text-xl"></i>
+                </Button>
+              </Link>
               
               {/* Hover Dropdown for Profile */}
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="p-4 bg-[#4531fc] text-white rounded-t-lg">
-                  <h3 className="font-semibold mb-2">ملف بياناتك الشخصية</h3>
+              <div className="absolute right-0 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
+                {/* Header */}
+                <div className="p-4 bg-gray-50 border-b border-gray-200 rounded-t-lg shrink-0">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                      <i className="fas fa-user-circle text-xl"></i>
+                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center">
+                      <i className="fas fa-user-circle text-xl text-gray-600"></i>
                     </div>
                     <div>
-                      <p className="font-medium">
+                      <p className="font-medium text-gray-900">
                         {user.name || user.email}
                       </p>
-                      <p className="text-sm text-blue-100">{user.email}</p>
+                      <p className="text-sm text-gray-600">{user.email}</p>
                     </div>
                   </div>
                 </div>
-                <div className="py-2">
-                  <Link href="/main/member" className="block px-4 py-2 text-sm hover:bg-gray-50 transition-colors">متابعتك</Link>
-                  <div className="px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer transition-colors">محفوظاتك</div>
-                  <div className="px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer transition-colors">كُن شريك التجمع</div>
-                  <div className="px-4 py-2 text-sm hover:bg-gray-50 cursor-pointer transition-colors">انضم لفريق التجمع</div>
-                  <div onClick={handleSignOut} className="px-4 py-2 text-sm text-red-600 hover:bg-gray-50 cursor-pointer transition-colors flex items-center">
-                    <i className="fas fa-sign-out-alt mr-2"></i>
-                    تسجيل خروج
-                  </div>
-                </div>
+                  {/* Content */}
+                  <div className="flex-1 py-2 overflow-y-auto">
+                          <Link href="/main/member" className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                            <i className="fas fa-user-edit text-gray-500 ml-3"></i>
+                            <span>متابعتك</span>
+                          </Link>
+                          <div className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                            <i className="fas fa-bookmark text-gray-500 ml-3"></i>
+                            <span>محفوظاتك</span>
+                          </div>
+                          <div className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                            <i className="fas fa-handshake text-gray-500 ml-3"></i>
+                            <span>كُن شريك التجمع</span>
+                          </div>
+                          <div className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                            <i className="fas fa-users text-gray-500 ml-3"></i>
+                            <span>انضم لفريق التجمع</span>
+                          </div>
+                          <div className="border-t border-gray-200 mt-2 pt-2">
+                            <div onClick={handleSignOut} className="flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 cursor-pointer transition-colors">
+                              <i className="fas fa-sign-out-alt text-red-600 ml-3"></i>
+                              <span>تسجيل خروج</span>
+                            </div>
+                          </div>
+                    </div>
               </div>
-            </Link>
+            </div>
 
             {/* Messages Icon */}
-            <Link href={"/main/messages"} className="group relative" onMouseEnter={fetchMessages}>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
-              >
-                <i className="fas fa-comments text-lg"></i>
-                {unreadMessages > 0 && (
-                  <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {unreadMessages}
-                  </span>
-                )}
-              </Button>
+            <div className="group relative" onMouseEnter={fetchMessages}>
+              <Link href={"/main/messages"}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                >
+                  <i className="fas fa-comments text-lg"></i>
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {unreadMessages}
+                    </span>
+                  )}
+                </Button>
+              </Link>
               
               {/* Hover Dropdown for Messages */}
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="p-4 bg-green-600 text-white rounded-t-lg">
-                  <h3 className="font-semibold mb-2">مراسلتك</h3>
+              <div className="absolute right-0 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
+                {/* Header */}
+                <div className="p-4 bg-gray-50 border-b border-gray-200 rounded-t-lg shrink-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">مراسلتك</h3>
+                    {unreadMessages > 0 && (
+                      <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                        {unreadMessages} جديد
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto">
                   {messagesLoading ? (
-                    <p className="text-sm">جاري التحميل...</p>
+                    <div className="flex items-center justify-center h-full">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
+                      <span className="ml-2 text-sm text-gray-600">جاري التحميل...</span>
+                    </div>
                   ) : messages.length > 0 ? (
-                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                    <div className="py-2">
                       {messages.map((message) => (
                         <div
                           key={message.id}
-                          className={`flex items-start gap-3 p-2 rounded ${!message.read ? "bg-white/20" : "bg-white/10"}`}
+                          className={`flex items-start gap-3 p-3 hover:bg-gray-50 transition-colors ${!message.read ? "bg-blue-50 border-l-4 border-blue-400" : ""}`}
                         >
                           <img
                             src={message.avatar || "/placeholder.svg"}
                             alt={message.sender}
-                            className="w-8 h-8 rounded-full"
+                            className="w-8 h-8 rounded-full bg-gray-200"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{message.sender}</p>
-                            <p className="text-xs truncate">{message.message}</p>
-                            <p className="text-xs opacity-75">{message.timestamp}</p>
+                            <p className="text-sm font-medium text-gray-900 truncate">{message.sender}</p>
+                            <p className="text-sm text-gray-600 truncate">{message.message}</p>
+                            <p className="text-xs text-gray-500 mt-1">{message.timestamp}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm">ليس عندك أي رسائل</p>
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                      <i className="fas fa-inbox text-2xl mb-2"></i>
+                      <p className="text-sm">ليس عندك أي رسائل</p>
+                    </div>
                   )}
                 </div>
+                {/* Footer */}
+                {messages.length > 0 && (
+                  <div className="border-t border-gray-200 p-2 shrink-0">
+                    <Link href="/main/messages" className="block w-full p-2 text-sm text-center text-gray-600 hover:bg-gray-50 rounded transition-colors">
+                      عرض جميع الرسائل
+                    </Link>
+                  </div>
+                )}
               </div>
-            </Link>
+            </div>
 
             {/* Notifications Icon */}
-            <Link href={"/main/notifications"} className="group relative" onMouseEnter={fetchNotifications}>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
-              >
-                <i className="fas fa-bell text-lg"></i>
-                {unreadNotifications > 0 && (
-                  <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {unreadNotifications}
-                  </span>
-                )}
-              </Button>
+            <div className="group relative" onMouseEnter={fetchNotifications}>
+              <Link href={"/main/notifications"}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                >
+                  <i className="fas fa-bell text-lg"></i>
+                  {unreadNotifications > 0 && (
+                    <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {unreadNotifications}
+                    </span>
+                  )}
+                </Button>
+              </Link>
               
               {/* Hover Dropdown for Notifications */}
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="p-4 bg-orange-600 text-white rounded-t-lg">
-                  <h3 className="font-semibold mb-2">الإشعارات</h3>
+              <div className="absolute right-0 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
+                {/* Header */}
+                <div className="p-4 bg-gray-50 border-b border-gray-200 rounded-t-lg shrink-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">الإشعارات</h3>
+                    {unreadNotifications > 0 && (
+                      <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                        {unreadNotifications} جديد
+                      </span>
+                    )}
+                  </div>
+                </div>
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto">
                   {notificationsLoading ? (
-                    <p className="text-sm">جاري التحميل...</p>
+                    <div className="flex items-center justify-center h-full">
+                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
+                      <span className="ml-2 text-sm text-gray-600">جاري التحميل...</span>
+                    </div>
                   ) : notifications.length > 0 ? (
-                    <div className="space-y-3 max-h-64 overflow-y-auto">
+                    <div className="py-2">
                       {notifications.map((notification) => (
                         <div
                           key={notification.id}
-                          className={`flex items-start gap-3 p-2 rounded ${!notification.read ? "bg-white/20" : "bg-white/10"}`}
+                          className={`flex items-start gap-3 p-3 hover:bg-gray-50 transition-colors ${!notification.read ? "bg-blue-50 border-l-4 border-blue-400" : ""}`}
                         >
                           <img
                             src={notification.avatar || "/placeholder.svg"}
                             alt="User"
-                            className="w-8 h-8 rounded-full"
+                            className="w-8 h-8 rounded-full bg-gray-200"
                           />
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm">{notification.message}</p>
-                            <p className="text-xs opacity-75">{notification.timestamp}</p>
+                            <p className="text-sm text-gray-900">{notification.message}</p>
+                            <p className="text-xs text-gray-500 mt-1">{notification.timestamp}</p>
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-sm">ليس عندك أي إشعارات</p>
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500">
+                      <i className="fas fa-bell-slash text-2xl mb-2"></i>
+                      <p className="text-sm">ليس عندك أي إشعارات</p>
+                    </div>
                   )}
                 </div>
+                {/* Footer */}
+                {notifications.length > 0 && (
+                  <div className="border-t border-gray-200 p-2 shrink-0">
+                    <Link href="/main/notifications" className="block w-full p-2 text-sm text-center text-gray-600 hover:bg-gray-50 rounded transition-colors">
+                      عرض جميع الإشعارات
+                    </Link>
+                  </div>
+                )}
               </div>
-            </Link>
+            </div>
 
             {/* Friends Icon */}
-            <Link href={"/main/friends"} className="group relative">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
-              >
-               <i className="fas fa-user-friends text-lg"></i>
-
-                <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                  9
-                </span>
-              </Button>
+            <div className="group relative">
+              <Link href={"/main/friends"}>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                >
+                  <i className="fas fa-user-friends text-lg"></i>
+                  <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                    9
+                  </span>
+                </Button>
+              </Link>
               
               {/* Hover Dropdown for Friends */}
-              <div className="absolute right-0 top-full mt-2 w-80 bg-white rounded-lg shadow-lg border opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50">
-                <div className="p-4 bg-[#4531fc] text-white rounded-t-lg">
-                  <h3 className="font-semibold mb-2">أصدقاء أمازيغ</h3>
-                  <p className="text-sm">يوجد 10 أصدقاء جديد</p>
+              <div className="absolute right-0 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
+                {/* Header */}
+                <div className="p-4 bg-gray-50 border-b border-gray-200 rounded-t-lg shrink-0">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-gray-900">أصدقاء أمازيغ</h3>
+                    <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+                      9 جديد
+                    </span>
+                  </div>
                 </div>
-                <div className="p-2">
-                  <Link href="/main/friends" className="block w-full p-2 text-sm text-center hover:bg-gray-50 rounded transition-colors">
-                    عرض جميع الأصدقاء
-                  </Link>
+                {/* Content */}
+                <div className="flex-1 flex items-center justify-center">
+                  <div className="text-center">
+                    <i className="fas fa-user-friends text-2xl text-gray-400 mb-2"></i>
+                    <p className="text-sm text-gray-600 mb-4">يوجد 9 طلبات صداقة جديدة</p>
+                    <Link href="/main/friends" className="inline-block bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-lg transition-colors">
+                      عرض جميع الأصدقاء
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </Link>
+            </div>
           </div>
 
           {/* Mobile Icons - Simple clickable buttons without dropdowns */}
@@ -313,7 +390,7 @@ export default function UserActions({ user }: UserActionsProps) {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
               >
                 <i className="fas fa-user-circle text-xl"></i>
               </Button>
@@ -324,7 +401,7 @@ export default function UserActions({ user }: UserActionsProps) {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
               >
                 <i className="fas fa-comments text-lg"></i>
                 {unreadMessages > 0 && (
@@ -340,7 +417,7 @@ export default function UserActions({ user }: UserActionsProps) {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
               >
                 <i className="fas fa-bell text-lg"></i>
                 {unreadNotifications > 0 && (
@@ -356,9 +433,9 @@ export default function UserActions({ user }: UserActionsProps) {
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 p-0"
+                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
               >
-               <i className="fas fa-user-friends text-lg"></i>
+                <i className="fas fa-user-friends text-lg"></i>
                 <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
                   9
                 </span>
