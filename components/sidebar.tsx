@@ -41,7 +41,7 @@ export default function Sidebar() {
   }, [])
 
   const sidebarLinks = [
-    { href: "/main", icon: "fa-home", label: "الصفحة الرئيسية", badge: null },
+    { href: "/main", icon: "fa-home", label: " أحدث المنشورات", badge: null },
     { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: stats?.sections.posts?.toString() || "05" },
     { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: stats?.sections.truth?.toString() || "05" },
     {
