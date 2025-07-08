@@ -3,12 +3,9 @@
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import {
-  ImageIcon,
-  Search,
-} from "lucide-react"
+import { Search, ImageIcon } from "lucide-react"
+import PostCard from "@/components/post-card"
 
 interface ImageData {
   id: number
@@ -70,213 +67,137 @@ export default function ImagesPage() {
     setSearchTerm(e.target.value)
   }
 
-  const handleClearFilters = () => {
-    setSelectedCategory("all")
-    setSearchTerm("")
-    fetchImages("all", "")
+  // Transform image data for PostCard
+  const transformImageToPost = (imageItem: ImageData) => ({
+    id: imageItem.id.toString(),
+    title: imageItem.title,
+    content: `${imageItem.description}\n\nالموقع: ${imageItem.location}\nالعلامات: ${imageItem.tags.join(', ')}`,
+    author: imageItem.author,
+    authorId: imageItem.id.toString(), // You might want to use a proper author ID
+    timestamp: imageItem.timestamp,
+    category: getCategoryArabic(imageItem.category),
+    subCategory: imageItem.resolution,
+    media: [{
+      id: imageItem.id.toString(),
+      type: 'image' as const,
+      url: imageItem.image || "/placeholder.svg",
+      alt: imageItem.title,
+      resolution: imageItem.resolution
+    }],
+    baseRoute: 'images',
+    stats: {
+      views: Math.floor(Math.random() * 1000) + 100,
+      likes: Math.floor(Math.random() * 50) + 10,
+      comments: Math.floor(Math.random() * 20) + 5,
+      shares: Math.floor(Math.random() * 10) + 2
+    }
+  })
+
+  const getCategoryArabic = (category: string) => {
+    const categoryMap: { [key: string]: string } = {
+      "heritage": "تراثية",
+      "clothing": "ملابس",
+      "nature": "طبيعة",
+      "art": "فنون",
+      "food": "طعام",
+      "architecture": "عمارة"
+    }
+    return categoryMap[category] || category
   }
 
   if (loading) {
     return (
-
-            <div className="max-w-2xl mx-auto">
-              <div className="text-center py-8">جاري التحميل...</div>
-            </div>
-    
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center py-8">جاري التحميل...</div>
+      </div>
     )
   }
 
   return (
+    <div className="max-w-2xl mx-auto">
+      {/* Breadcrumb */}
+      <nav className="mb-4">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <span>صور امازيغية متنوعة</span>
+        </div>
+      </nav>
 
-          <div className="max-w-4xl mx-auto">
-            {/* Breadcrumb */}
-            <nav className="mb-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>صور امازيغية متنوعة</span>
-                {selectedCategory !== "all" && (
-                  <>
-                    <span>/</span>
-                    <span className="text-blue-600 font-medium">
-                      {selectedCategory === "heritage" && "صور تراثية"}
-                      {selectedCategory === "clothing" && "ملابس تقليدية"}
-                      {selectedCategory === "nature" && "مناظر طبيعية"}
-                      {selectedCategory === "art" && "فنون وحرف"}
-                      {selectedCategory === "food" && "طعام امازيغي"}
-                      {selectedCategory === "architecture" && "عمارة امازيغية"}
-                    </span>
-                  </>
-                )}
-              </div>
-            </nav>
+      {/* Search and Filter */}
+      <div className="bg-white rounded-lg p-4 mb-4 border space-y-4">
+        {/* Search Bar */}
+        <form onSubmit={handleSearch} className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              type="text"
+              placeholder="ابحث في الصور..."
+              value={searchTerm}
+              onChange={handleSearchInputChange}
+              className="pr-10"
+            />
+          </div>
+          <Button type="submit" size="sm" className="bg-[#4531fc] hover:bg-blue-800">
+            بحث
+          </Button>
+        </form>
 
-            {/* Search and Filter */}
-            <div className="bg-white rounded-lg p-4 mb-4 border space-y-4">
-              {/* Search Bar */}
-              <form onSubmit={handleSearch} className="flex gap-2">
-                <div className="relative flex-1">
-                  <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                  <Input
-                    type="text"
-                    placeholder="ابحث في الصور..."
-                    value={searchTerm}
-                    onChange={handleSearchInputChange}
-                    className="pr-10"
-                  />
-                </div>
-                <Button type="submit" size="sm" className="bg-[#4531fc] hover:bg-blue-800 ">
-                  بحث
-                </Button>
-              </form>
+        {/* Category Filter */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <label className="text-sm font-medium whitespace-nowrap">اعرض صور:</label>
+          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="اختار قسم" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">الجميع</SelectItem>
+              <SelectItem value="heritage">صور تراثية</SelectItem>
+              <SelectItem value="clothing">ملابس تقليدية</SelectItem>
+              <SelectItem value="nature">مناظر طبيعية</SelectItem>
+              <SelectItem value="art">فنون وحرف</SelectItem>
+              <SelectItem value="food">طعام امازيغي</SelectItem>
+              <SelectItem value="architecture">عمارة امازيغية</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button size="sm" onClick={() => fetchImages(selectedCategory, searchTerm)} className="bg-[#4531fc] hover:bg-blue-800 w-full sm:w-auto">
+            اعرض
+          </Button>
+        </div>
+      </div>
 
-              {/* Category Filter */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <label className="text-sm font-medium whitespace-nowrap">اعرض صور قسم:</label>
-                <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="اختار قسم لعرضه" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">الجميع</SelectItem>
-                    <SelectItem value="heritage">صور تراثية</SelectItem>
-                    <SelectItem value="clothing">ملابس تقليدية</SelectItem>
-                    <SelectItem value="nature">مناظر طبيعية</SelectItem>
-                    <SelectItem value="art">فنون وحرف</SelectItem>
-                    <SelectItem value="food">طعام امازيغي</SelectItem>
-                    <SelectItem value="architecture">عمارة امازيغية</SelectItem>
-                  </SelectContent>
-                </Select>
-                {(selectedCategory !== "all" || searchTerm) && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => {
-                      setSelectedCategory("all")
-                      setSearchTerm("")
-                    }}
-                    className="w-full sm:w-auto"
-                  >
-                    مسح الفلاتر
-                  </Button>
-                )}
-              </div>
-            </div>
-
-            {/* Results Info */}
-            <div className="mb-4 text-sm text-gray-600">
-              {loading ? (
-                "جاري البحث..."
-              ) : (
-                <>
-                  تم العثور على {images.length} صورة
-                  {selectedCategory !== "all" && (
-                    <span className="text-blue-600 font-medium">
-                      {" "}في قسم "
-                      {selectedCategory === "heritage" && "صور تراثية"}
-                      {selectedCategory === "clothing" && "ملابس تقليدية"}
-                      {selectedCategory === "nature" && "مناظر طبيعية"}
-                      {selectedCategory === "art" && "فنون وحرف"}
-                      {selectedCategory === "food" && "طعام امازيغي"}
-                      {selectedCategory === "architecture" && "عمارة امازيغية"}
-                      "
-                    </span>
-                  )}
-                  {searchTerm && (
-                    <span className="text-blue-600 font-medium">
-                      {" "}للبحث "{searchTerm}"
-                    </span>
-                  )}
-                </>
-              )}
-            </div>
-
-            {/* Images Grid */}
-            {images.length === 0 && !loading ? (
-              <div className="text-center py-12">
-                <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد صور</h3>
-                <p className="text-gray-500">
-                  {searchTerm 
-                    ? `لم يتم العثور على صور تحتوي على "${searchTerm}"`
-                    : "لا توجد صور في هذا القسم حالياً"
-                  }
-                </p>
-                {(selectedCategory !== "all" || searchTerm) && (
-                  <Button 
-                    variant="outline" 
-                    onClick={() => {
-                      setSelectedCategory("all")
-                      setSearchTerm("")
-                    }}
-                    className="mt-4"
-                  >
-                    عرض جميع الصور
-                  </Button>
-                )}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {images.map((imageItem) => (
-                  <div
-                    key={imageItem.id}
-                    className="bg-white rounded-lg border overflow-hidden group cursor-pointer hover:shadow-lg transition-shadow"
-                  >
-                    <div className="relative">
-                      <img
-                        src={imageItem.image || "/placeholder.svg"}
-                        alt={imageItem.title}
-                        className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                      <div className="absolute top-2 right-2">
-                        <Badge variant="secondary">
-                          {imageItem.category === "heritage" && "تراثية"}
-                          {imageItem.category === "clothing" && "ملابس"}
-                          {imageItem.category === "nature" && "طبيعة"}
-                          {imageItem.category === "art" && "فنون"}
-                          {imageItem.category === "food" && "طعام"}
-                          {imageItem.category === "architecture" && "عمارة"}
-                          {!["heritage", "clothing", "nature", "art", "food", "architecture"].includes(imageItem.category) && imageItem.category}
-                        </Badge>
-                      </div>
-                      <div className="absolute bottom-2 left-2 bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded">
-                        {imageItem.resolution}
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h3 className="font-semibold mb-2 line-clamp-2">{imageItem.title}</h3>
-                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">{imageItem.description}</p>
-
-                      <div className="space-y-1 text-xs text-gray-500 mb-3">
-                        <div className="flex justify-between">
-                          <span>المصور:</span>
-                          <span>{imageItem.author}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>الموقع:</span>
-                          <span>{imageItem.location}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <span>التاريخ:</span>
-                          <span>{imageItem.timestamp}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-wrap gap-1 mb-3">
-                        {imageItem.tags.map((tag, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {tag}
-                          </Badge>
-                        ))}
-                      </div>
-
-                      <Button size="sm" variant="outline" className="w-full bg-transparent">
-                        عرض بالحجم الكامل
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+      {/* Images Feed */}
+      <div className="space-y-4">
+        {images.length > 0 ? (
+          images.map((imageItem) => (
+            <PostCard
+              key={imageItem.id}
+              {...transformImageToPost(imageItem)}
+            />
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد صور</h3>
+            <p className="text-gray-500">
+              {searchTerm 
+                ? `لم يتم العثور على صور تحتوي على "${searchTerm}"`
+                : "لا توجد صور في هذا القسم حالياً"
+              }
+            </p>
+            {(selectedCategory !== "all" || searchTerm) && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSelectedCategory("all")
+                  setSearchTerm("")
+                }}
+                className="mt-4"
+              >
+                عرض جميع الصور
+              </Button>
             )}
           </div>
-      
+        )}
+      </div>
+    </div>
   )
 }
