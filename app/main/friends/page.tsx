@@ -66,13 +66,7 @@ export default function FriendsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto flex">
-        {/* Right Sidebar - Main Navigation */}
-        <Sidebar />
 
-        {/* Main Content - Friends List */}
-        <div className="flex-1 p-2 sm:p-4">
           <div className="max-w-2xl mx-auto">
             {/* Mobile Friend Suggestions Button */}
             <div className="lg:hidden mb-4">
@@ -193,37 +187,8 @@ export default function FriendsPage() {
               </div>
             </div>
           </div>
-        </div>
+     
 
-        {/* Left Section - Friend Suggestions */}
-        <div className="hidden lg:block w-64 p-4">
-          <div className="bg-white rounded-lg p-4 border">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <UserPlus className="h-4 w-4 text-[#4531fc] " />
-              اقتراحات صداقة
-            </h3>
-            <div className="space-y-3">
-              {friendsData.suggestions.map((friend) => (
-                <div key={friend.id} className="border rounded-lg p-3">
-                  <div className="flex items-center gap-2 mb-2">
-                    <img src={friend.avatar || "/placeholder.svg"} alt={friend.name} className="w-8 h-8 rounded-full" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{friend.name}</p>
-                      <p className="text-xs text-gray-500">{friend.location}</p>
-                    </div>
-                  </div>
-                  <p className="text-xs text-gray-600 mb-2">{friend.occupation}</p>
-                  <p className="text-xs text-[#4531fc]  mb-2">{friend.mutualFriends} أصدقاء مشتركين</p>
-                  <Button size="sm" className="bg-[#4531fc] hover:bg-blue-900 w-full text-xs">
-                    إضافة صديق
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </div>
+   
   )
 }
