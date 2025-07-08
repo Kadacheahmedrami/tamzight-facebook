@@ -65,12 +65,13 @@ export default async function RootLayout({
           referrerPolicy="no-referrer"
         />
       </head>
-      <body className={inter.className}>
-        <Header user={session?.user || null} />
-        <main>
-          
-          {children}
-        </main>
+      <body className={`${inter.className} h-screen overflow-hidden`}>
+        <div className="h-full flex flex-col">
+          <Header user={session?.user || null} />
+          <main className="flex-1 overflow-hidden">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   )
