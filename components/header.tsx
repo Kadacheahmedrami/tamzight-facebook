@@ -176,15 +176,15 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyPress={handleKeyPress}
-                      className={`pl-12 pr-4 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-[#4531fc] placeholder:text-gray-500 rounded-lg ${isAuthenticated ? 'h-10' : 'h-8'}`}
+                      className={`pl-12 pr-8 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-[#4531fc] placeholder:text-gray-500 rounded-lg ${isAuthenticated ? 'h-10' : 'h-8'}`}
                     />
                     
                     {/* Search Button - Inside Input */}
                     <button 
                       onClick={handleSearchClick}
-                      className={`absolute left-1 top-1/2 transform -translate-y-1/2 bg-[#4531fc] hover:bg-blue-600 active:bg-blue-700 transition-colors flex justify-center items-center rounded-md ${isAuthenticated ? 'h-8 w-8' : 'h-6 w-6'}`}
+                      className={`absolute left-1 top-1/2 transform -translate-y-1/2  transition-colors flex justify-center items-center rounded-md ${isAuthenticated ? 'h-8 w-8' : 'h-6 w-6'}`}
                     >
-                      <Search className={`text-white ${isAuthenticated ? 'h-4 w-4' : 'h-3 w-3'}`} />
+                      <Search className={`text-gray-500 ${isAuthenticated ? 'h-4 w-4' : 'h-3 w-3'}`} />
                     </button>
                     
                     {/* Clear Button */}
@@ -291,15 +291,15 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  className={`pl-12 pr-4 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-[#4531fc] placeholder:text-gray-500 rounded-lg text-base ${isAuthenticated ? 'h-12' : 'h-10'}`}
+                  className={`pl-12 pr-8 text-right text-bold bg-gray-50 border-gray-300 focus:bg-white focus:border-[#4531fc] placeholder:text-gray-500 rounded-lg text-base ${isAuthenticated ? 'h-12' : 'h-10'}`}
                 />
                 
                 {/* Mobile Search Button - Inside Input */}
                 <button 
                   onClick={handleSearchClick}
-                  className={`absolute left-1 top-1/2 transform -translate-y-1/2 bg-[#4531fc] hover:bg-blue-600 active:bg-blue-700 transition-colors flex justify-center items-center rounded-md ${isAuthenticated ? 'h-10 w-10' : 'h-8 w-8'}`}
+                  className={`absolute left-1 top-1/2 transform -translate-y-1/2  transition-colors flex justify-center items-center rounded-md ${isAuthenticated ? 'h-10 w-10' : 'h-8 w-8'}`}
                 >
-                  <Search className={`text-white ${isAuthenticated ? 'h-5 w-5' : 'h-4 w-4'}`} />
+                  <Search className={`text-gray-500 ${isAuthenticated ? 'h-5 w-5' : 'h-4 w-4'}`} />
                 </button>
                 
                 {/* Mobile Clear Button */}
