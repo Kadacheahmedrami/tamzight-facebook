@@ -120,8 +120,10 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'all';
 
     const orderBy = { timestamp: 'desc' as const };
-    const models = ['post', 'book', 'idea', 'image', 'video', 'truth', 'question', 'ad', 'product'] as const;
     
+    // Use English model names that match your Prisma schema
+    const models = ['post', 'book', 'idea', 'image', 'video', 'truth', 'question', 'ad', 'product'] as const;
+
     // Filter models based on type parameter
     const modelsToQuery = type === 'all' ? models : models.filter(model => model === type);
     

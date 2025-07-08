@@ -51,7 +51,15 @@ export default function TruthsPage() {
       const url = `/api/main/truth${params.toString() ? `?${params.toString()}` : ""}`
       const response = await fetch(url)
       const data = await response.json()
-      setTruths(data)
+      
+      // Transform the data to match expected format
+      const transformedTruths = data.map((truth: any) => ({
+        ...truth,
+        category: "حقيقة", // Set main category as "حقيقة"
+        subcategory: truth.category || truth.subcategory // Move original category to subcategory
+      }))
+      
+      setTruths(transformedTruths)
     } catch (error) {
       console.error("Error fetching truths:", error)
     } finally {

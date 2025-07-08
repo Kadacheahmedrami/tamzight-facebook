@@ -3,12 +3,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-
-
-import PostCard from "@/components/post-card"
-import CreatePostModal from "@/components/create-post-modal"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ShoppingBag } from "lucide-react"
+import PostCard from "@/components/card-comps/post-card"
+import CreatePostModal from "@/components/create-post-modal"
 
 interface Product {
   id: number
@@ -78,62 +77,107 @@ export default function ShopPage() {
     fetchProducts(category)
   }
 
+  // Transform product data for PostCard
+  const transformProductToPost = (product: Product) => ({
+    id: product.id.toString(),
+    title: product.title,
+    content: product.content,
+    author: product.author,
+    authorId: product.id.toString(), // You might want to use a proper author ID
+    timestamp: product.timestamp,
+    category: "منتج", // Main category is now "منتج" (Product in Arabic)
+    subCategory: getCategoryArabic(product.category), // Original category moved to subcategory
+    media: product.image ? [{
+      id: product.id.toString(),
+      type: 'image' as const,
+      url: product.image,
+      alt: product.title
+    }] : undefined,
+    baseRoute: 'shop',
+    stats: product.stats
+  })
+
+  const getCategoryArabic = (category: string) => {
+    const categoryMap: { [key: string]: string } = {
+      "clothing": "ملابس",
+      "shoes": "احذية",
+      "accessories": "اكسسورات",
+      "furniture": "مفروشات"
+    }
+    return categoryMap[category] || category
+  }
+
   if (loading) {
     return (
-     
-            <div className="max-w-2xl mx-auto">
-              <div className="text-center py-8">جاري التحميل...</div>
-            </div>
-         
+      <div className="max-w-2xl mx-auto">
+        <div className="text-center py-8">جاري التحميل...</div>
+      </div>
     )
   }
 
   return (
+    <div className="max-w-2xl mx-auto">
+      {/* Breadcrumb */}
+      <nav className="mb-4">
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <span>تسوق صناعات امازيغية</span>
+        </div>
+      </nav>
 
+      {/* Filter */}
+      <div className="bg-white rounded-lg p-4 mb-4 border">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <label className="text-sm font-medium whitespace-nowrap">اعرض مُنتج امازيغي في:</label>
+          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="اختار قسم" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">الجميع</SelectItem>
+              <SelectItem value="clothing">ملابس</SelectItem>
+              <SelectItem value="shoes">احذية</SelectItem>
+              <SelectItem value="accessories">اكسسورات</SelectItem>
+              <SelectItem value="furniture">مفروشات</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button size="sm" onClick={() => fetchProducts(selectedCategory)} className="bg-[#4531fc] hover:bg-blue-800 w-full sm:w-auto">
+            اعرض المنتجات
+          </Button>
+        </div>
+      </div>
 
+      {/* Create Product */}
+      <CreatePostModal />
 
-          <div className="max-w-2xl mx-auto">
-            {/* Breadcrumb */}
-            <nav className="mb-4">
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>تسوق صناعات امازيغية</span>
-              </div>
-            </nav>
-
-            {/* Filter */}
-            <div className="bg-white rounded-lg p-4 mb-4 border">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                <label className="text-sm font-medium whitespace-nowrap">اعرض مُنتج امازيغي في:</label>
-                <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                  <SelectTrigger className="w-full sm:w-48">
-                    <SelectValue placeholder="اختار قسم" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">الجميع</SelectItem>
-                    <SelectItem value="clothing">ملابس</SelectItem>
-                    <SelectItem value="shoes">احذية</SelectItem>
-                    <SelectItem value="accessories">اكسسورات</SelectItem>
-                    <SelectItem value="furniture">مفروشات</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Button size="sm" onClick={() => fetchProducts(selectedCategory)} className="w-full bg-[#4531fc] hover:bg-blue-800  sm:w-auto">
-                  اعرض
-                </Button>
-              </div>
-            </div>
-
-            {/* Create Product */}
-            <CreatePostModal />
-
-            {/* Products Feed */}
-            <div className="space-y-4">
-              {products.length > 0 ? (
-                products.map((product) => <PostCard key={product.id} {...product} />)
-              ) : (
-                <div className="text-center py-8 text-gray-500">لا توجد منتجات في هذا القسم</div>
-              )}
-            </div>
+      {/* Products Feed */}
+      <div className="space-y-4">
+        {products.length > 0 ? (
+          products.map((product) => (
+            <PostCard
+              key={product.id}
+              {...transformProductToPost(product)}
+            />
+          ))
+        ) : (
+          <div className="text-center py-8">
+            <ShoppingBag className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد منتجات</h3>
+            <p className="text-gray-500">لا توجد منتجات في هذا القسم حالياً</p>
+            {selectedCategory !== "all" && (
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setSelectedCategory("all")
+                  fetchProducts("all")
+                }}
+                className="mt-4"
+              >
+                عرض جميع المنتجات
+              </Button>
+            )}
           </div>
-
+        )}
+      </div>
+    </div>
   )
 }

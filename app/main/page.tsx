@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useRef, useCallback } from "react"
-import PostCard from "@/components/post-card"
+import PostCard from "@/components/card-comps/post-card"
 import CreatePostModal from "@/components/create-post-modal"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -68,6 +68,32 @@ export default function LatestPostsPage() {
   const isLoadingRef = useRef(false) // Prevent multiple simultaneous requests
   const abortControllerRef = useRef<AbortController | null>(null) // For request cancellation
 
+  // Mapping of content types to Arabic categories
+  const getArabicCategory = useCallback((type: string): string => {
+    const categoryMap: { [key: string]: string } = {
+      'post': 'منشور',
+      'book': 'كتاب',
+      'idea': 'فكرة',
+      'image': 'صورة',
+      'video': 'فيديو',
+      'truth': 'حقيقة',
+      'question': 'سؤال',
+      'ad': 'إعلان',
+      'product': 'منتج',
+      'story': 'قصة',
+      'article': 'مقال',
+      'news': 'خبر',
+      'poem': 'قصيدة',
+      'quote': 'اقتباس',
+      'event': 'حدث',
+      'tutorial': 'درس',
+      'review': 'مراجعة',
+      'discussion': 'نقاش',
+      'announcement': 'إعلان'
+    }
+    return categoryMap[type] || 'عام'
+  }, [])
+
   // Transform API data to match PostCard format
   const transformPost = useCallback((item: any): Post => ({
     id: item.id?.toString() || Math.random().toString(36).substr(2, 9),
@@ -76,8 +102,8 @@ export default function LatestPostsPage() {
     author: item.author ? `${item.author.firstName} ${item.author.lastName}` : 'مجهول',
     authorId: item.author?.id?.toString() || 'unknown',
     timestamp: formatTimestamp(item.timestamp),
-    category: item.type || 'عام',
-    subCategory: item.category || undefined,
+    category: getArabicCategory(item.type || 'post'), // Main category in Arabic
+    subCategory: item.category || undefined, // Original category becomes subcategory
     media: [],
     image: item.image || undefined,
     images: item.images || [],
@@ -87,7 +113,7 @@ export default function LatestPostsPage() {
       comments: item._count?.comments || 0,
       shares: item._count?.shares || 0
     }
-  }), [])
+  }), [getArabicCategory])
 
   const fetchPosts = useCallback(async (type = "all", offset = 0, isLoadMore = false) => {
     // Prevent multiple simultaneous requests

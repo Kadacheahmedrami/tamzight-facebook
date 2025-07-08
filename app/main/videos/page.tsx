@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Play } from "lucide-react"
-import PostCard from "@/components/post-card"
+import PostCard from "@/components/card-comps/post-card"
 
 interface VideoData {
   id: number
