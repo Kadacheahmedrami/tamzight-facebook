@@ -367,24 +367,16 @@ export default function LatestPostsPage() {
     </div>
   )
 
-  if (loading) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <LoadingSkeleton />
-      </div>
-    )
-  }
-
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Breadcrumb */}
+      {/* Breadcrumb - Always visible */}
       <nav className="mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <span>منشورات حول الامة الامازيغ</span>
         </div>
       </nav>
 
-      {/* Filter */}
+      {/* Filter - Always visible */}
       <div className="bg-white rounded-lg p-4 mb-4 border">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <label className="text-sm font-medium whitespace-nowrap">اعرض اخر منشورات حول:</label>
@@ -416,15 +408,16 @@ export default function LatestPostsPage() {
         </div>
       </div>
 
-      {/* Create Post */}
+      {/* Create Post - Always visible */}
       <CreatePostModal />
-
-      {/* Error Display */}
-      {error && posts.length === 0 && <ErrorDisplay />}
 
       {/* Posts Feed */}
       <div className="space-y-4">
-        {posts.length > 0 ? (
+        {loading && posts.length === 0 ? (
+          <LoadingSkeleton />
+        ) : error && posts.length === 0 ? (
+          <ErrorDisplay />
+        ) : posts.length > 0 ? (
           <>
             {posts.map((post, index) => (
               <PostCard 
@@ -470,8 +463,18 @@ export default function LatestPostsPage() {
                 </div>
               </div>
             )}
+            
+            {/* Load more error */}
+            {error && posts.length > 0 && (
+              <div className="text-center py-4">
+                <p className="text-red-500 mb-2">حدث خطأ أثناء تحميل المزيد من المنشورات</p>
+                <Button onClick={loadMore} variant="outline">
+                  إعادة المحاولة
+                </Button>
+              </div>
+            )}
           </>
-        ) : !loading && !error && (
+        ) : (
           <div className="text-center py-8">
             <div className="bg-gray-50 rounded-lg p-8">
               <div className="text-gray-400 text-6xl mb-4">📝</div>
