@@ -4,7 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import Sidebar from "@/components/sidebar"
+
 
 import Header from "@/components/header"
 
