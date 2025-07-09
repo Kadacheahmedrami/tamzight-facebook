@@ -191,6 +191,7 @@ model Idea {
   authorId    Int
   timestamp   DateTime @default(now())
   category    String
+  subcategory String?   // Add this field
   image       String?
   status      String   @default("قيد المراجعة")
   priority    String   @default("متوسطة")
@@ -213,6 +214,8 @@ model Image {
   title       String
   description String?
   category    String
+  subcategory String?   // Add this field
+
   image       String
   authorId    Int
   timestamp   DateTime @default(now())
@@ -286,6 +289,8 @@ model Question {
   authorId    Int
   timestamp   DateTime @default(now())
   category    String   @default("سؤال")
+  subcategory String?   // Add this field
+
   type        String   @default("answer")
   answered    Boolean  @default(false)
   image       String?
@@ -334,6 +339,8 @@ model Product {
   authorId    Int      // seller
   timestamp   DateTime @default(now())
   category    String
+  subcategory String?   // Add this field
+
   image       String?
   price       String
   currency    String
