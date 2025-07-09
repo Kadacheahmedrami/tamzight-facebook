@@ -21,7 +21,7 @@ interface SearchResult {
 interface Message {
   id: number
   sender: string
-  message: string
+  message: string 
   timestamp: string
   read: boolean
   avatar: string
