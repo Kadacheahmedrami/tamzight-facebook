@@ -144,7 +144,7 @@ const validateContentData = (type: ContentType, data: ContentData): string[] => 
       
     case 'questions':
       const questionData = data as QuestionData;
-      if (questionData.type && !['answer', 'poll', 'discussion'].includes(questionData.type)) {
+      if (questionData.type && !['يحتاج إجابة"', 'استطلاع رأي', 'نقاش'].includes(questionData.type)) {
         errors.push('Invalid question type');
       }
       break;
