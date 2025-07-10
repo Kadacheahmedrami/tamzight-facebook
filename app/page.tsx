@@ -142,11 +142,11 @@ const footerLinks = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen overflow-y-scroll bg-white" dir="rtl">
+    <div className="h-full overflow-y-auto bg-white" dir="rtl">
       {/* FontAwesome CDN */}
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
       
-      <main className="max-w-7xl  mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-4 py-8">
         {/* Introduction */}
       
         <section className="bg-white px-3 sm:px-6 py-6 sm:py-12">

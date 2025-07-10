@@ -37,7 +37,7 @@ export default function MainLayout({
   }
 
   return (
-    <div className="h-[calc(100vh-7vh)]  bg-gray-50 overflow-hidden">
+    <div className="h-[calc(100vh-7vh)]    bg-gray-50 ">
       <div className="max-w-7xl mx-auto flex h-full">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block h-full">
