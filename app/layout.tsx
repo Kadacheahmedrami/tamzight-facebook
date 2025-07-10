@@ -68,7 +68,7 @@ export default async function RootLayout({
       <body className={`${inter.className} h-screen overflow-hidden`}>
         <div className="h-full flex flex-col">
           <Header user={session?.user || null} />
-          <main className="flex-1 overflow-x-hidden">
+          <main className="flex-1 overflow-hidden">
             {children}
           </main>
         </div>
