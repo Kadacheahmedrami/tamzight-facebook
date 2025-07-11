@@ -68,6 +68,7 @@
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
+    "@types/next-auth": "^3.13.0",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",

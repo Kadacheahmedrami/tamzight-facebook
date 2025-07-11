@@ -1,6 +1,7 @@
 // app/api/main/upload/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
+;
 import { authOptions } from '@/lib/auth';
 import { ContentController } from './contentController';
 import type { ContentType, ContentData } from './contentController';

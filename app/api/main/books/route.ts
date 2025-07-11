@@ -7,6 +7,11 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get("category")
     const search = searchParams.get("search")
+    
+    // استخراج معلمات الترقيم
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = 5 // حجم الصفحة ثابت = 5
+    const skip = (page - 1) * limit
 
     // Build the where clause for filtering
     const whereClause: any = {}
@@ -53,9 +58,16 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    // Fetch books from database
+    // الحصول على العدد الإجمالي للكتب
+    const totalBooks = await prisma.book.count({
+      where: whereClause,
+    })
+
+    // Fetch books from database with pagination
     const books = await prisma.book.findMany({
       where: whereClause,
+      skip: skip,
+      take: limit,
       include: {
         author: {
           select: {
@@ -95,7 +107,7 @@ export async function GET(request: NextRequest) {
     })
 
     // Transform the data to match your frontend format
-    const transformedBooks = books.map(book => ({
+    const transformedBooks = books.map((book: any) => ({
       id: book.id,
       title: book.title,
       content: book.content,
@@ -115,7 +127,22 @@ export async function GET(request: NextRequest) {
       isbn: book.isbn
     }))
 
-    return NextResponse.json(transformedBooks)
+    // حساب معلومات الترقيم
+    const totalPages = Math.ceil(totalBooks / limit)
+    const hasNextPage = page < totalPages
+    const hasPreviousPage = page > 1
+
+    return NextResponse.json({
+      data: transformedBooks,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalItems: totalBooks,
+        itemsPerPage: limit,
+        hasNextPage: hasNextPage,
+        hasPreviousPage: hasPreviousPage,
+      }
+    })
   } catch (error) {
     console.error("Error fetching books:", error)
     return NextResponse.json(

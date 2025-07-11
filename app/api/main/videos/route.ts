@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { PrismaClient } from "@prisma/client"
 
-const prisma = new PrismaClient()
+import { prisma } from "@/lib/prisma"
 
 export async function GET(req: NextRequest) {
   // استخراج معلمات الفئة والكلمة المفتاحية من رابط الطلب
@@ -56,7 +56,30 @@ export async function GET(req: NextRequest) {
   })
 
   // إعداد الاستجابة بالشكل المناسب
-  const result = videos.map(video => ({
+  type VideoWithCounts = {
+    id: number;
+    title: string;
+    content: string;
+    timestamp: Date;
+    category: string;
+    subcategory: string;
+    image: string;
+    duration: number;
+    quality: string;
+    language: string;
+    views: number;
+    author: {
+      firstName: string;
+      lastName: string;
+    };
+    _count: {
+      likes: number;
+      comments: number;
+      shares: number;
+    };
+  };
+
+  const result = videos.map((video: VideoWithCounts) => ({
     id: video.id,
     title: video.title,
     content: video.content,

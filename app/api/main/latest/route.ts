@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 interface ContentItem {
   id: number;
@@ -115,8 +114,12 @@ const normalizeContent = (items: any[], type: string): ContentItem[] => {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 100);
-    const offset = parseInt(searchParams.get('offset') || '0');
+    
+    // استخراج معلمات الترقيم
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = 5; // حجم الصفحة ثابت = 5
+    const offset = (page - 1) * limit;
+    
     const type = searchParams.get('type') || 'all';
 
     const orderBy = { timestamp: 'desc' as const };
@@ -156,25 +159,33 @@ export async function GET(request: NextRequest) {
 
     // Apply pagination ONLY here, after combining and sorting
     const paginatedContent = sortedContent.slice(offset, offset + limit);
-    const hasMore = offset + limit < sortedContent.length;
+    const totalItems = sortedContent.length;
+    const totalPages = Math.ceil(totalItems / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
 
     console.log('Pagination Debug:', {
-      totalItems: sortedContent.length,
-      requestedOffset: offset,
+      totalItems,
+      requestedPage: page,
       requestedLimit: limit,
       returnedItems: paginatedContent.length,
-      hasMore,
-      nextOffset: hasMore ? offset + limit : null
+      totalPages,
+      hasNextPage,
+      hasPreviousPage
     });
 
     return NextResponse.json({
       success: true,
       data: paginatedContent,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalItems: totalItems,
+        itemsPerPage: limit,
+        hasNextPage: hasNextPage,
+        hasPreviousPage: hasPreviousPage,
+      },
       meta: {
-        total: sortedContent.length, // Total should be all items, not just paginated
-        limit,
-        offset,
-        hasMore,
         type,
       },
     });
@@ -251,7 +262,5 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
-  }
+  } 
 }

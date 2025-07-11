@@ -2,13 +2,18 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { PrismaClient } from "@prisma/client"
 
-const prisma = new PrismaClient()
+import {prisma} from "@/lib/prisma"
 
 export async function GET(req: NextRequest) {
   // استخراج معلمات الفئة والكلمة المفتاحية من رابط الطلب
   const { searchParams } = new URL(req.url)
   const categoryParam = searchParams.get('category')
   const searchParam = searchParams.get('search')
+  
+  // استخراج معلمات الترقيم
+  const page = parseInt(searchParams.get('page') || '1')
+  const limit = 5 // حجم الصفحة ثابت = 5
+  const skip = (page - 1) * limit
 
   // بناء شرط الفلترة
   const whereClause: any = {}
@@ -23,10 +28,17 @@ export async function GET(req: NextRequest) {
     ]
   }
 
-  // جلب الإعلانات من قاعدة البيانات
+  // الحصول على العدد الإجمالي للإعلانات
+  const totalAds = await prisma.ad.count({
+    where: whereClause,
+  })
+
+  // جلب الإعلانات من قاعدة البيانات مع الترقيم
   const ads = await prisma.ad.findMany({
     where: whereClause,
     orderBy: { createdAt: 'desc' },
+    skip: skip,
+    take: limit,
     select: {
       id: true,
       title: true,
@@ -56,7 +68,30 @@ export async function GET(req: NextRequest) {
   })
 
   // إعداد الاستجابة بالشكل المناسب
-  const result = ads.map(ad => ({
+  type AdType = {
+    id: number;
+    title: string;
+    content: string;
+    timestamp: Date;
+    category: string;
+    subcategory: string;
+    image: string | null;
+    targetAmount: number | null;
+    currentAmount: number | null;
+    deadline: Date | null;
+    views: number;
+    author: {
+      firstName: string;
+      lastName: string;
+    };
+    _count: {
+      likes: number;
+      comments: number;
+      shares: number;
+    };
+  };
+
+  const result = ads.map((ad: AdType) => ({
     id: ad.id,
     title: ad.title,
     content: ad.content,
@@ -77,5 +112,20 @@ export async function GET(req: NextRequest) {
     deadline: ad.deadline?.toISOString(),
   }))
 
-  return NextResponse.json(result)
+  // حساب معلومات الترقيم
+  const totalPages = Math.ceil(totalAds / limit)
+  const hasNextPage = page < totalPages
+  const hasPreviousPage = page > 1
+
+  return NextResponse.json({
+    data: result,
+    pagination: {
+      currentPage: page,
+      totalPages: totalPages,
+      totalItems: totalAds,
+      itemsPerPage: limit,
+      hasNextPage: hasNextPage,
+      hasPreviousPage: hasPreviousPage,
+    }
+  })
 }
