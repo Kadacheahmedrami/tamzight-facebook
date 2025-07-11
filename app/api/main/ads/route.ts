@@ -69,15 +69,15 @@ export async function GET(req: NextRequest) {
 
   // إعداد الاستجابة بالشكل المناسب
   type AdType = {
-    id: number;
+    id: string;
     title: string;
     content: string;
     timestamp: Date;
     category: string;
-    subcategory: string;
+    subcategory: string | null;
     image: string | null;
-    targetAmount: number | null;
-    currentAmount: number | null;
+    targetAmount: string | null;
+    currentAmount: string | null;
     deadline: Date | null;
     views: number;
     author: {
@@ -98,7 +98,7 @@ export async function GET(req: NextRequest) {
     author: `${ad.author.firstName} ${ad.author.lastName}`,
     timestamp: ad.timestamp.toISOString(),
     category: ad.category,
-    subcategory: ad.subcategory,
+    subcategory: ad.subcategory ?? '',
     image: ad.image,
     stats: {
       views: ad.views,
@@ -106,10 +106,9 @@ export async function GET(req: NextRequest) {
       comments: ad._count.comments,
       shares: ad._count.shares,
     },
-    // حقول مالية وخيرية
-    targetAmount: ad.targetAmount,
-    currentAmount: ad.currentAmount,
-    deadline: ad.deadline?.toISOString(),
+    targetAmount: ad.targetAmount !== null ? Number(ad.targetAmount) : null,
+    currentAmount: ad.currentAmount !== null ? Number(ad.currentAmount) : null,
+    deadline: ad.deadline ? ad.deadline.toISOString() : null,
   }))
 
   // حساب معلومات الترقيم

@@ -12,18 +12,18 @@ datasource db {
 
 
 model Account {
-  id                 Int       @id @default(autoincrement())
-  userId             Int
-  type               String
-  provider           String
-  providerAccountId  String
-  refresh_token      String?   @map("refreshToken")
-  access_token       String?   @map("accessToken")
-  expires_at         Int?      @map("expiresAt")
-  token_type         String?   @map("tokenType")
-  scope              String?
-  id_token           String?   @map("idToken")
-  session_state      String?
+  id                String    @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?   @map("refreshToken")
+  access_token      String?   @map("accessToken")
+  expires_at        Int?      @map("expiresAt")
+  token_type        String?   @map("tokenType")
+  scope             String?
+  id_token          String?   @map("idToken")
+  session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -32,9 +32,9 @@ model Account {
 }
 
 model Session {
-  id           Int      @id @default(autoincrement())
+  id           String   @id @default(cuid())
   sessionToken String   @unique
-  userId       Int
+  userId       String
   expires      DateTime
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -53,22 +53,22 @@ model VerificationToken {
 
 // User model - Main user entity
 model User {
-  id             Int       @id @default(autoincrement())
-  email          String    @unique
-  emailVerified  DateTime?               // ← required by NextAuth.js
-  password       String
-  firstName      String
-  lastName       String
-  role           String    @default("user") // admin, user, moderator
-  location       String?
-  occupation     String?
-  bio            String?
-  avatar         String?                 // your existing avatar field
-  image          String?                 // ← NextAuth.js uses this for profile pics
-  coverImage     String?
-  joinDate       DateTime  @default(now())
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?               // ← required by NextAuth.js
+  password      String
+  firstName     String
+  lastName      String
+  role          String    @default("user") // admin, user, moderator
+  location      String?
+  occupation    String?
+  bio           String?
+  avatar        String?                 // your existing avatar field
+  image         String?                 // ← NextAuth.js uses this for profile pics
+  coverImage    String?
+  joinDate      DateTime  @default(now())
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // NextAuth relations
   accounts       Account[]               // ← add this for NextAuth
@@ -109,11 +109,11 @@ model User {
 
 // Friend Request model
 model FriendRequest {
-  id        Int      @id @default(autoincrement())
-  senderId  Int
-  receiverId Int
-  status    String   @default("pending") // pending, accepted, rejected
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  senderId   String
+  receiverId String
+  status     String   @default("pending") // pending, accepted, rejected
+  createdAt  DateTime @default(now())
   
   sender   User @relation("SentRequests", fields: [senderId], references: [id], onDelete: Cascade)
   receiver User @relation("ReceivedRequests", fields: [receiverId], references: [id], onDelete: Cascade)
@@ -124,9 +124,9 @@ model FriendRequest {
 
 // Friendship model (after request is accepted)
 model Friendship {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  friendId  Int
+  id        String   @id @default(cuid())
+  userId    String
+  friendId  String
   createdAt DateTime @default(now())
   
   user   User @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
@@ -138,10 +138,10 @@ model Friendship {
 
 // Post model
 model Post {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(cuid())
   title       String
   content     String
-  authorId    Int
+  authorId    String
   timestamp   DateTime @default(now())
   category    String
   subcategory String?
@@ -160,10 +160,10 @@ model Post {
 
 // Book model
 model Book {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(cuid())
   title       String
   content     String
-  authorId    Int
+  authorId    String
   timestamp   DateTime @default(now())
   category    String   @default("كتاب")
   subcategory String?
@@ -185,10 +185,10 @@ model Book {
 
 // Idea model
 model Idea {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(cuid())
   title       String
   content     String
-  authorId    Int
+  authorId    String
   timestamp   DateTime @default(now())
   category    String
   subcategory String?   // Add this field
@@ -210,14 +210,13 @@ model Idea {
 
 // Image model
 model Image {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(cuid())
   title       String
   description String?
   category    String
   subcategory String?   // Add this field
-
   image       String
-  authorId    Int
+  authorId    String
   timestamp   DateTime @default(now())
   location    String?
   resolution  String?
@@ -236,10 +235,10 @@ model Image {
 
 // Video model
 model Video {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(cuid())
   title       String
   content     String
-  authorId    Int
+  authorId    String
   timestamp   DateTime @default(now())
   category    String   @default("فيديو")
   subcategory String?
@@ -261,10 +260,10 @@ model Video {
 
 // Truth model
 model Truth {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(cuid())
   title       String
   content     String
-  authorId    Int
+  authorId    String
   timestamp   DateTime @default(now())
   category    String   @default("حقيقة")
   subcategory String?
@@ -283,14 +282,13 @@ model Truth {
 
 // Question model
 model Question {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(cuid())
   title       String
   content     String
-  authorId    Int
+  authorId    String
   timestamp   DateTime @default(now())
   category    String   @default("سؤال")
   subcategory String?   // Add this field
-
   type        String   @default("answer")
   answered    Boolean  @default(false)
   image       String?
@@ -308,20 +306,20 @@ model Question {
 
 // Ad model (charity and other ads)
 model Ad {
-  id            Int      @id @default(autoincrement())
+  id            String    @id @default(cuid())
   title         String
   content       String
-  authorId      Int
-  timestamp     DateTime @default(now())
+  authorId      String
+  timestamp     DateTime  @default(now())
   category      String
   subcategory   String?
   image         String?
   targetAmount  String?
   currentAmount String?
   deadline      DateTime?
-  views         Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  views         Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
   
   author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
   likes    Like[]
@@ -333,14 +331,13 @@ model Ad {
 
 // Product model
 model Product {
-  id          Int      @id @default(autoincrement())
+  id          String   @id @default(cuid())
   title       String
   content     String
-  authorId    Int      // seller
+  authorId    String      // seller
   timestamp   DateTime @default(now())
   category    String
   subcategory String?   // Add this field
-
   image       String?
   price       String
   currency    String
@@ -361,21 +358,21 @@ model Product {
 
 // Like model - polymorphic likes for all content types
 model Like {
-  id        Int      @id @default(autoincrement())
-  userId    Int
+  id        String   @id @default(cuid())
+  userId    String
   emoji     String   @default("👍") // User can specify emoji
   createdAt DateTime @default(now())
   
   // Polymorphic relations - only one should be set
-  postId     Int?
-  bookId     Int?
-  ideaId     Int?
-  imageId    Int?
-  videoId    Int?
-  truthId    Int?
-  questionId Int?
-  adId       Int?
-  productId  Int?
+  postId     String?
+  bookId     String?
+  ideaId     String?
+  imageId    String?
+  videoId    String?
+  truthId    String?
+  questionId String?
+  adId       String?
+  productId  String?
   
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   post     Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -402,22 +399,22 @@ model Like {
 
 // Comment model - polymorphic comments for all content types
 model Comment {
-  id        Int      @id @default(autoincrement())
+  id        String   @id @default(cuid())
   content   String
-  userId    Int
+  userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   
   // Polymorphic relations - only one should be set
-  postId     Int?
-  bookId     Int?
-  ideaId     Int?
-  imageId    Int?
-  videoId    Int?
-  truthId    Int?
-  questionId Int?
-  adId       Int?
-  productId  Int?
+  postId     String?
+  bookId     String?
+  ideaId     String?
+  imageId    String?
+  videoId    String?
+  truthId    String?
+  questionId String?
+  adId       String?
+  productId  String?
   
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   post     Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -435,20 +432,20 @@ model Comment {
 
 // Share model - polymorphic shares for all content types
 model Share {
-  id        Int      @id @default(autoincrement())
-  userId    Int
+  id        String   @id @default(cuid())
+  userId    String
   createdAt DateTime @default(now())
   
   // Polymorphic relations - only one should be set
-  postId     Int?
-  bookId     Int?
-  ideaId     Int?
-  imageId    Int?
-  videoId    Int?
-  truthId    Int?
-  questionId Int?
-  adId       Int?
-  productId  Int?
+  postId     String?
+  bookId     String?
+  ideaId     String?
+  imageId    String?
+  videoId    String?
+  truthId    String?
+  questionId String?
+  adId       String?
+  productId  String?
   
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   post     Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -466,8 +463,8 @@ model Share {
 
 // Group Message model - single group chat
 model GroupMessage {
-  id        Int      @id @default(autoincrement())
-  senderId  Int
+  id        String   @id @default(cuid())
+  senderId  String
   message   String
   timestamp DateTime @default(now())
   read      Boolean  @default(false)
@@ -480,8 +477,8 @@ model GroupMessage {
 
 // Notification model
 model Notification {
-  id        Int      @id @default(autoincrement())
-  userId    Int
+  id        String   @id @default(cuid())
+  userId    String
   type      String   // like, comment, share, friend_request, etc.
   message   String
   timestamp DateTime @default(now())
@@ -495,7 +492,7 @@ model Notification {
 
 // Badge model
 model Badge {
-  id          Int    @id @default(autoincrement())
+  id          String @id @default(cuid())
   name        String @unique
   color       String
   description String?
@@ -507,9 +504,9 @@ model Badge {
 
 // User Badge junction table
 model UserBadge {
-  id       Int @id @default(autoincrement())
-  userId   Int
-  badgeId  Int
+  id       String   @id @default(cuid())
+  userId   String
+  badgeId  String
   earnedAt DateTime @default(now())
   
   user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)

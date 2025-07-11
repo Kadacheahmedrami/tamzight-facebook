@@ -1,7 +1,7 @@
 // lib/controllers/contentController.ts
-import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+
+import { prisma } from '@/lib/prisma';
 
 // Content type mapping for validation
 const CONTENT_TYPES = {
@@ -158,7 +158,7 @@ const prepareContentData = (type: ContentType, data: ContentData, userId: string
   const baseData = {
     title: data.title.trim(),
     content: data.content ? data.content.trim() : '',
-    authorId: parseInt(userId),
+    authorId: userId,
     category: data.category.trim(),
     subcategory: data.subcategory ? data.subcategory.trim() : null,
     image: data.image ? data.image.trim() : null,
@@ -188,7 +188,7 @@ const prepareContentData = (type: ContentType, data: ContentData, userId: string
       return {
         title: imageData.title.trim(),
         description: imageData.description ? imageData.description.trim() : '',
-        authorId: parseInt(userId),
+        authorId: userId,
         category: imageData.category.trim(),
         subcategory: imageData.subcategory ? imageData.subcategory.trim() : null,
         location: imageData.location ? imageData.location.trim() : null,
