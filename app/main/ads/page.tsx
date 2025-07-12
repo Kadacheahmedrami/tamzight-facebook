@@ -7,6 +7,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Eye, Heart, MessageCircle, Share2, Calendar, MapPin, DollarSign } from "lucide-react"
 import Image from "next/image"
+import CreatePostModal from "@/components/create-post/create-post-modal"
+
 
 interface AdData {
   id: number
@@ -146,13 +148,15 @@ export default function AdsPage() {
           <Button 
             size="sm" 
             onClick={() => fetchAds(selectedCategory)} 
-            className="w-full sm:w-auto"
+            className="w-full bg-[#4531fc] hover:bg-blue-800  sm:w-auto"
           >
             اعرض القسم
           </Button>
         </div>
       </div>
 
+
+      <CreatePostModal />
       {/* Ads Grid */}
       <div className="space-y-6">
         {loading ? (
@@ -288,7 +292,7 @@ export default function AdsPage() {
             </Card>
           ))
         ) : (
-          <div className="text-center py-8 text-gray-500">
+          <div className="text-center  py-8 text-gray-500">
             لا توجد اعلانات في هذا القسم
             {selectedCategory !== "all" && (
               <Button 
@@ -297,7 +301,7 @@ export default function AdsPage() {
                   setSelectedCategory("all")
                   fetchAds("all")
                 }}
-                className="mt-4"
+                className="mt-4 "
               >
                 عرض جميع الاعلانات
               </Button>
