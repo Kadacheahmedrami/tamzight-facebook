@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET() {
   try {
+    // Ensure Prisma is connected before making queries
+    await prisma.$connect()
+
     // Total counts
     const [
       totalPosts,
@@ -136,6 +139,13 @@ export async function GET() {
 
     return NextResponse.json(stats)
   } catch (error) {
-    return NextResponse.json({ error: 'Failed to fetch stats', details: (error as Error).message }, { status: 500 })
+    console.error('Stats API Error:', error)
+    return NextResponse.json({ 
+      error: 'Failed to fetch stats', 
+      details: (error as Error).message 
+    }, { status: 500 })
+  } finally {
+    // Ensure connection is properly closed
+    await prisma.$disconnect()
   }
 }
