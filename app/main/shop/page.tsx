@@ -56,7 +56,7 @@ export default function ShopPage() {
   const fetchProducts = async (category = "all") => {
     setLoading(true)
     try {
-      const url = category === "all" ? "/api/main/products" : `/api/main/products?category=${category}`
+      const url = category === "all" ? "/api/main/shop" : `/api/main/shop?category=${category}`
       const response = await fetch(url)
       const data = await response.json()
       setProducts(data)
@@ -64,26 +64,7 @@ export default function ShopPage() {
       console.error("Error fetching products:", error)
       // Fallback sample data
       const sampleProducts: Product[] = [
-        {
-          id: 1,
-          title: "فستان امازيغي تقليدي",
-          content: "فستان امازيغي تقليدي مصنوع يدويا",
-          author: "سيبتموس سيفوروس",
-          timestamp: "نشر بتاريخ 01-04-2023 الساعة 12:35 مساء",
-          category: "clothing",
-          image: "/placeholder.svg?height=300&width=600",
-          stats: { views: 250, likes: 1605, comments: 154, shares: 10 },
-        },
-        {
-          id: 2,
-          title: "سجاد امازيغي",
-          content: "سجاد امازيغي مصنوع من الصوف الطبيعي",
-          author: "سيبتموس سيفوروس",
-          timestamp: "نشر بتاريخ 01-04-2023 الساعة 12:35 مساء",
-          category: "furniture",
-          image: "/placeholder.svg?height=300&width=600",
-          stats: { views: 320, likes: 1200, comments: 89, shares: 15 },
-        },
+       
       ]
       setProducts(sampleProducts)
     } finally {
