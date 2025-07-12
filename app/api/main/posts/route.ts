@@ -111,15 +111,15 @@ export async function GET(request: NextRequest) {
       take: limit
     })
 
-    // Define the type for the post object
-    type PostWithRelations = {
+    // Define the type for the post object from database
+    type PostFromDb = {
       id: string;
       title: string;
-      content: string;
+      content: string | null;
       createdAt: Date;
       category: string;
-      subcategory: string;
-      image?: string | null;
+      subcategory: string | null;
+      image: string | null;
       views: number;
       author: {
         id: string;
@@ -145,15 +145,15 @@ export async function GET(request: NextRequest) {
     };
 
     // Transform the data to match your frontend format
-    const transformedPosts = posts.map((post: PostWithRelations) => ({
+    const transformedPosts = posts.map((post: PostFromDb) => ({
       id: post.id,
       title: post.title,
-      content: post.content,
+      content: post.content || "", // Handle null content
       author: `${post.author.firstName} ${post.author.lastName}`,
       timestamp: `نشر بتاريخ ${post.createdAt.toLocaleDateString('ar-EG')} الساعة ${post.createdAt.toLocaleTimeString('ar-EG')}`,
       category: post.category,
-      subcategory: post.subcategory,
-      image: post.image || "/placeholder.svg?height=300&width=600",
+      subcategory: post.subcategory || "", // Handle null subcategory
+      image: post.image || "/placeholder.svg?height=300&width=600", // Handle null image
       stats: {
         views: post.views,
         likes: post._count.likes,
