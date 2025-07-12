@@ -17,8 +17,8 @@ interface SidebarStats {
     shop: number
     ideas: number
     support: number
-    friends: number
-    messages: number
+    friends?: number
+    messages?: number
   }
 }
 
@@ -32,21 +32,50 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
   const [stats, setStats] = useState<SidebarStats | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [isLoadingStats, setIsLoadingStats] = useState(true)
   const pathname = usePathname()
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
+        setIsLoadingStats(true)
         const response = await fetch("/api/main/stats")
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
         const data = await response.json()
         setStats(data)
       } catch (error) {
         console.error("Error fetching sidebar stats:", error)
+        // Set default stats if fetch fails
+        setStats({
+          sections: {
+            posts: 0,
+            truth: 0,
+            questions: 0,
+            books: 0,
+            videos: 0,
+            images: 0,
+            ads: 0,
+            shop: 0,
+            ideas: 0,
+            support: 0,
+            friends: 0,
+            messages: 0
+          }
+        })
+      } finally {
+        setIsLoadingStats(false)
       }
     }
 
     fetchStats()
   }, [])
+
+  // Close mobile menu when pathname changes
+  useEffect(() => {
+    setMobileMenuOpen(false)
+  }, [pathname])
 
   const handleLogout = async () => {
     try {
@@ -72,32 +101,72 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
   }
 
   const sidebarLinks = [
-    { href: "/main", icon: "fa-home", label: " أحدث المنشورات", badge: null },
-    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: stats?.sections.posts?.toString() || "05" },
-    { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: stats?.sections.truth?.toString() || "05" },
+    { href: "/main", icon: "fa-home", label: "أحدث المنشورات", badge: null },
+    { 
+      href: "/main/posts", 
+      icon: "fa-edit", 
+      label: "منشورات امازيغية", 
+      badge: isLoadingStats ? "..." : (stats?.sections?.posts?.toString() || "0") 
+    },
+    { 
+      href: "/main/truth", 
+      icon: "fa-sun", 
+      label: "حقيقة امازيغية", 
+      badge: isLoadingStats ? "..." : (stats?.sections?.truth?.toString() || "0") 
+    },
     {
       href: "/main/questions",
       icon: "fa-question-circle",
       label: "اسئلة امازيغية",
-      badge: stats?.sections.questions?.toString() || "05",
+      badge: isLoadingStats ? "..." : (stats?.sections?.questions?.toString() || "0"),
     },
-    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: stats?.sections.books?.toString() || "05" },
-    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: stats?.sections.images?.toString() || "05" },
-    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: stats?.sections.videos?.toString() || "05" },
-    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: stats?.sections.ads?.toString() || "05" },
-    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: stats?.sections.shop?.toString() || "05" },
+    { 
+      href: "/main/books", 
+      icon: "fa-book", 
+      label: "كُتب امازيغية", 
+      badge: isLoadingStats ? "..." : (stats?.sections?.books?.toString() || "0") 
+    },
+    { 
+      href: "/main/images", 
+      icon: "fa-images", 
+      label: "صور امازيغية", 
+      badge: isLoadingStats ? "..." : (stats?.sections?.images?.toString() || "0") 
+    },
+    { 
+      href: "/main/videos", 
+      icon: "fa-tv", 
+      label: "فيديوهات امازيغية", 
+      badge: isLoadingStats ? "..." : (stats?.sections?.videos?.toString() || "0") 
+    },
+    { 
+      href: "/main/ads", 
+      icon: "fa-bullhorn", 
+      label: "اعلانات امازيغية", 
+      badge: isLoadingStats ? "..." : (stats?.sections?.ads?.toString() || "0") 
+    },
+    { 
+      href: "/main/shop", 
+      icon: "fa-store", 
+      label: "تسوق منتجات امازيغية", 
+      badge: isLoadingStats ? "..." : (stats?.sections?.shop?.toString() || "0") 
+    },
     {
       href: "/main/ideas",
       icon: "fa-lightbulb",
       label: "اقتراحات لتطوير المنصة",
-      badge: stats?.sections.ideas?.toString() || "05",
+      badge: isLoadingStats ? "..." : (stats?.sections?.ideas?.toString() || "0"),
     },
-    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: stats?.sections.support?.toString() || "05" },
+    { 
+      href: "/main/support", 
+      icon: "fa-archive", 
+      label: "صندوق دعم الامازيغ", 
+      badge: isLoadingStats ? "..." : (stats?.sections?.support?.toString() || "0") 
+    },
   ]
 
   const isActiveLink = (href: string) => {
-    if (href === "/" && pathname === "/") return true
-    if (href !== "/" && pathname.startsWith(href)) return true
+    if (href === "/main" && pathname === "/main") return true
+    if (href !== "/main" && pathname.startsWith(href)) return true
     return false
   }
 
@@ -117,19 +186,21 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                   : "bg-blue-50 text-blue-700 border-r-4 border-blue-700" 
                 : isMobile
                   ? "text-gray-700 hover:bg-gray-50"
-                  : "hover:bg-gray-50"
+                  : "text-gray-700 hover:bg-gray-50"
             }`}
           >
-            <i className={`fa ${link.icon} h-5 w-5 ${isActive ? "text-blue-700" : "text-gray-500"}`}></i>
-            <span className="flex-1">{link.label}</span>
+            <i className={`fa ${link.icon} h-5 w-5 ${
+              isActive ? "text-blue-700" : "text-gray-500"
+            }`}></i>
+            <span className="flex-1 text-sm font-medium">{link.label}</span>
             {link.badge && (
               <span
-                className={`text-xs px-2 py-1 rounded-full ${
+                className={`text-xs px-2 py-1 rounded-full min-w-[2rem] text-center ${
                   link.badge === "جديد" 
                     ? "bg-green-100 text-green-800" 
                     : isActive
                       ? "bg-blue-200 text-blue-900"
-                      : "bg-blue-100 text-blue-800"
+                      : "bg-gray-100 text-gray-700"
                 }`}
               >
                 {link.badge}
@@ -141,6 +212,98 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
     </>
   )
 
+  const ImportantLinks = ({ isMobile = false }) => (
+    <div className="space-y-2">
+      {/* First row - الشروط and الخصوصية */}
+      <div className="flex gap-2">
+        <Link 
+          href="/main/policy"
+          onClick={isMobile ? () => setMobileMenuOpen(false) : undefined}
+          className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors text-sm ${
+            pathname === "/main/policy" 
+              ? "text-blue-600 bg-blue-50 font-medium" 
+              : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+          }`}
+        >
+          <i className="fa fa-file-contract text-sm"></i>
+          الشروط
+        </Link>
+        <Link 
+          href="/main/privacy"
+          onClick={isMobile ? () => setMobileMenuOpen(false) : undefined}
+          className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors text-sm ${
+            pathname === "/main/privacy" 
+              ? "text-blue-600 bg-blue-50 font-medium" 
+              : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+          }`}
+        >
+          <i className="fa fa-shield-alt text-sm"></i>
+          الخصوصية
+        </Link>
+      </div>
+
+      {/* Second row - ملفات تعريف الارتباط alone */}
+      <Link 
+        href="/main/cookies"
+        onClick={isMobile ? () => setMobileMenuOpen(false) : undefined}
+        className={`flex items-center gap-2 py-2 px-3 rounded-lg transition-colors text-sm ${
+          pathname === "/main/cookies" 
+            ? "text-blue-600 bg-blue-50 font-medium" 
+            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+        }`}
+      >
+        <i className="fa fa-cookie-bite text-sm"></i>
+        ملفات تعريف الارتباط
+      </Link>
+
+      {/* Third row - المساعدة and تواصل معنا */}
+      <div className="flex gap-2">
+        <Link 
+          href="/main/help"
+          onClick={isMobile ? () => setMobileMenuOpen(false) : undefined}
+          className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors text-sm ${
+            pathname === "/main/help" 
+              ? "text-blue-600 bg-blue-50 font-medium" 
+              : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+          }`}
+        >
+          <i className="fa fa-question-circle text-sm"></i>
+          المساعدة
+        </Link>
+        <Link 
+          href="/main/contact"
+          onClick={isMobile ? () => setMobileMenuOpen(false) : undefined}
+          className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors text-sm ${
+            pathname === "/main/contact" 
+              ? "text-blue-600 bg-blue-50 font-medium" 
+              : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
+          }`}
+        >
+          <i className="fa fa-envelope text-sm"></i>
+          تواصل معنا
+        </Link>
+      </div>
+    </div>
+  )
+
+  const LanguageSelector = () => (
+    <div className="text-xs text-gray-600">
+      <div className="flex items-center justify-center gap-2">
+        <button className="hover:text-blue-600 transition-colors duration-200 font-medium">
+          ⴰⵎⴰⵣⵉⵖ
+        </button>
+        <span className="text-gray-400">•</span>
+        <button className="hover:text-blue-600 transition-colors duration-200 font-medium">
+          عربي
+        </button>
+        <span className="text-gray-400">•</span>
+        <button className="hover:text-blue-600 transition-colors duration-200 font-medium">
+          English
+        </button>
+      </div>
+    </div>
+  )
+
   return (
     <>
       {/* Mobile Menu Button */}
@@ -148,6 +311,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
         <button
           onClick={() => setMobileMenuOpen(true)}
           className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          aria-label="Open navigation menu"
         >
           <i className="fa fa-bars h-6 w-6"></i>
         </button>
@@ -156,18 +320,19 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
       {/* Mobile Menu Overlay */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 lg:hidden">
-          <div className="fixed inset-0 bg-black/50" onClick={() => setMobileMenuOpen(false)} />
+          <div 
+            className="fixed inset-0 bg-black/50" 
+            onClick={() => setMobileMenuOpen(false)}
+            aria-hidden="true"
+          />
           <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-xl">
             <div className="flex flex-col overflow-y-auto h-full">
-           
-
-           
               {/* User Profile Section (if user exists) */}
               {user && (
                 <div className="p-4 flex items-center justify-between border-b bg-[#4531fc] text-white">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                      <i className="fa fa-user-circle "></i>
+                      <i className="fa fa-user-circle text-2xl"></i>
                     </div>
                     <div>
                       <p className="font-medium">
@@ -177,17 +342,17 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                     </div>
                   </div>
                   <button
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="h-8 w-8 p-0 rounded-full hover:bg-gray-100 flex items-center justify-center"
-                >
-                  <i className="fa fa-times h-4 w-4"></i>
-                </button> 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="h-8 w-8 p-0 rounded-full hover:bg-white/10 flex items-center justify-center transition-colors"
+                    aria-label="Close menu"
+                  >
+                    <i className="fa fa-times h-4 w-4"></i>
+                  </button> 
                 </div>
               )}
 
-
               {/* Main Navigation Links */}
-              <div className="flex-1 p-4 ">
+              <div className="flex-1 p-4">
                 <h3 className="text-sm font-medium text-gray-500 mb-3">التصفح</h3>
                 <div className="space-y-1">
                   <NavigationLinks isMobile={true} />
@@ -196,96 +361,12 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                 {/* Important Links */}
                 <div className="mt-6 pt-6 border-t">
                   <h4 className="text-sm font-medium text-gray-500 mb-3">روابط مهمة</h4>
-                  <div className="space-y-2">
-                    {/* First row - الشروط and الخصوصية */}
-                    <div className="flex gap-2">
-                      <Link 
-                        href="/main/policy"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors ${
-                          pathname === "/main/policy" 
-                            ? "text-blue-600 bg-blue-50 font-medium" 
-                            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        <i className="fa fa-file-contract text-sm"></i>
-                        الشروط
-                      </Link>
-                      <Link 
-                        href="/main/privacy"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors ${
-                          pathname === "/main/privacy" 
-                            ? "text-blue-600 bg-blue-50 font-medium" 
-                            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        <i className="fa fa-shield-alt text-sm"></i>
-                        الخصوصية
-                      </Link>
-                    </div>
-
-                    {/* Second row - ملفات تعريف الارتباط alone */}
-                    <Link 
-                      href="/main/cookies"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`flex items-center gap-2 py-2 px-3 rounded-lg transition-colors ${
-                        pathname === "/main/cookies" 
-                          ? "text-blue-600 bg-blue-50 font-medium" 
-                          : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      <i className="fa fa-cookie-bite text-sm"></i>
-                      ملفات تعريف الارتباط
-                    </Link>
-
-                    {/* Third row - المساعدة and تواصل معنا */}
-                    <div className="flex gap-2">
-                      <Link 
-                        href="/main/help"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors ${
-                          pathname === "/main/help" 
-                            ? "text-blue-600 bg-blue-50 font-medium" 
-                            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        <i className="fa fa-question-circle text-sm"></i>
-                        المساعدة
-                      </Link>
-                      <Link 
-                        href="/main/contact"
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors ${
-                          pathname === "/main/contact" 
-                            ? "text-blue-600 bg-blue-50 font-medium" 
-                            : "text-gray-600 hover:text-blue-600 hover:bg-gray-50"
-                        }`}
-                      >
-                        <i className="fa fa-envelope text-sm"></i>
-                        تواصل معنا
-                      </Link>
-                    </div>
-                  </div>
+                  <ImportantLinks isMobile={true} />
                 </div>
 
                 {/* Language options - Mobile */}
                 <div className="mt-6 pt-6 border-t">
-                  <div className="text-xs text-gray-600">
-                    <div className="flex items-center justify-center gap-2">
-                      <button className="hover:text-blue-600 transition-colors duration-200 font-medium">
-                        ⴰⵎⴰⵣⵉⵖ
-                      </button>
-                      <span className="text-gray-400">•</span>
-                      <button className="hover:text-blue-600 transition-colors duration-200 font-medium">
-                        عربي
-                      </button>
-                      <span className="text-gray-400">•</span>
-                      <button className="hover:text-blue-600 transition-colors duration-200 font-medium">
-                        English
-                      </button>
-                    </div>
-                  </div>
+                  <LanguageSelector />
                 </div>
               </div>
 
@@ -314,7 +395,6 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                   </button>
                 </div>
               )}
-
             </div>
           </div>
         </div>
@@ -332,79 +412,12 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
             <div className="space-y-4">
               <div className="text-sm">
                 <h4 className="font-semibold mb-2">روابط مهمة</h4>
-                <div className="space-y-2 text-gray-600">
-                  {/* First row - الشروط and الخصوصية */}
-                  <div className="flex gap-2">
-                    <Link 
-                      href="/main/policy" 
-                      className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors duration-200 ${
-                        pathname === "/main/policy" ? "text-blue-600 font-medium bg-blue-50" : "hover:text-blue-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      <i className="fa fa-file-contract text-sm"></i>
-                      الشروط
-                    </Link>
-                    <Link 
-                      href="/main/privacy" 
-                      className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors duration-200 ${
-                        pathname === "/main/privacy" ? "text-blue-600 font-medium bg-blue-50" : "hover:text-blue-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      <i className="fa fa-shield-alt text-sm"></i>
-                      الخصوصية
-                    </Link>
-                  </div>
-
-                  {/* Second row - ملفات تعريف الارتباط alone */}
-                  <Link 
-                    href="/main/cookies" 
-                    className={`flex items-center gap-2 py-2 px-3 rounded-lg transition-colors duration-200 ${
-                      pathname === "/main/cookies" ? "text-blue-600 font-medium bg-blue-50" : "hover:text-blue-600 hover:bg-gray-50"
-                    }`}
-                  >
-                    <i className="fa fa-cookie-bite text-sm"></i>
-                    ملفات تعريف الارتباط
-                  </Link>
-
-                  {/* Third row - المساعدة and تواصل معنا */}
-                  <div className="flex gap-2">
-                    <Link 
-                      href="/main/help" 
-                      className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors duration-200 ${
-                        pathname === "/main/help" ? "text-blue-600 font-medium bg-blue-50" : "hover:text-blue-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      <i className="fa fa-question-circle text-sm"></i>
-                      المساعدة
-                    </Link>
-                    <Link 
-                      href="/main/contact" 
-                      className={`flex items-center gap-1 flex-1 justify-center py-2 px-3 rounded-lg transition-colors duration-200 ${
-                        pathname === "/main/contact" ? "text-blue-600 font-medium bg-blue-50" : "hover:text-blue-600 hover:bg-gray-50"
-                      }`}
-                    >
-                      <i className="fa fa-envelope text-sm"></i>
-                      تواصل معنا
-                    </Link>
-                  </div>
-                </div>
+                <ImportantLinks />
               </div>
 
               {/* Language options - Desktop */}
-              <div className="text-xs text-gray-600 pt-4 border-t border-gray-200">
-                <div className="flex items-center justify-center gap-2">
-                  <button className="hover:text-blue-600 transition-colors duration-200 font-medium">
-                    ⴰⵎⴰⵣⵉⵖ
-                  </button>
-                  <span className="text-gray-400">•</span>
-                  <button className="hover:text-blue-600 transition-colors duration-200 font-medium">
-                    عربي
-                  </button>
-                  <span className="text-gray-400">•</span>
-                  <button className="hover:text-blue-600 transition-colors duration-200 font-medium">
-                    English
-                  </button>
-                </div>
+              <div className="pt-4 border-t border-gray-200">
+                <LanguageSelector />
               </div>
 
               <div className="text-xs text-gray-500 pt-4 border-t border-gray-200">
