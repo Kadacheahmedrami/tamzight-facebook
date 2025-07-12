@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
 
   // إعداد الاستجابة بالشكل المناسب
   type IdeaType = {
-    id: number;
+    id: string | number;
     title: string;
     content: string;
     category: string;
