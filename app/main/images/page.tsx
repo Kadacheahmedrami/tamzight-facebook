@@ -1,11 +1,12 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Search, ImageIcon } from "lucide-react"
+import { ImageIcon } from "lucide-react"
 import PostCard from "@/components/card-comps/post-card"
+import CreatePostModal from "@/components/create-post/create-post-modal"
+
 
 interface ImageData {
   id: number
@@ -59,29 +60,16 @@ const LoadingSkeleton = () => (
 export default function ImagesPage() {
   const [images, setImages] = useState<ImageData[]>([])
   const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
-  const [searchTerm, setSearchTerm] = useState<string>("")
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const [allImages, setAllImages] = useState<ImageData[]>([]) // Store all images for client-side pagination
 
-  const fetchImages = async (category: string = "all", search: string = "", pageNumber = 1, isLoadMore = false) => {
-    if (isLoadMore) {
-      setLoadingMore(true)
-    } else {
-      setLoading(true)
-    }
+  const fetchImages = async (category: string = "all") => {
+    setLoading(true)
 
     try {
       const params = new URLSearchParams()
       
       if (category && category !== "all") {
         params.append("category", category)
-      }
-      
-      if (search.trim()) {
-        params.append("search", search.trim())
       }
 
       const url = `/api/main/images${params.toString() ? `?${params.toString()}` : ""}`
@@ -98,91 +86,22 @@ export default function ImagesPage() {
         imagesData = data.data
       }
 
-      if (isLoadMore) {
-        // Client-side pagination simulation
-        const startIndex = (pageNumber - 1) * 10
-        const endIndex = pageNumber * 10
-        const pageData = allImages.slice(startIndex, endIndex)
-        
-        if (pageData.length > 0) {
-          setImages(prev => [...prev, ...pageData])
-        }
-        setHasMore(endIndex < allImages.length)
-      } else {
-        // Store all images for pagination
-        setAllImages(imagesData)
-        // Show first 10 images
-        const initialData = imagesData.slice(0, 10)
-        setImages(initialData)
-        setHasMore(imagesData.length > 10)
-      }
+      setImages(imagesData)
 
     } catch (error) {
       console.error("Error fetching images:", error)
-      if (!isLoadMore) {
-        setImages([])
-        setAllImages([])
-      }
-      setHasMore(false)
+      setImages([])
     } finally {
       setLoading(false)
-      setLoadingMore(false)
     }
   }
 
-  const handleScroll = useCallback(() => {
-    if (window.innerHeight + document.documentElement.scrollTop 
-        >= document.documentElement.offsetHeight - 1000) {
-      if (hasMore && !loading && !loadingMore) {
-        setPage(prev => prev + 1)
-      }
-    }
-  }, [hasMore, loading, loadingMore])
-
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [handleScroll])
-
-  useEffect(() => {
-    fetchImages(selectedCategory, searchTerm, 1)
-    setPage(1)
+    fetchImages(selectedCategory)
   }, [selectedCategory])
-
-  useEffect(() => {
-    if (page > 1) {
-      fetchImages(selectedCategory, searchTerm, page, true)
-    }
-  }, [page])
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category)
-    setImages([])
-    setAllImages([])
-    setPage(1)
-    setHasMore(true)
-  }
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault()
-    setImages([])
-    setAllImages([])
-    setPage(1)
-    setHasMore(true)
-    fetchImages(selectedCategory, searchTerm, 1)
-  }
-
-  const handleSearchInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchTerm(e.target.value)
-  }
-
-  const resetFilters = () => {
-    setSelectedCategory("all")
-    setSearchTerm("")
-    setImages([])
-    setAllImages([])
-    setPage(1)
-    setHasMore(true)
   }
 
   // Transform image data for PostCard
@@ -232,30 +151,10 @@ export default function ImagesPage() {
         </div>
       </nav>
 
-      {/* Search and Filter */}
-      <div className="bg-white rounded-lg p-4 mb-4 border space-y-4">
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              type="text"
-              placeholder="ابحث في الصور..."
-              value={searchTerm}
-              onChange={handleSearchInputChange}
-              className="pr-10"
-            />
-          </div>
-          <Button 
-            type="submit" 
-            size="sm" 
-            className="bg-[#4531fc] hover:bg-blue-800"
-            disabled={loading}
-          >
-            {loading ? "جاري البحث..." : "بحث"}
-          </Button>
-        </form>
 
+    
+      {/* Filter */}
+      <div className="bg-white rounded-lg p-4 mb-4 border space-y-4">
         {/* Category Filter */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <label className="text-sm font-medium whitespace-nowrap">اعرض صور:</label>
@@ -275,24 +174,19 @@ export default function ImagesPage() {
           </Select>
           <Button 
             size="sm" 
-            onClick={() => {
-              setImages([])
-              setAllImages([])
-              setPage(1)
-              setHasMore(true)
-              fetchImages(selectedCategory, searchTerm, 1)
-            }} 
+            onClick={() => fetchImages(selectedCategory)} 
             className="bg-[#4531fc] hover:bg-blue-800 w-full sm:w-auto"
-            disabled={loading}
           >
-            {loading ? "جاري التحميل..." : "اعرض"}
+            اعرض الصور
           </Button>
         </div>
       </div>
 
+
+      <CreatePostModal />
       {/* Images Feed */}
       <div className="space-y-4">
-        {loading && images.length === 0 ? (
+        {loading ? (
           <LoadingSkeleton />
         ) : (
           <>
@@ -308,34 +202,8 @@ export default function ImagesPage() {
                 <ImageIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد صور</h3>
                 <p className="text-gray-500">
-                  {searchTerm 
-                    ? `لم يتم العثور على صور تحتوي على "${searchTerm}"`
-                    : "لا توجد صور في هذا القسم حالياً"
-                  }
+                  لا توجد صور في هذا القسم حالياً
                 </p>
-                {(selectedCategory !== "all" || searchTerm) && (
-                  <Button 
-                    variant="outline" 
-                    onClick={resetFilters}
-                    className="mt-4"
-                  >
-                    عرض جميع الصور
-                  </Button>
-                )}
-              </div>
-            )}
-            
-            {/* Loading more indicator */}
-            {loadingMore && (
-              <div className="space-y-4">
-                <LoadingSkeleton />
-              </div>
-            )}
-            
-            {/* End of results indicator */}
-            {!hasMore && images.length > 0 && (
-              <div className="text-center py-8 text-gray-500 border-t">
-                تم عرض جميع الصور المتاحة
               </div>
             )}
           </>
