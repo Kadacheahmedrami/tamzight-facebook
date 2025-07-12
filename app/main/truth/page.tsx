@@ -1,17 +1,17 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState} from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
+import CreatePostModal from "@/components/create-post/create-post-modal"
+
 import {
   Heart,
   MessageCircle,
   Share2,
   Eye,
-  Search,
   User,
   Clock
 } from "lucide-react"
@@ -35,13 +35,9 @@ interface TruthData {
 
 export default function TruthsPage() {
   const [truths, setTruths] = useState<TruthData[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
+  const [loading, setLoading] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState("all")
-  const [searchTerm, setSearchTerm] = useState("")
-  const [currentPage, setCurrentPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const TRUTHS_PER_PAGE = 10
 
@@ -105,22 +101,23 @@ export default function TruthsPage() {
     </div>
   )
 
-  const fetchTruths = async (category = "all", search = "", page = 1, append = false) => {
-    if (page === 1) {
-      setLoading(true)
-    } else {
-      setLoadingMore(true)
-    }
+  const fetchTruths = async (category = "all") => {
+    setLoading(true)
+    setError(null)
 
     try {
       const params = new URLSearchParams()
       if (category !== "all") params.append("category", category)
-      if (search) params.append("search", search)
-      params.append("page", page.toString())
+      params.append("page", "1")
       params.append("limit", TRUTHS_PER_PAGE.toString())
       
       const url = `/api/main/truth${params.toString() ? `?${params.toString()}` : ""}`
       const response = await fetch(url)
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      
       const data = await response.json()
       
       // Transform the data to match expected format
@@ -130,212 +127,94 @@ export default function TruthsPage() {
         subcategory: truth.category || truth.subcategory // Move original category to subcategory
       })) || []
 
-      // Check if there are more truths
-      const totalTruths = data.total || transformedTruths.length
-      const hasMoreTruths = (page * TRUTHS_PER_PAGE) < totalTruths
-
-      setHasMore(hasMoreTruths)
-      
-      if (append) {
-        setTruths(prev => [...prev, ...transformedTruths])
-      } else {
-        setTruths(transformedTruths)
-      }
+      setTruths(transformedTruths)
 
     } catch (error) {
       console.error("Error fetching truths:", error)
-      
-      // Fallback handling (only for first page)
-      if (page === 1) {
-        setTruths([])
-        setHasMore(false)
-      }
+      setError("فشل في تحميل الحقائق. يرجى المحاولة مرة أخرى.")
+      setTruths([])
     } finally {
       setLoading(false)
-      setLoadingMore(false)
-      setIsRefreshing(false)
     }
   }
 
-  // Scroll event handler for infinite scrolling
-  const handleScroll = useCallback(() => {
-    if (loadingMore || !hasMore) return
-
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-    const scrollHeight = document.documentElement.scrollHeight
-    const clientHeight = document.documentElement.clientHeight
-
-    // Load more when user scrolls to bottom (with 100px buffer)
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
-      const nextPage = currentPage + 1
-      setCurrentPage(nextPage)
-      fetchTruths(selectedCategory, searchTerm, nextPage, true)
-    }
-  }, [currentPage, selectedCategory, searchTerm, loadingMore, hasMore])
-
+  // Load initial truths
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [handleScroll])
-
-  useEffect(() => {
-    setCurrentPage(1)
-    setHasMore(true)
-    fetchTruths(selectedCategory, searchTerm, 1, false)
+    fetchTruths(selectedCategory)
   }, [selectedCategory])
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category)
-    setCurrentPage(1)
-    setHasMore(true)
-    setTruths([]) // Clear existing truths
-  }
-
-  const handleSearch = () => {
-    setCurrentPage(1)
-    setHasMore(true)
-    setTruths([]) // Clear existing truths
-    fetchTruths(selectedCategory, searchTerm, 1, false)
-  }
-
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter') {
-      handleSearch()
-    }
+    setTruths([])
+    setError(null)
   }
 
   const handleRefresh = () => {
-    setIsRefreshing(true)
-    setCurrentPage(1)
-    setHasMore(true)
-    setTruths([])
-    fetchTruths(selectedCategory, searchTerm, 1, false)
-  }
-
-  if (loading && truths.length === 0) {
-    return (
-      <div className="max-w-4xl mx-auto">
-        {/* Breadcrumb - Hidden on mobile */}
-        <nav className="mb-4 hidden lg:block">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span>حقائق امازيغية متنوعة</span>
-          </div>
-        </nav>
-
-        {/* Filter and Search */}
-        <div className="bg-white rounded-lg p-4 mb-4 border">
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <label className="text-sm font-medium whitespace-nowrap">اعرض حقائق:</label>
-              <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="اختار قسم الحقائق" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">الجميع</SelectItem>
-                  <SelectItem value="history">تاريخية</SelectItem>
-                  <SelectItem value="culture">ثقافية</SelectItem>
-                  <SelectItem value="language">لغوية</SelectItem>
-                  <SelectItem value="geography">جغرافية</SelectItem>
-                  <SelectItem value="traditions">تقاليد</SelectItem>
-                  <SelectItem value="personalities">شخصيات</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button 
-                size="sm" 
-                onClick={handleRefresh} 
-                className="bg-[#4531fc] w-full sm:w-auto"
-                disabled={isRefreshing}
-              >
-                {isRefreshing ? "جاري التحميل..." : "اعرض الحقائق"}
-              </Button>
-            </div>
-            
-            {/* Search Bar */}
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="ابحث في الحقائق..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  onKeyPress={handleKeyPress}
-                  className="pl-10"
-                />
-              </div>
-              <Button onClick={handleSearch} size="sm" className="bg-[#4531fc]">
-                بحث
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Loading Skeleton */}
-        <LoadingSkeleton />
-      </div>
-    )
+    fetchTruths(selectedCategory)
   }
 
   return (
     <div className="max-w-4xl mx-auto">
-      {/* Breadcrumb - Hidden on mobile */}
-      <nav className="mb-4 hidden lg:block">
+      {/* Breadcrumb */}
+      <nav className="mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <span>حقائق امازيغية متنوعة</span>
         </div>
       </nav>
 
-      {/* Filter and Search */}
+      {/* Filter - Always visible */}
       <div className="bg-white rounded-lg p-4 mb-4 border">
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <label className="text-sm font-medium whitespace-nowrap">اعرض حقائق:</label>
-            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="اختار قسم الحقائق" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">الجميع</SelectItem>
-                <SelectItem value="history">تاريخية</SelectItem>
-                <SelectItem value="culture">ثقافية</SelectItem>
-                <SelectItem value="language">لغوية</SelectItem>
-                <SelectItem value="geography">جغرافية</SelectItem>
-                <SelectItem value="traditions">تقاليد</SelectItem>
-                <SelectItem value="personalities">شخصيات</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button 
-              size="sm" 
-              onClick={handleRefresh} 
-              className="bg-[#4531fc] w-full sm:w-auto"
-              disabled={isRefreshing}
-            >
-              {isRefreshing ? "جاري التحميل..." : "اعرض الحقائق"}
-            </Button>
-          </div>
-          
-          {/* Search Bar */}
-          <div className="flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="ابحث في الحقائق..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={handleKeyPress}
-                className="pl-10"
-              />
-            </div>
-            <Button onClick={handleSearch} size="sm" className="bg-[#4531fc]">
-              بحث
-            </Button>
-          </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <label className="text-sm font-medium whitespace-nowrap">اعرض اخر حقائق حول:</label>
+          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="اختار قسم لعرضه" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">الجميع</SelectItem>
+              <SelectItem value="history">تاريخية</SelectItem>
+              <SelectItem value="culture">ثقافية</SelectItem>
+              <SelectItem value="language">لغوية</SelectItem>
+              <SelectItem value="geography">جغرافية</SelectItem>
+              <SelectItem value="traditions">تقاليد</SelectItem>
+              <SelectItem value="personalities">شخصيات</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button 
+            size="sm" 
+            onClick={handleRefresh} 
+            className="bg-[#4531fc] hover:bg-blue-800 w-full sm:w-auto"
+            disabled={loading}
+          >
+            {loading ? 'جاري التحميل...' : 'اعرض'}
+          </Button>
         </div>
       </div>
 
+      <CreatePostModal />
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="text-red-500">⚠️</div>
+            <p className="text-red-700">{error}</p>
+          </div>
+          <Button 
+            size="sm" 
+            onClick={handleRefresh} 
+            className="mt-2"
+            variant="outline"
+          >
+            إعادة المحاولة
+          </Button>
+        </div>
+      )}
+
       {/* Truths Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-1 gap-4">
-        {truths.length > 0 ? (
+        {loading ? (
+          <LoadingSkeleton />
+        ) : truths.length > 0 ? (
           <>
             {truths.map((truth) => (
               <Card key={truth.id} className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -405,22 +284,14 @@ export default function TruthsPage() {
               </Card>
             ))}
             
-            {/* Load More Indicator */}
-            {loadingMore && (
-              <div className="col-span-full">
-                <LoadingSkeleton />
+            {/* Results summary */}
+            <div className="col-span-full text-center py-4">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <p className="text-gray-600 text-sm">
+                  عرض {truths.length} حقيقة
+                </p>
               </div>
-            )}
-            
-            {/* End of Truths Indicator */}
-            {!hasMore && truths.length > 0 && (
-              <div className="col-span-full text-center py-8">
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <div className="text-gray-400 text-4xl mb-2">✨</div>
-                  <p className="text-gray-600 text-sm">تم عرض جميع الحقائق</p>
-                </div>
-              </div>
-            )}
+            </div>
           </>
         ) : (
           <div className="col-span-full text-center py-8">
