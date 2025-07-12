@@ -3,10 +3,12 @@
 import { useEffect, useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Play } from "lucide-react"
+import { Image } from "lucide-react"
 import PostCard from "@/components/card-comps/post-card"
+import CreatePostModal from "@/components/create-post/create-post-modal"
 
-interface VideoData {
+
+interface ImageData {
   id: number
   title: string
   content: string
@@ -20,8 +22,8 @@ interface VideoData {
     comments: number
     shares: number
   }
-  duration: string
-  quality: string
+  resolution: string
+  format: string
   language: string
 }
 
@@ -50,15 +52,15 @@ const LoadingSkeleton = () => (
   </div>
 )
 
-export default function VideosPage() {
-  const [videos, setVideos] = useState<VideoData[]>([])
+export default function ImagesPage() {
+  const [images, setImages] = useState<ImageData[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState("all")
   const [page, setPage] = useState(1)
   const [hasMore, setHasMore] = useState(true)
 
-  const fetchVideos = async (category = "all", pageNum = 1, append = false) => {
+  const fetchImages = async (category = "all", pageNum = 1, append = false) => {
     if (pageNum === 1) {
       setLoading(true)
     } else {
@@ -67,28 +69,28 @@ export default function VideosPage() {
     
     try {
       const url = category === "all" 
-        ? `/api/main/videos?page=${pageNum}&limit=10`
-        : `/api/main/videos?category=${category}&page=${pageNum}&limit=10`
+        ? `/api/main/images?page=${pageNum}&limit=10`
+        : `/api/main/images?category=${category}&page=${pageNum}&limit=10`
       
       const response = await fetch(url)
       const data = await response.json()
       
       // Handle the response structure - adjust based on your API
-      const videosData = Array.isArray(data) ? data : data.videos || []
-      const hasMoreData = data.hasMore !== undefined ? data.hasMore : videosData.length === 10
+      const imagesData = Array.isArray(data) ? data : data.images || []
+      const hasMoreData = data.hasMore !== undefined ? data.hasMore : imagesData.length === 10
       
       if (append) {
-        setVideos(prev => [...prev, ...videosData])
+        setImages(prev => [...prev, ...imagesData])
       } else {
-        setVideos(videosData)
+        setImages(imagesData)
       }
       
       setHasMore(hasMoreData)
     } catch (error) {
-      console.error("Error fetching videos:", error)
+      console.error("Error fetching images:", error)
       // Set empty array on error to prevent undefined length error
       if (!append) {
-        setVideos([])
+        setImages([])
       }
     } finally {
       setLoading(false)
@@ -100,7 +102,7 @@ export default function VideosPage() {
     if (!loadingMore && hasMore) {
       const nextPage = page + 1
       setPage(nextPage)
-      fetchVideos(selectedCategory, nextPage, true)
+      fetchImages(selectedCategory, nextPage, true)
     }
   }, [selectedCategory, page, loadingMore, hasMore])
 
@@ -120,36 +122,35 @@ export default function VideosPage() {
   }, [loadMore])
 
   useEffect(() => {
-    fetchVideos()
+    fetchImages()
   }, [])
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category)
     setPage(1)
     setHasMore(true)
-    fetchVideos(category, 1, false)
+    fetchImages(category, 1, false)
   }
 
-  // Transform video data for PostCard
-  const transformVideoToPost = (video: VideoData) => ({
-    id: video.id.toString(),
-    title: video.title,
-    content: `${video.content}\n\nاللغة: ${video.language}\nالجودة: ${video.quality}`,
-    author: video.author,
-    authorId: video.id.toString(),
-    timestamp: video.timestamp,
-    category: getCategoryArabic(video.category),
-    subCategory: video.duration,
+  // Transform image data for PostCard
+  const transformImageToPost = (image: ImageData) => ({
+    id: image.id.toString(),
+    title: image.title,
+    content: `${image.content}\n\nاللغة: ${image.language}\nالدقة: ${image.resolution}`,
+    author: image.author,
+    authorId: image.id.toString(),
+    timestamp: image.timestamp,
+    category: getCategoryArabic(image.category),
+    subCategory: image.format,
     media: [{
-      id: video.id.toString(),
-      type: 'video' as const,
-      url: `/api/videos/${video.id}`,
-      thumbnail: video.image || "/placeholder.svg",
-      alt: video.title,
-      duration: video.duration
+      id: image.id.toString(),
+      type: 'image' as const,
+      url: image.image || "/placeholder.svg",
+      thumbnail: image.image || "/placeholder.svg",
+      alt: image.title
     }],
-    baseRoute: 'videos',
-    stats: video.stats
+    baseRoute: 'images',
+    stats: image.stats
   })
 
   const getCategoryArabic = (category: string) => {
@@ -166,23 +167,23 @@ export default function VideosPage() {
       {/* Breadcrumb - Always visible */}
       <nav className="mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
-          <span>فيديوهات أمازيغية متنوعة</span>
+          <span>صور أمازيغية متنوعة</span>
         </div>
       </nav>
 
       {/* Filter - Always visible */}
       <div className="bg-white rounded-lg p-4 mb-4 border">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <label className="text-sm font-medium whitespace-nowrap">اعرض فيديوهات:</label>
+          <label className="text-sm font-medium whitespace-nowrap">اعرض صور:</label>
           <Select value={selectedCategory} onValueChange={handleCategoryChange}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="اختار قسم" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">الجميع</SelectItem>
-              <SelectItem value="educational">فيديوهات تعليمية</SelectItem>
-              <SelectItem value="cultural">فيديوهات ثقافية</SelectItem>
-              <SelectItem value="historical">فيديوهات تاريخية</SelectItem>
+              <SelectItem value="educational">صور تعليمية</SelectItem>
+              <SelectItem value="cultural">صور ثقافية</SelectItem>
+              <SelectItem value="historical">صور تاريخية</SelectItem>
             </SelectContent>
           </Select>
           <Button 
@@ -190,21 +191,24 @@ export default function VideosPage() {
             onClick={() => handleCategoryChange(selectedCategory)} 
             className="bg-[#4531fc] hover:bg-blue-800 w-full sm:w-auto"
           >
-            اعرض
+            اعرض الصور
           </Button>
         </div>
       </div>
 
-      {/* Videos Feed */}
+
+      <CreatePostModal />
+
+      {/* Images Feed */}
       <div className="space-y-4">
         {loading ? (
           <LoadingSkeleton />
-        ) : videos.length > 0 ? (
+        ) : images.length > 0 ? (
           <>
-            {videos.map((video) => (
+            {images.map((image) => (
               <PostCard
-                key={video.id}
-                {...transformVideoToPost(video)}
+                key={image.id}
+                {...transformImageToPost(image)}
               />
             ))}
             
@@ -229,17 +233,17 @@ export default function VideosPage() {
             )}
             
             {/* End of results message */}
-            {!hasMore && videos.length > 0 && (
+            {!hasMore && images.length > 0 && (
               <div className="text-center py-4 text-gray-500">
-                لا توجد المزيد من الفيديوهات
+                لا توجد المزيد من الصور
               </div>
             )}
           </>
         ) : (
           <div className="text-center py-8">
-            <Play className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد فيديوهات</h3>
-            <p className="text-gray-500">لا توجد فيديوهات في هذا القسم حالياً</p>
+            <Image className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">لا توجد صور</h3>
+            <p className="text-gray-500">لا توجد صور في هذا القسم حالياً</p>
             {selectedCategory !== "all" && (
               <Button 
                 variant="outline" 
@@ -247,11 +251,11 @@ export default function VideosPage() {
                   setSelectedCategory("all")
                   setPage(1)
                   setHasMore(true)
-                  fetchVideos("all", 1, false)
+                  fetchImages("all", 1, false)
                 }}
                 className="mt-4"
               >
-                عرض جميع الفيديوهات
+                عرض جميع الصور
               </Button>
             )}
           </div>
