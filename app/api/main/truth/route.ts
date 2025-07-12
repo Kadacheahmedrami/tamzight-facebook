@@ -111,38 +111,18 @@ export async function GET(request: NextRequest) {
       take: limit
     })
 
-    // Define the type for truth
-    type TruthWithCounts = {
-      id: string;
-      title: string;
-      content: string;
-      author: {
-        id: string;
-        firstName: string;
-        lastName: string;
-        avatar: string | null;
-      };
-      createdAt: Date;
-      category: string;
-      subcategory: string;
-      image?: string | null;
-      views: number;
-      _count: {
-        likes: number;
-        comments: number;
-        shares: number;
-      };
-    };
+    // Use the actual Prisma type instead of custom type
+    type PrismaTruth = typeof truths[0]
 
     // Transform the data to match your frontend format
-    const transformedTruths = truths.map((truth: TruthWithCounts) => ({
+    const transformedTruths = truths.map((truth: PrismaTruth) => ({
       id: truth.id,
       title: truth.title,
       content: truth.content,
       author: `${truth.author.firstName} ${truth.author.lastName}`,
       timestamp: `نشر بتاريخ ${truth.createdAt.toLocaleDateString('ar-EG')} الساعة ${truth.createdAt.toLocaleTimeString('ar-EG')}`,
       category: truth.category,
-      subcategory: truth.subcategory,
+      subcategory: truth.subcategory || "", // Handle null subcategory
       image: truth.image || "/placeholder.svg?height=300&width=600",
       stats: {
         views: truth.views,
