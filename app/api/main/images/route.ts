@@ -2,86 +2,143 @@ import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
-    // استخراج معلمات الفئة والكلمة المفتاحية من رابط الطلب
-    const { searchParams } = new URL(req.url)
-    const categoryParam = searchParams.get('category')
-    const searchParam = searchParams.get('search')
-    
-    // استخراج معلمات الترقيم
-    const page = parseInt(searchParams.get('page') || '1')
-    const limit = 5 // حجم الصفحة ثابت = 5
-    const skip = (page - 1) * limit
+    const { searchParams } = new URL(request.url)
+    const category = searchParams.get("category")
+    const search = searchParams.get("search")
+    const page = parseInt(searchParams.get("page") || "1")
+    const limit = parseInt(searchParams.get("limit") || "5")
 
-    // بناء شرط الفلترة
+    // Calculate offset for pagination
+    const offset = (page - 1) * limit
+
+    // Build the where clause for filtering
     const whereClause: any = {}
-    if (categoryParam && categoryParam !== 'all') {
-      whereClause.category = categoryParam
+
+    // Filter by category
+    if (category && category !== "all") {
+      whereClause.category = category
     }
 
-    if (searchParam) {
+    // Search functionality
+    if (search) {
+      const searchTerm = search.toLowerCase()
       whereClause.OR = [
-        { title: { contains: searchParam, mode: 'insensitive' } },
-        { description: { contains: searchParam, mode: 'insensitive' } },
-        { tags: { has: searchParam } },
+        {
+          title: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          description: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          author: {
+            OR: [
+              {
+                firstName: {
+                  contains: searchTerm,
+                  mode: 'insensitive'
+                }
+              },
+              {
+                lastName: {
+                  contains: searchTerm,
+                  mode: 'insensitive'
+                }
+              }
+            ]
+          }
+        }
       ]
     }
 
-    // الحصول على العدد الإجمالي للصور
+    // Get total count for pagination metadata
     const totalImages = await prisma.image.count({
-      where: whereClause,
+      where: whereClause
     })
 
-    // جلب الصور من قاعدة البيانات مع الترقيم
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalImages / limit)
+    const hasNextPage = page < totalPages
+    const hasPreviousPage = page > 1
+
+    // Fetch images from database with pagination
     const images = await prisma.image.findMany({
       where: whereClause,
-      orderBy: { createdAt: 'desc' },
-      skip: skip,
-      take: limit,
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        category: true,
-        image: true,
-        location: true,
-        resolution: true,
-        tags: true,
-        timestamp: true,
-        views: true,
+      include: {
         author: {
           select: {
+            id: true,
             firstName: true,
             lastName: true,
+            avatar: true
+          }
+        },
+        likes: {
+          select: {
+            id: true,
+            emoji: true
+          }
+        },
+        comments: {
+          select: {
+            id: true
+          }
+        },
+        shares: {
+          select: {
+            id: true
           }
         },
         _count: {
           select: {
             likes: true,
             comments: true,
-            shares: true,
+            shares: true
           }
         }
-      }
+      },
+      orderBy: {
+        timestamp: 'desc'
+      },
+      skip: offset,
+      take: limit
     })
 
-    // تعريف نوع العنصر في مصفوفة الصور
-    type ImageType = {
+    // Define the type for the image object from database
+    type ImageFromDb = {
       id: string;
       title: string;
-      description: string;
+      description: string | null;
+      timestamp: Date;
       category: string;
       image: string;
-      location: string;
-      resolution: string;
+      location: string | null;
+      resolution: string | null;
       tags: string[];
-      timestamp: Date;
       views: number;
       author: {
+        id: string;
         firstName: string;
         lastName: string;
+        avatar: string | null;
       };
+      likes: Array<{
+        id: string;
+        emoji: string;
+      }>;
+      comments: Array<{
+        id: string;
+      }>;
+      shares: Array<{
+        id: string;
+      }>;
       _count: {
         likes: number;
         comments: number;
@@ -89,42 +146,39 @@ export async function GET(req: NextRequest) {
       };
     };
 
-    // إعداد الاستجابة بالشكل المناسب
-    const result = images.map((img: ImageType) => ({
+    // Transform the data to match your frontend format
+    const transformedImages = images.map((img: ImageFromDb) => ({
       id: img.id,
       title: img.title,
-      description: img.description,
+      description: img.description || "", // Handle null description
       author: `${img.author.firstName} ${img.author.lastName}`,
-      timestamp: img.timestamp.toISOString(),
+      timestamp: `نشر بتاريخ ${img.timestamp.toLocaleDateString('ar-EG')} الساعة ${img.timestamp.toLocaleTimeString('ar-EG')}`,
       category: img.category,
       image: img.image,
       stats: {
         views: img.views,
         likes: img._count.likes,
         comments: img._count.comments,
-        shares: img._count.shares,
+        shares: img._count.shares
       },
-      location: img.location,
-      resolution: img.resolution,
-      tags: img.tags,
+      location: img.location || "", // Handle null location
+      resolution: img.resolution || "", // Handle null resolution
+      tags: img.tags
     }))
 
-    // حساب معلومات الترقيم
-    const totalPages = Math.ceil(totalImages / limit)
-    const hasNextPage = page < totalPages
-    const hasPreviousPage = page > 1
-
+    // Return paginated response
     return NextResponse.json({
-      data: result,
+      images: transformedImages,
       pagination: {
         currentPage: page,
         totalPages: totalPages,
-        totalItems: totalImages,
-        itemsPerPage: limit,
+        totalImages: totalImages,
         hasNextPage: hasNextPage,
         hasPreviousPage: hasPreviousPage,
+        limit: limit
       }
     })
+
   } catch (error) {
     console.error("Error fetching images:", error)
     return NextResponse.json(
