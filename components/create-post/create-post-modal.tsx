@@ -461,7 +461,7 @@ export default function CreatePostModal() {
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <div className="post-card cursor-pointer hover:bg-gray-50 transition-colors">
+        <div className="post-card mb-4 cursor-pointer hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full"></div>
             <Input
