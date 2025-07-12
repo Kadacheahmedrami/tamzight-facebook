@@ -1,53 +1,155 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from 'next/server';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
-export async function GET() {
-  const products = [
-    {
-      id: 1,
-      title: "فستان امازيغي تقليدي مطرز يدوياً",
-      content: "فستان امازيغي تقليدي مصنوع يدوياً بخيوط الحرير والقطن الطبيعي",
-      author: "متجر التراث الأمازيغي",
-      timestamp: "نشر بتاريخ 01-04-2023 الساعة 12:35 مساء",
-      category: "ملابس تقليدية",
-      image: "/placeholder.svg?height=300&width=600",
-      stats: { views: 250, likes: 1605, comments: 154, shares: 10 },
-      price: "1200",
-      currency: "درهم",
-      inStock: true,
-      sizes: ["S", "M", "L", "XL"],
-      colors: ["أحمر", "أزرق", "أخضر"],
-    },
-    {
-      id: 2,
-      title: "سجاد امازيغي منسوج يدوياً",
-      content: "سجاد امازيغي أصيل مصنوع من الصوف الطبيعي بنقوش تقليدية",
-      author: "تعاونية النساء الحرفيات",
-      timestamp: "نشر بتاريخ 01-04-2023 الساعة 12:35 مساء",
-      category: "مفروشات",
-      image: "/placeholder.svg?height=300&width=600",
-      stats: { views: 320, likes: 1200, comments: 89, shares: 15 },
-      price: "2500",
-      currency: "درهم",
-      inStock: true,
-      dimensions: "200x150 سم",
-      material: "صوف طبيعي 100%",
-    },
-    {
-      id: 3,
-      title: "مجوهرات امازيغية فضية",
-      content: "مجموعة من المجوهرات الأمازيغية التقليدية المصنوعة من الفضة الخالصة",
-      author: "صائغ التراث",
-      timestamp: "نشر بتاريخ 01-04-2023 الساعة 12:35 مساء",
-      category: "مجوهرات",
-      image: "/placeholder.svg?height=300&width=600",
-      stats: { views: 180, likes: 890, comments: 67, shares: 8 },
-      price: "800",
-      currency: "درهم",
-      inStock: true,
-      material: "فضة 925",
-      weight: "25 جرام",
-    },
-  ]
-
-  return NextResponse.json(products)
+export async function GET(request: NextRequest) {
+  try {
+    // Get session (optional - depends on if you want to restrict access)
+    const session = await getServerSession(authOptions);
+    
+    // Extract query parameters
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1', 10);
+    const limit = parseInt(searchParams.get('limit') || '10', 10);
+    const category = searchParams.get('category');
+    const subcategory = searchParams.get('subcategory');
+    const search = searchParams.get('search');
+    const inStock = searchParams.get('inStock');
+    const sortBy = searchParams.get('sortBy') || 'createdAt';
+    const sortOrder = searchParams.get('sortOrder') || 'desc';
+    
+    // Validate pagination parameters
+    if (page < 1 || limit < 1 || limit > 100) {
+      return NextResponse.json(
+        { error: 'Invalid pagination parameters' },
+        { status: 400 }
+      );
+    }
+    
+    // Calculate offset
+    const offset = (page - 1) * limit;
+    
+    // Build where clause for filtering
+    const whereClause: any = {};
+    
+    if (category) {
+      whereClause.category = category;
+    }
+    
+    if (subcategory) {
+      whereClause.subcategory = subcategory;
+    }
+    
+    if (search) {
+      whereClause.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { content: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+    
+    if (inStock !== null && inStock !== undefined) {
+      whereClause.inStock = inStock === 'true';
+    }
+    
+    // Build orderBy clause
+    const orderByClause: any = {};
+    if (sortBy === 'views' || sortBy === 'createdAt' || sortBy === 'updatedAt') {
+      orderByClause[sortBy] = sortOrder;
+    } else {
+      orderByClause.createdAt = 'desc';
+    }
+    
+    // Execute database queries
+    const [products, totalCount] = await Promise.all([
+      prisma.product.findMany({
+        where: whereClause,
+        orderBy: orderByClause,
+        skip: offset,
+        take: limit,
+        include: {
+          author: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatar: true
+            }
+          },
+          likes: {
+            select: {
+              id: true,
+              emoji: true,
+              userId: true
+            }
+          },
+          comments: {
+            select: {
+              id: true
+            }
+          },
+          shares: {
+            select: {
+              id: true
+            }
+          }
+        }
+      }),
+      prisma.product.count({
+        where: whereClause
+      })
+    ]);
+    
+    // Transform data to match your frontend format
+    const transformedProducts = products.map(product => ({
+      id: product.id,
+      title: product.title,
+      content: product.content,
+      author: `${product.author.firstName} ${product.author.lastName}`,
+      authorId: product.author.id,
+      authorAvatar: product.author.avatar,
+      timestamp: product.createdAt.toISOString(),
+      category: product.category,
+      subcategory: product.subcategory,
+      image: product.image,
+      stats: {
+        views: product.views,
+        likes: product.likes.length,
+        comments: product.comments.length,
+        shares: product.shares.length
+      },
+      price: product.price,
+      currency: product.currency,
+      inStock: product.inStock,
+      sizes: product.sizes,
+      colors: product.colors,
+      createdAt: product.createdAt,
+      updatedAt: product.updatedAt
+    }));
+    
+    // Calculate pagination metadata
+    const totalPages = Math.ceil(totalCount / limit);
+    const hasNextPage = page < totalPages;
+    const hasPreviousPage = page > 1;
+    
+    return NextResponse.json({
+      products: transformedProducts,
+      pagination: {
+        currentPage: page,
+        totalPages,
+        totalItems: totalCount,
+        itemsPerPage: limit,
+        hasNextPage,
+        hasPreviousPage
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error fetching products:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
 }
+
