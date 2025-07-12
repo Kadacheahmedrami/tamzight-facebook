@@ -88,6 +88,17 @@ const selectConfigs = {
   product: { ...baseSelect, content: true, image: true }, // removed subcategory
 };
 
+// Enhanced connection handling
+const ensurePrismaConnection = async () => {
+  try {
+    await prisma.$connect();
+    console.log('Prisma connected successfully');
+  } catch (error) {
+    console.error('Failed to connect to Prisma:', error);
+    throw new Error('Database connection failed');
+  }
+};
+
 const safeQuery = async (queryFn: () => Promise<any>, modelName: string) => {
   try {
     const result = await queryFn();
@@ -113,6 +124,9 @@ const normalizeContent = (items: any[], type: string): ContentItem[] => {
 
 export async function GET(request: NextRequest) {
   try {
+    // Ensure Prisma connection is established
+    await ensurePrismaConnection();
+    
     const { searchParams } = new URL(request.url);
     
     // استخراج معلمات الترقيم
@@ -135,11 +149,18 @@ export async function GET(request: NextRequest) {
     // Fixed query - remove take and skip from individual model queries
     const results = await Promise.all(
       modelsToQuery.map(model => 
-        safeQuery(() => (prisma[model] as any).findMany({
-          select: selectConfigs[model],
-          orderBy,
-          // Removed take and skip from here
-        }), model)
+        safeQuery(async () => {
+          // Add connection check for each query
+          const modelClient = prisma[model] as any;
+          if (!modelClient) {
+            throw new Error(`Model ${model} not found in Prisma client`);
+          }
+          
+          return await modelClient.findMany({
+            select: selectConfigs[model],
+            orderBy,
+          });
+        }, model)
       )
     );
 
@@ -200,12 +221,20 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   } finally {
-    await prisma.$disconnect();
+    // Ensure proper cleanup
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      console.error('Error disconnecting Prisma:', disconnectError);
+    }
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
+    // Ensure Prisma connection is established
+    await ensurePrismaConnection();
+    
     const body = await request.json();
     const { type, authorId, ...contentData } = body;
 
@@ -243,7 +272,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const newContent = await (prisma[type as keyof typeof prisma] as any).create({
+    const modelClient = prisma[type as keyof typeof prisma] as any;
+    if (!modelClient) {
+      return NextResponse.json(
+        { success: false, error: `Model ${type} not found` },
+        { status: 400 }
+      );
+    }
+
+    const newContent = await modelClient.create({
       data: { ...contentData, authorId },
       include: includeConfig,
     });
@@ -262,5 +299,12 @@ export async function POST(request: NextRequest) {
       },
       { status: 500 }
     );
-  } 
+  } finally {
+    // Ensure proper cleanup
+    try {
+      await prisma.$disconnect();
+    } catch (disconnectError) {
+      console.error('Error disconnecting Prisma:', disconnectError);
+    }
+  }
 }
