@@ -12,6 +12,7 @@ import {
   Eye,
   Star,
 } from "lucide-react"
+import CreatePostModal from "@/components/create-post/create-post-modal"
 
 interface BookData {
   id: number
@@ -238,7 +239,8 @@ export default function BooksPage() {
           </Button>
         </div>
       </div>
-
+    {/* Create Idea - Always visible */}
+      <CreatePostModal />
       {/* Books Feed */}
       <div className="space-y-4">
         {loading && books.length === 0 ? (
