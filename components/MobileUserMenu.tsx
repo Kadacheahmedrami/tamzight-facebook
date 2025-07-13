@@ -5,7 +5,16 @@ import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 
-interface SidebarStats {
+interface StatsResponse {
+  totalPosts: number
+  todayPosts: number
+  trendingPosts: number
+  totalUsers: number
+  activeUsers: number
+  totalViews: number
+  totalLikes: number
+  totalComments: number
+  totalShares: number
   sections: {
     posts: number
     truth: number
@@ -17,8 +26,6 @@ interface SidebarStats {
     shop: number
     ideas: number
     support: number
-    friends?: number
-    messages?: number
   }
 }
 
@@ -29,26 +36,48 @@ interface UnifiedNavigationProps {
 }
 
 export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }: UnifiedNavigationProps) {
-  const [stats, setStats] = useState<SidebarStats | null>(null)
+  const [stats, setStats] = useState<StatsResponse | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isLoadingStats, setIsLoadingStats] = useState(true)
+  const [statsError, setStatsError] = useState<string | null>(null)
   const pathname = usePathname()
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         setIsLoadingStats(true)
+        setStatsError(null)
+        
         const response = await fetch("/api/main/stats")
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
+        
         const data = await response.json()
+        
+        // Check if response has error property
+        if (data.error) {
+          throw new Error(data.error)
+        }
+        
         setStats(data)
       } catch (error) {
         console.error("Error fetching sidebar stats:", error)
+        setStatsError(error instanceof Error ? error.message : "Unknown error")
+        
         // Set default stats if fetch fails
         setStats({
+          totalPosts: 0,
+          todayPosts: 0,
+          trendingPosts: 0,
+          totalUsers: 0,
+          activeUsers: 0,
+          totalViews: 0,
+          totalLikes: 0,
+          totalComments: 0,
+          totalShares: 0,
           sections: {
             posts: 0,
             truth: 0,
@@ -59,9 +88,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
             ads: 0,
             shop: 0,
             ideas: 0,
-            support: 0,
-            friends: 0,
-            messages: 0
+            support: 0
           }
         })
       } finally {
@@ -100,67 +127,81 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
     }
   }
 
+  const formatStatsBadge = (count: number | undefined): string => {
+    if (isLoadingStats) return "..."
+    if (count === undefined || count === null) return "0"
+    
+    // Format large numbers
+    if (count >= 1000000) {
+      return `${(count / 1000000).toFixed(1)}M`
+    } else if (count >= 1000) {
+      return `${(count / 1000).toFixed(1)}K`
+    }
+    
+    return count.toString()
+  }
+
   const sidebarLinks = [
     { href: "/main", icon: "fa-home", label: "أحدث المنشورات", badge: null },
     { 
       href: "/main/posts", 
       icon: "fa-edit", 
       label: "منشورات امازيغية", 
-      badge: isLoadingStats ? "..." : (stats?.sections?.posts?.toString() || "0") 
+      badge: formatStatsBadge(stats?.sections?.posts)
     },
     { 
       href: "/main/truth", 
       icon: "fa-sun", 
       label: "حقيقة امازيغية", 
-      badge: isLoadingStats ? "..." : (stats?.sections?.truth?.toString() || "0") 
+      badge: formatStatsBadge(stats?.sections?.truth)
     },
     {
       href: "/main/questions",
       icon: "fa-question-circle",
       label: "اسئلة امازيغية",
-      badge: isLoadingStats ? "..." : (stats?.sections?.questions?.toString() || "0"),
+      badge: formatStatsBadge(stats?.sections?.questions)
     },
     { 
       href: "/main/books", 
       icon: "fa-book", 
       label: "كُتب امازيغية", 
-      badge: isLoadingStats ? "..." : (stats?.sections?.books?.toString() || "0") 
+      badge: formatStatsBadge(stats?.sections?.books)
     },
     { 
       href: "/main/images", 
       icon: "fa-images", 
       label: "صور امازيغية", 
-      badge: isLoadingStats ? "..." : (stats?.sections?.images?.toString() || "0") 
+      badge: formatStatsBadge(stats?.sections?.images)
     },
     { 
       href: "/main/videos", 
       icon: "fa-tv", 
       label: "فيديوهات امازيغية", 
-      badge: isLoadingStats ? "..." : (stats?.sections?.videos?.toString() || "0") 
+      badge: formatStatsBadge(stats?.sections?.videos)
     },
     { 
       href: "/main/ads", 
       icon: "fa-bullhorn", 
       label: "اعلانات امازيغية", 
-      badge: isLoadingStats ? "..." : (stats?.sections?.ads?.toString() || "0") 
+      badge: formatStatsBadge(stats?.sections?.ads)
     },
     { 
       href: "/main/shop", 
       icon: "fa-store", 
       label: "تسوق منتجات امازيغية", 
-      badge: isLoadingStats ? "..." : (stats?.sections?.shop?.toString() || "0") 
+      badge: formatStatsBadge(stats?.sections?.shop)
     },
     {
       href: "/main/ideas",
       icon: "fa-lightbulb",
       label: "اقتراحات لتطوير المنصة",
-      badge: isLoadingStats ? "..." : (stats?.sections?.ideas?.toString() || "0"),
+      badge: formatStatsBadge(stats?.sections?.ideas)
     },
     { 
       href: "/main/support", 
       icon: "fa-archive", 
       label: "صندوق دعم الامازيغ", 
-      badge: isLoadingStats ? "..." : (stats?.sections?.support?.toString() || "0") 
+      badge: formatStatsBadge(stats?.sections?.support)
     },
   ]
 
@@ -351,6 +392,17 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                 </div>
               )}
 
+              {/* Stats Error Display (Mobile) */}
+              {statsError && (
+                <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-2 text-red-700">
+                    <i className="fa fa-exclamation-triangle text-sm"></i>
+                    <span className="text-sm">خطأ في تحميل الإحصائيات</span>
+                  </div>
+                  <p className="text-xs text-red-600 mt-1">{statsError}</p>
+                </div>
+              )}
+
               {/* Main Navigation Links */}
               <div className="flex-1 p-4">
                 <h3 className="text-sm font-medium text-gray-500 mb-3">التصفح</h3>
@@ -403,6 +455,17 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
       {/* Desktop Sidebar */}
       <aside className="hidden lg:block w-64 bg-white border-l border-gray-200 h-screen sticky top-16 overflow-y-auto">
         <div className="p-4">
+          {/* Stats Error Display (Desktop) */}
+          {statsError && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center gap-2 text-red-700">
+                <i className="fa fa-exclamation-triangle text-sm"></i>
+                <span className="text-sm">خطأ في تحميل الإحصائيات</span>
+              </div>
+              <p className="text-xs text-red-600 mt-1">{statsError}</p>
+            </div>
+          )}
+
           {/* Main Navigation */}
           <nav className="space-y-2">
             <NavigationLinks />

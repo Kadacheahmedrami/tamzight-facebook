@@ -62,7 +62,7 @@ export default function UserActions({ user }: UserActionsProps) {
     if (!user) return
     setMessagesLoading(true)
     try {
-      const response = await fetch("/api/main/messages")
+      const response = await fetch("/api/main/mess")
       const data = await response.json()
       setMessages(data)
     } catch (error) {
