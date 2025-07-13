@@ -2,11 +2,10 @@
 
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState, useCallback } from "react"
-import { Card } from "@/components/ui/card"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { Loader2, Send, ArrowLeft, MoreVertical } from "lucide-react"
+import { Loader2, Send, ArrowLeft, MoreVertical, Users, Phone, Video } from "lucide-react"
 
 interface Message {
   id: string
@@ -14,6 +13,17 @@ interface Message {
   text: string
   timestamp: string
   createdAt: Date
+  status?: 'sent' | 'delivered' | 'read'
+}
+
+interface Conversation {
+  id: string
+  name: string
+  avatarUrl?: string
+  isOnline?: boolean
+  isGroup?: boolean
+  groupMembers?: number
+  lastSeen?: string
 }
 
 // Skeleton component for loading messages
@@ -38,17 +48,19 @@ const MessageSkeleton = () => (
 export default function ChatPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const [messages, setMessages] = useState<Message[]>([])
+  const [conversation, setConversation] = useState<Conversation | null>(null)
   const [text, setText] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [hasMoreMessages, setHasMoreMessages] = useState(true)
   const [page, setPage] = useState(1)
+  const [error, setError] = useState<string | null>(null)
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const shouldScrollToBottom = useRef(true)
 
-  // Get chat title from route parameter
-  const chatTitle = params.id ? decodeURIComponent(params.id) : "مستخدم مجهول"
-  
+  // Get conversation ID from params
+  const conversationId = params.id
+
   // Generate first letter for avatar fallback
   const getAvatarLetter = (name: string) => {
     return name.charAt(0) || 'م'
@@ -65,7 +77,29 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     return `قبل ${Math.floor(diffInMinutes / 1440)} يوم`
   }
 
-  // Generate dummy messages based on chat title
+  // Fetch conversation data
+  const fetchConversation = useCallback(async () => {
+    try {
+      const response = await fetch(`/api/main/messages/${conversationId}`)
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('المحادثة غير موجودة')
+        }
+        if (response.status === 401) {
+          throw new Error('غير مصرح لك بالوصول')
+        }
+        throw new Error('فشل في جلب بيانات المحادثة')
+      }
+      
+      const data = await response.json()
+      setConversation(data)
+    } catch (err) {
+      console.error('Error fetching conversation:', err)
+      setError(err instanceof Error ? err.message : 'حدث خطأ في جلب بيانات المحادثة')
+    }
+  }, [conversationId])
+
+  // Generate dummy messages (replace with actual API call)
   const generateDummyMessages = (pageNum: number): Message[] => {
     const messagesPerPage = 15
     const startIndex = (pageNum - 1) * messagesPerPage
@@ -80,14 +114,36 @@ export default function ChatPage({ params }: { params: { id: string } }) {
         fromMe: i % 3 === 0,
         text: i % 3 === 0 
           ? `رسالتي رقم ${i + 1}` 
-          : `رسالة من ${chatTitle} رقم ${i + 1}`,
+          : `رسالة من ${conversation?.name || 'المستخدم'} رقم ${i + 1}`,
         timestamp: formatTimestamp(messageTime),
-        createdAt: messageTime
+        createdAt: messageTime,
+        status: i % 3 === 0 ? (i % 2 === 0 ? 'read' : 'delivered') : undefined
       })
     }
     
     return dummyMessages.reverse()
   }
+
+  // Load messages from API
+  const loadMessages = useCallback(async (pageNum: number) => {
+    try {
+      // Replace with actual API call
+      const response = await fetch(`/api/main/messages/${conversationId}/messages?page=${pageNum}`)
+      
+      if (!response.ok) {
+        throw new Error('فشل في جلب الرسائل')
+      }
+      
+      // For now, simulate API response
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      const newMessages = generateDummyMessages(pageNum)
+      return newMessages
+    } catch (err) {
+      console.error('Error loading messages:', err)
+      throw err
+    }
+  }, [conversationId, conversation?.name])
 
   // Scroll to bottom function
   const scrollToBottom = useCallback(() => {
@@ -99,51 +155,55 @@ export default function ChatPage({ params }: { params: { id: string } }) {
 
   // Load initial messages
   const loadInitialMessages = useCallback(async () => {
-    setIsLoading(true)
-    shouldScrollToBottom.current = true
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    const initialMessages = generateDummyMessages(1)
-    setMessages(initialMessages)
-    setIsLoading(false)
-  }, [chatTitle])
+    try {
+      setIsLoading(true)
+      setError(null)
+      shouldScrollToBottom.current = true
+      
+      const initialMessages = await loadMessages(1)
+      setMessages(initialMessages)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'حدث خطأ في جلب الرسائل')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [loadMessages])
 
   // Load more messages (pagination)
   const loadMoreMessages = useCallback(async () => {
     if (isLoadingMore || !hasMoreMessages) return
     
-    setIsLoadingMore(true)
-    shouldScrollToBottom.current = false
-    
-    const container = messagesContainerRef.current
-    const previousScrollHeight = container?.scrollHeight || 0
-    
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    const nextPage = page + 1
-    const newMessages = generateDummyMessages(nextPage)
-    
-    if (newMessages.length === 0) {
-      setHasMoreMessages(false)
-    } else {
-      setMessages(prev => [...newMessages, ...prev])
-      setPage(nextPage)
+    try {
+      setIsLoadingMore(true)
+      shouldScrollToBottom.current = false
       
-      // Maintain scroll position
-      if (container) {
-        setTimeout(() => {
-          const newScrollHeight = container.scrollHeight
-          const heightDifference = newScrollHeight - previousScrollHeight
-          container.scrollTop = heightDifference
-        }, 0)
+      const container = messagesContainerRef.current
+      const previousScrollHeight = container?.scrollHeight || 0
+      
+      const nextPage = page + 1
+      const newMessages = await loadMessages(nextPage)
+      
+      if (newMessages.length === 0) {
+        setHasMoreMessages(false)
+      } else {
+        setMessages(prev => [...newMessages, ...prev])
+        setPage(nextPage)
+        
+        // Maintain scroll position
+        if (container) {
+          setTimeout(() => {
+            const newScrollHeight = container.scrollHeight
+            const heightDifference = newScrollHeight - previousScrollHeight
+            container.scrollTop = heightDifference
+          }, 0)
+        }
       }
+    } catch (err) {
+      console.error('Error loading more messages:', err)
+    } finally {
+      setIsLoadingMore(false)
     }
-    
-    setIsLoadingMore(false)
-  }, [isLoadingMore, hasMoreMessages, page, chatTitle])
+  }, [isLoadingMore, hasMoreMessages, page, loadMessages])
 
   // Handle scroll for infinite loading
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -155,34 +215,64 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   }, [isLoadingMore, hasMoreMessages, loadMoreMessages])
 
   // Send message
-  const sendMessage = useCallback(() => {
+  const sendMessage = useCallback(async () => {
     if (!text.trim()) return
     
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      fromMe: true,
-      text: text.trim(),
-      timestamp: 'الآن',
-      createdAt: new Date()
-    }
-    
-    setMessages(prev => [...prev, newMessage])
-    setText("")
-    shouldScrollToBottom.current = true
-    
-    // Simulate reply
-    setTimeout(() => {
-      const replyMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        fromMe: false,
-        text: `رد على: ${newMessage.text}`,
+    try {
+      const newMessage: Message = {
+        id: Date.now().toString(),
+        fromMe: true,
+        text: text.trim(),
         timestamp: 'الآن',
-        createdAt: new Date()
+        createdAt: new Date(),
+        status: 'sent'
       }
-      setMessages(prev => [...prev, replyMessage])
+      
+      // Add message to UI immediately
+      setMessages(prev => [...prev, newMessage])
+      setText("")
       shouldScrollToBottom.current = true
-    }, 2000)
-  }, [text])
+      
+      // Send to API
+      const response = await fetch(`/api/main/messages/${conversationId}/send`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: newMessage.text,
+          tempId: newMessage.id
+        })
+      })
+      
+      if (response.ok) {
+        const sentMessage = await response.json()
+        // Update message with server response
+        setMessages(prev => prev.map(msg => 
+          msg.id === newMessage.id 
+            ? { ...msg, id: sentMessage.id, status: 'delivered' }
+            : msg
+        ))
+      }
+      
+      // Simulate reply (remove in production)
+      setTimeout(() => {
+        const replyMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          fromMe: false,
+          text: `رد على: ${newMessage.text}`,
+          timestamp: 'الآن',
+          createdAt: new Date()
+        }
+        setMessages(prev => [...prev, replyMessage])
+        shouldScrollToBottom.current = true
+      }, 2000)
+      
+    } catch (err) {
+      console.error('Error sending message:', err)
+      // Handle error - maybe show notification
+    }
+  }, [text, conversationId])
 
   // Handle key press
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
@@ -194,24 +284,51 @@ export default function ChatPage({ params }: { params: { id: string } }) {
 
   // Initial load effect
   useEffect(() => {
-    loadInitialMessages()
-  }, [params.id, loadInitialMessages])
+    if (conversationId) {
+      fetchConversation()
+      loadInitialMessages()
+    }
+  }, [conversationId, fetchConversation, loadInitialMessages])
 
   // Auto-scroll effect
   useEffect(() => {
     if (messages.length > 0 && shouldScrollToBottom.current) {
-      // Use multiple timeouts to ensure scrolling works
       setTimeout(scrollToBottom, 0)
       setTimeout(scrollToBottom, 50)
       setTimeout(scrollToBottom, 100)
     }
   }, [messages, scrollToBottom])
 
+  // Show error if conversation not found
+  if (error && !isLoading) {
+    return (
+      <div className="flex h-[80svh] md:h-[100svh] flex-col bg-gradient-to-br from-slate-50 to-blue-50/30 items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Loader2 className="w-8 h-8 text-red-500" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">حدث خطأ</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <Button 
+            onClick={() => {
+              setError(null)
+              fetchConversation()
+              loadInitialMessages()
+            }} 
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            إعادة المحاولة
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   // Show loading skeleton
-  if (isLoading) {
+  if (isLoading || !conversation) {
     return (
       <div className="flex h-[80svh] md:h-[100svh] flex-col bg-gradient-to-br from-slate-50 to-blue-50/30">
-        {/* Header */}
+        {/* Loading Header */}
         <header className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
           <div className="flex items-center gap-3">
             <Button 
@@ -223,20 +340,14 @@ export default function ChatPage({ params }: { params: { id: string } }) {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-3">
-              <Avatar className="h-10 w-10 ring-2 ring-blue-100">
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-medium">
-                  {getAvatarLetter(chatTitle)}
-                </AvatarFallback>
-              </Avatar>
+              <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse"></div>
               <div>
-                <h3 className="font-semibold text-gray-900">{chatTitle}</h3>
-                <p className="text-xs text-green-600 font-medium">متصل الآن</p>
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-1"></div>
+                <div className="h-3 w-16 bg-gray-200 rounded animate-pulse"></div>
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="p-2 hover:bg-gray-100/80 rounded-full transition-all duration-200">
-            <MoreVertical className="h-5 w-5" />
-          </Button>
+          <div className="h-8 w-8 bg-gray-200 rounded-full animate-pulse"></div>
         </header>
 
         <MessageSkeleton />
@@ -245,7 +356,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <div className="flex h-[80svh] overflow-hidden md:h-[90svh] flex-col bg-gradient-to-br from-slate-50 to-blue-50/30">
+    <div className="flex h-[80svh] overflow-hidden md:h-[90svh] flex-col bg-gradient-to-br from-slate-50 to-blue-50/30" dir="rtl">
       {/* Header */}
       <header className="flex items-center justify-between p-4 bg-white/80 backdrop-blur-sm border-b border-gray-200/50 shadow-sm">
         <div className="flex items-center gap-3">
@@ -258,20 +369,58 @@ export default function ChatPage({ params }: { params: { id: string } }) {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex items-center gap-3">
-            <Avatar className="h-10 w-10 ring-2 ring-blue-100">
-              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-medium">
-                {getAvatarLetter(chatTitle)}
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative">
+              <Avatar className="h-10 w-10 ring-2 ring-blue-100">
+                {conversation.avatarUrl ? (
+                  <AvatarImage src={conversation.avatarUrl} alt={conversation.name} />
+                ) : (
+                  <AvatarFallback className={`bg-gradient-to-br ${
+                    conversation.isGroup 
+                      ? 'from-purple-500 to-pink-600' 
+                      : 'from-blue-500 to-purple-600'
+                  } text-white font-medium`}>
+                    {conversation.isGroup ? (
+                      <Users className="h-5 w-5" />
+                    ) : (
+                      getAvatarLetter(conversation.name)
+                    )}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+              {conversation.isOnline && !conversation.isGroup && (
+                <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+              )}
+            </div>
             <div>
-              <h3 className="font-semibold text-gray-900">{chatTitle}</h3>
-              <p className="text-xs text-green-600 font-medium">متصل الآن</p>
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-gray-900">{conversation.name}</h3>
+                {conversation.isGroup && (
+                  <span className="text-xs text-gray-500">
+                    ({conversation.groupMembers} أعضاء)
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">
+                {conversation.isOnline ? (
+                  <span className="text-green-600 font-medium">متصل الآن</span>
+                ) : (
+                  conversation.lastSeen || 'غير متصل'
+                )}
+              </p>
             </div>
           </div>
         </div>
-        <Button variant="ghost" size="sm" className="p-2 hover:bg-gray-100/80 rounded-full transition-all duration-200">
-          <MoreVertical className="h-5 w-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="p-2 hover:bg-gray-100/80 rounded-full transition-all duration-200">
+            <Phone className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="sm" className="p-2 hover:bg-gray-100/80 rounded-full transition-all duration-200">
+            <Video className="h-5 w-5" />
+          </Button>
+          <Button variant="ghost" size="sm" className="p-2 hover:bg-gray-100/80 rounded-full transition-all duration-200">
+            <MoreVertical className="h-5 w-5" />
+          </Button>
+        </div>
       </header>
 
       {/* Messages container */}
@@ -312,7 +461,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
               }`}
             >
               <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-              <div className="flex items-center justify-end mt-1">
+              <div className="flex items-center justify-end mt-1 gap-2">
                 <span 
                   className={`text-xs ${
                     msg.fromMe ? 'text-blue-100' : 'text-gray-400'
@@ -320,6 +469,13 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                 >
                   {msg.timestamp}
                 </span>
+                {msg.fromMe && msg.status && (
+                  <div className="flex items-center">
+                    {msg.status === 'sent' && <div className="w-2 h-2 border border-blue-200 rounded-full"></div>}
+                    {msg.status === 'delivered' && <div className="w-2 h-2 bg-blue-200 rounded-full"></div>}
+                    {msg.status === 'read' && <div className="w-2 h-2 bg-green-400 rounded-full"></div>}
+                  </div>
+                )}
               </div>
             </div>
           </div>
