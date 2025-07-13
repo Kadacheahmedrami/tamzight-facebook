@@ -16,14 +16,6 @@ interface Message {
   createdAt: Date
 }
 
-interface Friend {
-  id: string
-  name: string
-  avatarUrl?: string
-  lastMessage: string
-  lastSeen: string
-}
-
 // Skeleton component for loading messages
 const MessageSkeleton = () => (
   <div className="flex-1 p-4 space-y-4">
@@ -54,21 +46,13 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const shouldScrollToBottom = useRef(true)
 
-  // Dummy friend list
-  const friends: Friend[] = [
-    { id: '1', name: 'أحمد', avatarUrl: '/avatar1.jpg', lastMessage: 'مرحبا!', lastSeen: 'متصل الآن' },
-    { id: '2', name: 'ليلى', avatarUrl: '/avatar2.jpg', lastMessage: 'كيف حالك؟', lastSeen: 'اليوم - 08:00' },
-    { id: '3', name: 'سارة', avatarUrl: '/avatar3.jpg', lastMessage: 'أراك لاحقاً', lastSeen: 'أمس - 22:15' },
-    { id: '4', name: 'محمد', avatarUrl: '/avatar4.jpg', lastMessage: 'تم إرسال الملف', lastSeen: 'منذ ساعة' },
-    { id: '5', name: 'فاطمة', avatarUrl: '/avatar5.jpg', lastMessage: 'هل تناولت الغداء؟', lastSeen: 'اليوم - 12:30' },
-    { id: '6', name: 'خالد', avatarUrl: '/avatar6.jpg', lastMessage: 'أنا مشغول حالياً', lastSeen: 'أمس - 20:10' },
-    { id: '7', name: 'نور', avatarUrl: '/avatar7.jpg', lastMessage: 'أراك لاحقاً!', lastSeen: 'منذ 3 أيام' },
-    { id: '8', name: 'ياسمين', avatarUrl: '/avatar8.jpg', lastMessage: 'هل قرأت الكتاب؟', lastSeen: 'اليوم - 09:15' },
-    { id: '9', name: 'سعيد', avatarUrl: '/avatar9.jpg', lastMessage: 'شكراً جزيلاً!', lastSeen: 'منذ 10 دقائق' },
-    { id: '10', name: 'ندى', avatarUrl: '/avatar10.jpg', lastMessage: 'سأرسل لك الرابط', lastSeen: 'منذ 5 أيام' },
-  ];
+  // Get chat title from route parameter
+  const chatTitle = params.id ? decodeURIComponent(params.id) : "مستخدم مجهول"
   
-  const friend = friends.find(f => f.id === params.id)
+  // Generate first letter for avatar fallback
+  const getAvatarLetter = (name: string) => {
+    return name.charAt(0) || 'م'
+  }
 
   // Format timestamp
   const formatTimestamp = (date: Date): string => {
@@ -81,7 +65,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     return `قبل ${Math.floor(diffInMinutes / 1440)} يوم`
   }
 
-  // Generate dummy messages
+  // Generate dummy messages based on chat title
   const generateDummyMessages = (pageNum: number): Message[] => {
     const messagesPerPage = 15
     const startIndex = (pageNum - 1) * messagesPerPage
@@ -96,7 +80,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
         fromMe: i % 3 === 0,
         text: i % 3 === 0 
           ? `رسالتي رقم ${i + 1}` 
-          : `رسالة من ${friend?.name} رقم ${i + 1}`,
+          : `رسالة من ${chatTitle} رقم ${i + 1}`,
         timestamp: formatTimestamp(messageTime),
         createdAt: messageTime
       })
@@ -124,7 +108,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     const initialMessages = generateDummyMessages(1)
     setMessages(initialMessages)
     setIsLoading(false)
-  }, [friend?.name])
+  }, [chatTitle])
 
   // Load more messages (pagination)
   const loadMoreMessages = useCallback(async () => {
@@ -159,7 +143,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     }
     
     setIsLoadingMore(false)
-  }, [isLoadingMore, hasMoreMessages, page, friend?.name])
+  }, [isLoadingMore, hasMoreMessages, page, chatTitle])
 
   // Handle scroll for infinite loading
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -241,12 +225,12 @@ export default function ChatPage({ params }: { params: { id: string } }) {
             <div className="flex items-center gap-3">
               <Avatar className="h-10 w-10 ring-2 ring-blue-100">
                 <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-medium">
-                  {friend?.name?.charAt(0) || 'م'}
+                  {getAvatarLetter(chatTitle)}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="font-semibold text-gray-900">{friend?.name ?? "مستخدم مجهول"}</h3>
-                <p className="text-xs text-green-600 font-medium">{friend?.lastSeen}</p>
+                <h3 className="font-semibold text-gray-900">{chatTitle}</h3>
+                <p className="text-xs text-green-600 font-medium">متصل الآن</p>
               </div>
             </div>
           </div>
@@ -275,17 +259,13 @@ export default function ChatPage({ params }: { params: { id: string } }) {
           </Button>
           <div className="flex items-center gap-3">
             <Avatar className="h-10 w-10 ring-2 ring-blue-100">
-              {friend?.avatarUrl ? (
-                <AvatarImage src={friend.avatarUrl} alt={friend.name} />
-              ) : (
-                <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-medium">
-                  {friend?.name?.charAt(0) || 'م'}
-                </AvatarFallback>
-              )}
+              <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-medium">
+                {getAvatarLetter(chatTitle)}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="font-semibold text-gray-900">{friend?.name ?? "مستخدم مجهول"}</h3>
-              <p className="text-xs text-green-600 font-medium">{friend?.lastSeen}</p>
+              <h3 className="font-semibold text-gray-900">{chatTitle}</h3>
+              <p className="text-xs text-green-600 font-medium">متصل الآن</p>
             </div>
           </div>
         </div>
