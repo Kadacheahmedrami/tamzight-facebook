@@ -19,7 +19,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
     }
 
-    // Get all friends to show them in conversations
+    // Get all friends
     const friends = await prisma.friendship.findMany({
       where: {
         OR: [
@@ -49,11 +49,8 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // Get recent group messages to see who user has messaged
+    // Get recent messages to find last message with each friend
     const recentMessages = await prisma.groupMessage.findMany({
-      where: {
-        senderId: user.id
-      },
       include: {
         sender: {
           select: {
@@ -68,58 +65,59 @@ export async function GET(req: NextRequest) {
       orderBy: {
         timestamp: 'desc'
       },
-      take: 50 // Get recent messages to find conversation partners
+      take: 100 // Get more messages to find conversations
     });
 
-    // Build conversations map
-    const conversations = new Map();
+    // Build conversations array
+    const conversations = [];
 
-    // Add friends as potential conversations
+    // Add friends as conversations
     for (const friendship of friends) {
       const friend = friendship.userId === user.id ? friendship.friend : friendship.user;
       
-      // Check if there are recent messages with this friend
-      const hasMessages = recentMessages.some(msg => 
-        msg.senderId === friend.id || msg.senderId === user.id
+      // Find last message between user and this friend
+      const lastMessage = recentMessages.find(msg => 
+        (msg.senderId === user.id && msg.message.includes(friend.firstName)) ||
+        (msg.senderId === friend.id)
       );
 
-      conversations.set(friend.id, {
+      conversations.push({
         id: friend.id,
         name: `${friend.firstName} ${friend.lastName}`,
         avatarUrl: friend.avatar || friend.image,
-        lastMessage: hasMessages ? 'آخر رسالة...' : 'ابدأ محادثة...',
-        lastSeen: hasMessages ? 'منذ قليل' : 'غير متصل',
-        isOnline: Math.random() > 0.5, // Mock online status - you can implement real presence
-        unreadCount: hasMessages ? Math.floor(Math.random() * 5) : 0, // Mock unread count
+        lastMessage: lastMessage ? lastMessage.message : 'ابدأ محادثة...',
+        lastSeen: lastMessage ? formatLastSeen(lastMessage.timestamp) : 'غير متصل',
+        isOnline: Math.random() > 0.5, // Mock online status
+        unreadCount: lastMessage ? Math.floor(Math.random() * 3) : 0,
         isPinned: false,
         messageStatus: 'read' as const,
-        lastActivity: hasMessages ? new Date(Date.now() - Math.random() * 86400000) : friendship.createdAt,
+        lastActivity: lastMessage ? lastMessage.timestamp : friendship.createdAt,
         isGroup: false,
         groupMembers: 2
       });
     }
 
-    // Add group conversation if there are group messages
-    if (recentMessages.length > 0) {
-      const lastGroupMessage = recentMessages[0];
-      conversations.set('group', {
-        id: 'group',
-        name: 'المحادثة الجماعية',
+    // Add general chat conversation (using existing GroupMessage)
+    const lastGroupMessage = recentMessages[0];
+    if (lastGroupMessage) {
+      conversations.push({
+        id: 'general',
+        name: 'المحادثة العامة',
         avatarUrl: null,
         lastMessage: lastGroupMessage.message,
         lastSeen: formatLastSeen(lastGroupMessage.timestamp),
         isOnline: true,
-        unreadCount: Math.floor(Math.random() * 10),
+        unreadCount: Math.floor(Math.random() * 5),
         isPinned: true,
         messageStatus: 'read' as const,
         lastActivity: lastGroupMessage.timestamp,
         isGroup: true,
-        groupMembers: await prisma.user.count() // All users in the group
+        groupMembers: await prisma.user.count()
       });
     }
 
-    // Convert to array and sort by last activity
-    const conversationList = Array.from(conversations.values()).sort((a, b) => {
+    // Sort conversations by last activity
+    conversations.sort((a, b) => {
       // Pinned conversations first
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
@@ -128,7 +126,7 @@ export async function GET(req: NextRequest) {
       return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
     });
 
-    return NextResponse.json(conversationList);
+    return NextResponse.json(conversations);
 
   } catch (error) {
     console.error('Error fetching conversations:', error);

@@ -15,7 +15,7 @@ import {
 interface Conversation {
   id: string
   name: string
-  avatarUrl?: string
+  avatarUrl?: string | null
   lastMessage: string
   lastSeen: string
   isOnline?: boolean
@@ -220,7 +220,7 @@ export default function MessagesListPage() {
                             <Users className="w-6 h-6 text-purple-600" />
                           ) : (
                             <span className="text-blue-600 font-medium">
-                              {conversation.name.charAt(0)}
+                              {conversation.name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2)}
                             </span>
                           )}
                         </AvatarFallback>
