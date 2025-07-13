@@ -12,17 +12,27 @@ import {
   Phone, Video, Settings, CheckCheck, Check, Clock, Loader2
 } from "lucide-react"
 
-interface Friend {
-  id: string; name: string; avatarUrl?: string; lastMessage: string; lastSeen: string
-  isOnline?: boolean; unreadCount?: number; isPinned?: boolean; isArchived?: boolean
-  messageStatus?: 'sent' | 'delivered' | 'read'; isTyping?: boolean; lastActivity?: Date
-  isGroup?: boolean; groupMembers?: number
+interface Conversation {
+  id: string
+  name: string
+  avatarUrl?: string
+  lastMessage: string
+  lastSeen: string
+  isOnline?: boolean
+  unreadCount?: number
+  isPinned?: boolean
+  isArchived?: boolean
+  messageStatus?: 'sent' | 'delivered' | 'read'
+  isTyping?: boolean
+  lastActivity?: Date
+  isGroup?: boolean
+  groupMembers?: number
 }
 
 type FilterType = 'all' | 'unread' | 'groups'
 
 export default function MessagesListPage() {
-  const [friends, setFriends] = useState<Friend[]>([])
+  const [conversations, setConversations] = useState<Conversation[]>([])
   const [search, setSearch] = useState("")
   const [filter, setFilter] = useState<FilterType>('all')
   const [loading, setLoading] = useState(true)
@@ -36,6 +46,9 @@ export default function MessagesListPage() {
       
       const response = await fetch('/api/main/messages')
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('غير مصرح لك بالوصول')
+        }
         throw new Error('فشل في جلب المحادثات')
       }
       
@@ -47,7 +60,7 @@ export default function MessagesListPage() {
         lastActivity: new Date(conversation.lastActivity)
       }))
       
-      setFriends(processedData)
+      setConversations(processedData)
     } catch (err) {
       console.error('Error fetching conversations:', err)
       setError(err instanceof Error ? err.message : 'حدث خطأ في جلب المحادثات')
@@ -60,17 +73,17 @@ export default function MessagesListPage() {
     fetchConversations()
   }, [])
 
-  const filteredFriends = useMemo(() => {
-    const filtered = friends.filter(f => {
-      const matchesSearch = f.name.toLowerCase().includes(search.toLowerCase()) || 
-                           f.lastMessage.toLowerCase().includes(search.toLowerCase())
+  const filteredConversations = useMemo(() => {
+    const filtered = conversations.filter(conversation => {
+      const matchesSearch = conversation.name.toLowerCase().includes(search.toLowerCase()) || 
+                           conversation.lastMessage.toLowerCase().includes(search.toLowerCase())
       if (!matchesSearch) return false
       
       switch (filter) {
         case 'unread':
-          return f.unreadCount && f.unreadCount > 0
+          return conversation.unreadCount && conversation.unreadCount > 0
         case 'groups':
-          return f.isGroup
+          return conversation.isGroup
         default:
           return true
       }
@@ -84,7 +97,7 @@ export default function MessagesListPage() {
       // Then sort by last activity
       return (b.lastActivity?.getTime() || 0) - (a.lastActivity?.getTime() || 0)
     })
-  }, [friends, search, filter])
+  }, [conversations, search, filter])
 
   const getStatusIcon = (status?: string) => {
     switch (status) {
@@ -99,7 +112,7 @@ export default function MessagesListPage() {
     }
   }
 
-  const totalUnread = friends.reduce((sum, f) => sum + (f.unreadCount || 0), 0)
+  const totalUnread = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0)
 
   if (loading) {
     return (
@@ -130,7 +143,7 @@ export default function MessagesListPage() {
   }
 
   return (
-    <div className="w-full h-full flex flex-col bg-white">
+    <div className="w-full h-full flex flex-col bg-white" dir="rtl">
       {/* Header */}
       <div className="p-4 border-b bg-gray-50">
         <div className="flex items-center justify-between mb-4">
@@ -144,13 +157,13 @@ export default function MessagesListPage() {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" title="مكالمة">
               <Phone className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" title="مكالمة فيديو">
               <Video className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" title="الإعدادات">
               <Settings className="w-4 h-4" />
             </Button>
           </div>
@@ -158,12 +171,12 @@ export default function MessagesListPage() {
         
         {/* Search */}
         <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
           <Input 
             placeholder="ابحث عن صديق أو رسالة..." 
             value={search} 
             onChange={e => setSearch(e.target.value)} 
-            className="pl-10 bg-white" 
+            className="pr-10 bg-white text-right" 
           />
         </div>
         
@@ -172,7 +185,7 @@ export default function MessagesListPage() {
           {[
             { key: 'all', label: 'الكل' },
             { key: 'unread', label: 'غير مقروءة' },
-            { key: 'groups', label: 'مجموعات', icon: <Users className="w-4 h-4 mr-1" /> }
+            { key: 'groups', label: 'مجموعات', icon: <Users className="w-4 h-4 ml-1" /> }
           ].map(({ key, label, icon }) => (
             <Button 
               key={key} 
@@ -181,7 +194,7 @@ export default function MessagesListPage() {
               onClick={() => setFilter(key as FilterType)} 
               className="whitespace-nowrap"
             >
-              {icon}{label}
+              {label}{icon}
             </Button>
           ))}
         </div>
@@ -189,29 +202,31 @@ export default function MessagesListPage() {
       
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto">
-        {filteredFriends.length > 0 ? (
-          filteredFriends.map(f => (
-            <div key={f.id}>
-              <Link href={`/main/messages/${f.id}`}>
+        {filteredConversations.length > 0 ? (
+          filteredConversations.map(conversation => (
+            <div key={conversation.id}>
+              <Link href={`/main/messages/${conversation.id}`}>
                 <div className={`flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors ${
-                  f.unreadCount ? 'bg-blue-50/50' : ''
+                  conversation.unreadCount && conversation.unreadCount > 0 ? 'bg-blue-50/50' : ''
                 }`}>
                   {/* Avatar */}
                   <div className="relative">
                     <Avatar className="w-12 h-12">
-                      {f.avatarUrl ? (
-                        <AvatarImage src={f.avatarUrl} alt={f.name} />
+                      {conversation.avatarUrl ? (
+                        <AvatarImage src={conversation.avatarUrl} alt={conversation.name} />
                       ) : (
-                        <AvatarFallback className={f.isGroup ? 'bg-purple-100' : 'bg-blue-100'}>
-                          {f.isGroup ? (
-                            <Users className="w-6 h-6" />
+                        <AvatarFallback className={conversation.isGroup ? 'bg-purple-100' : 'bg-blue-100'}>
+                          {conversation.isGroup ? (
+                            <Users className="w-6 h-6 text-purple-600" />
                           ) : (
-                            f.name.charAt(0)
+                            <span className="text-blue-600 font-medium">
+                              {conversation.name.charAt(0)}
+                            </span>
                           )}
                         </AvatarFallback>
                       )}
                     </Avatar>
-                    {f.isOnline && (
+                    {conversation.isOnline && (
                       <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                     )}
                   </div>
@@ -220,21 +235,21 @@ export default function MessagesListPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <h4 className={`font-medium ${f.unreadCount ? 'text-gray-900' : 'text-gray-700'}`}>
-                          {f.name}
+                        <h4 className={`font-medium ${conversation.unreadCount && conversation.unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
+                          {conversation.name}
                         </h4>
-                        {f.isPinned && <Pin className="w-3 h-3 text-gray-400" />}
-                        {f.isGroup && (
+                        {conversation.isPinned && <Pin className="w-3 h-3 text-gray-400" />}
+                        {conversation.isGroup && (
                           <Badge variant="secondary" className="text-xs">
-                            {f.groupMembers} أعضاء
+                            {conversation.groupMembers} أعضاء
                           </Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">{f.lastSeen}</span>
-                        {f.unreadCount && f.unreadCount > 0 && (
-                          <Badge className="rounded-full min-w-[20px] h-5 text-xs">
-                            {f.unreadCount}
+                        <span className="text-xs text-gray-500">{conversation.lastSeen}</span>
+                        {conversation.unreadCount && conversation.unreadCount > 0 && (
+                          <Badge className="rounded-full min-w-[20px] h-5 text-xs bg-blue-600">
+                            {conversation.unreadCount}
                           </Badge>
                         )}
                       </div>
@@ -242,7 +257,7 @@ export default function MessagesListPage() {
                     
                     <div className="flex items-center justify-between mt-1">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
-                        {f.isTyping ? (
+                        {conversation.isTyping ? (
                           <div className="flex items-center gap-1 text-green-600">
                             <div className="flex gap-1">
                               {[0, 100, 200].map(delay => (
@@ -257,15 +272,15 @@ export default function MessagesListPage() {
                           </div>
                         ) : (
                           <p className={`text-sm truncate ${
-                            f.unreadCount ? 'text-gray-900 font-medium' : 'text-gray-600'
+                            conversation.unreadCount && conversation.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-600'
                           }`}>
-                            {f.lastMessage}
+                            {conversation.lastMessage}
                           </p>
                         )}
                       </div>
-                      {!f.isTyping && (
-                        <div className="flex items-center gap-1 ml-2">
-                          {getStatusIcon(f.messageStatus)}
+                      {!conversation.isTyping && (
+                        <div className="flex items-center gap-1 mr-2">
+                          {getStatusIcon(conversation.messageStatus)}
                         </div>
                       )}
                     </div>
@@ -281,8 +296,12 @@ export default function MessagesListPage() {
                 <MessageCircle className="w-8 h-8 text-gray-400" />
               </div>
               <div>
-                <p className="text-gray-500 text-lg mb-2">لم يتم العثور على نتائج</p>
-                <p className="text-gray-400 text-sm">جرب البحث بكلمات مختلفة</p>
+                <p className="text-gray-500 text-lg mb-2">
+                  {search || filter !== 'all' ? 'لم يتم العثور على نتائج' : 'لا توجد محادثات'}
+                </p>
+                <p className="text-gray-400 text-sm">
+                  {search || filter !== 'all' ? 'جرب البحث بكلمات مختلفة' : 'ابدأ محادثة جديدة مع أصدقائك'}
+                </p>
               </div>
             </div>
           </div>
