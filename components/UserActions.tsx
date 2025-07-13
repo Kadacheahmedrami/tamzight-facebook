@@ -133,13 +133,13 @@ export default function UserActions({ user }: UserActionsProps) {
   const unreadMessages = messages.filter((m) => !m.read).length
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 relative">
       {user ? (
         <>
           {/* Desktop Icons */}
           <div className="hidden md:flex items-center gap-3">
             {/* Profile Icon */}
-            <div className="group relative">
+            <div className="group">
               <Link href={"/main/member"}>
                 <Button 
                   variant="ghost" 
@@ -151,7 +151,7 @@ export default function UserActions({ user }: UserActionsProps) {
               </Link>
               
               {/* Hover Dropdown for Profile */}
-              <div className="absolute right-0 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
+              <div className="absolute -left-28 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
                 {/* Header */}
                 <div className="p-4 bg-gray-50 border-b border-gray-200 rounded-t-lg shrink-0">
                   <div className="flex items-center gap-3">
@@ -195,7 +195,7 @@ export default function UserActions({ user }: UserActionsProps) {
             </div>
 
             {/* Messages Icon */}
-            <div className="group relative" onMouseEnter={fetchMessages}>
+            <div className="group" onMouseEnter={fetchMessages}>
               <Link href={"/main/messages"}>
                 <Button 
                   variant="ghost" 
@@ -212,7 +212,7 @@ export default function UserActions({ user }: UserActionsProps) {
               </Link>
               
               {/* Hover Dropdown for Messages */}
-              <div className="absolute right-0 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
+              <div className="absolute -left-28 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
                 {/* Header */}
                 <div className="p-4 bg-gray-50 border-b border-gray-200 rounded-t-lg shrink-0">
                   <div className="flex items-center justify-between">
@@ -270,7 +270,7 @@ export default function UserActions({ user }: UserActionsProps) {
             </div>
 
             {/* Notifications Icon */}
-            <div className="group relative" onMouseEnter={fetchNotifications}>
+            <div className="group" onMouseEnter={fetchNotifications}>
               <Link href={"/main/notifications"}>
                 <Button 
                   variant="ghost" 
@@ -287,7 +287,7 @@ export default function UserActions({ user }: UserActionsProps) {
               </Link>
               
               {/* Hover Dropdown for Notifications */}
-              <div className="absolute right-0 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
+              <div className="absolute -left-28 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
                 {/* Header */}
                 <div className="p-4 bg-gray-50 border-b border-gray-200 rounded-t-lg shrink-0">
                   <div className="flex items-center justify-between">
@@ -344,7 +344,7 @@ export default function UserActions({ user }: UserActionsProps) {
             </div>
 
             {/* Friends Icon */}
-            <div className="group relative">
+            <div className="group">
               <Link href={"/main/friends"}>
                 <Button 
                   variant="ghost" 
@@ -359,7 +359,7 @@ export default function UserActions({ user }: UserActionsProps) {
               </Link>
               
               {/* Hover Dropdown for Friends */}
-              <div className="absolute right-0 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
+              <div className="absolute -left-28 top-full mt-2 w-80 h-96 bg-white rounded-lg shadow-lg border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 flex flex-col">
                 {/* Header */}
                 <div className="p-4 bg-gray-50 border-b border-gray-200 rounded-t-lg shrink-0">
                   <div className="flex items-center justify-between">
