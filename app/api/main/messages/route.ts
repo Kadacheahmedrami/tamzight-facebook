@@ -7,147 +7,81 @@ import { prisma } from '@/lib/prisma';
 async function getCurrentUser(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user?.email) return null;
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+  
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email }
+  });
   return user;
 }
 
-// GET /api/main/messages - Get all conversations for current user
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser(req);
-    if (!user) {
-      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+    const currentUser = await getCurrentUser(req);
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all friends
-    const friends = await prisma.friendship.findMany({
+    // Get all messages involving the current user
+    const messages = await prisma.groupMessage.findMany({
       where: {
-        OR: [
-          { userId: user.id },
-          { friendId: user.id }
-        ]
+        senderId: currentUser.id
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-            image: true
-          }
-        },
-        friend: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-            image: true
-          }
-        }
-      }
-    });
-
-    // Get recent messages to find last message with each friend
-    const recentMessages = await prisma.groupMessage.findMany({
       include: {
         sender: {
           select: {
             id: true,
             firstName: true,
             lastName: true,
-            avatar: true,
-            image: true
+            avatar: true
           }
         }
       },
       orderBy: {
         timestamp: 'desc'
-      },
-      take: 100 // Get more messages to find conversations
+      }
     });
 
-    // Build conversations array
-    const conversations = [];
+    // Since your schema doesn't have a receiverId field, we need to modify the approach
+    // For now, I'll assume all messages are in a group chat format
+    // If you need direct messaging, you'd need to add a receiverId field to GroupMessage
 
-    // Add friends as conversations
-    for (const friendship of friends) {
-      const friend = friendship.userId === user.id ? friendship.friend : friendship.user;
+    // Group messages by conversation (in this case, it's just the group chat)
+    const conversations = messages.reduce((acc: any[], message) => {
+      const existingConversation = acc.find(conv => conv.participantId === message.senderId);
       
-      // Find last message between user and this friend
-      const lastMessage = recentMessages.find(msg => 
-        (msg.senderId === user.id && msg.message.includes(friend.firstName)) ||
-        (msg.senderId === friend.id)
-      );
-
-      conversations.push({
-        id: friend.id,
-        name: `${friend.firstName} ${friend.lastName}`,
-        avatarUrl: friend.avatar || friend.image,
-        lastMessage: lastMessage ? lastMessage.message : 'ابدأ محادثة...',
-        lastSeen: lastMessage ? formatLastSeen(lastMessage.timestamp) : 'غير متصل',
-        isOnline: Math.random() > 0.5, // Mock online status
-        unreadCount: lastMessage ? Math.floor(Math.random() * 3) : 0,
-        isPinned: false,
-        messageStatus: 'read' as const,
-        lastActivity: lastMessage ? lastMessage.timestamp : friendship.createdAt,
-        isGroup: false,
-        groupMembers: 2
-      });
-    }
-
-    // Add general chat conversation (using existing GroupMessage)
-    const lastGroupMessage = recentMessages[0];
-    if (lastGroupMessage) {
-      conversations.push({
-        id: 'general',
-        name: 'المحادثة العامة',
-        avatarUrl: null,
-        lastMessage: lastGroupMessage.message,
-        lastSeen: formatLastSeen(lastGroupMessage.timestamp),
-        isOnline: true,
-        unreadCount: Math.floor(Math.random() * 5),
-        isPinned: true,
-        messageStatus: 'read' as const,
-        lastActivity: lastGroupMessage.timestamp,
-        isGroup: true,
-        groupMembers: await prisma.user.count()
-      });
-    }
-
-    // Sort conversations by last activity
-    conversations.sort((a, b) => {
-      // Pinned conversations first
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
+      if (!existingConversation) {
+        acc.push({
+          participantId: message.senderId,
+          participant: {
+            id: message.sender.id,
+            firstName: message.sender.firstName,
+            lastName: message.sender.lastName,
+            avatar: message.sender.avatar
+          },
+          lastMessage: {
+            id: message.id,
+            message: message.message,
+            timestamp: message.timestamp,
+            read: message.read
+          },
+          unreadCount: message.read ? 0 : 1
+        });
+      } else if (message.timestamp > existingConversation.lastMessage.timestamp) {
+        existingConversation.lastMessage = {
+          id: message.id,
+          message: message.message,
+          timestamp: message.timestamp,
+          read: message.read
+        };
+      }
       
-      // Then sort by last activity
-      return new Date(b.lastActivity).getTime() - new Date(a.lastActivity).getTime();
-    });
+      return acc;
+    }, []);
 
-    return NextResponse.json(conversations);
+    return NextResponse.json({ conversations });
 
   } catch (error) {
     console.error('Error fetching conversations:', error);
-    return NextResponse.json({ error: 'حدث خطأ في جلب المحادثات' }, { status: 500 });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-}
-
-// Helper function to format last seen time
-function formatLastSeen(date: Date): string {
-  const now = new Date();
-  const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60));
-  
-  if (diffInMinutes < 1) return 'الآن';
-  if (diffInMinutes < 60) return `قبل ${diffInMinutes} دقيقة`;
-  
-  const diffInHours = Math.floor(diffInMinutes / 60);
-  if (diffInHours < 24) return `قبل ${diffInHours} ساعة`;
-  
-  const diffInDays = Math.floor(diffInHours / 24);
-  if (diffInDays === 1) return 'أمس';
-  if (diffInDays < 7) return `منذ ${diffInDays} أيام`;
-  
-  return `منذ ${Math.floor(diffInDays / 7)} أسبوع`;
 }

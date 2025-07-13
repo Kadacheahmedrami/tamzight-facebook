@@ -7,28 +7,61 @@ import { prisma } from '@/lib/prisma';
 async function getCurrentUser(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session || !session.user?.email) return null;
-  const user = await prisma.user.findUnique({ where: { email: session.user.email } });
+  
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email }
+  });
   return user;
 }
 
-// GET /api/messages - Get all group messages (since only GroupMessage exists in schema)
-export async function GET(req: NextRequest) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
     const currentUser = await getCurrentUser(req);
     if (!currentUser) {
-      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Get all group messages
+    const { id: otherUserId } = params;
+
+    // Verify the other user exists
+    const otherUser = await prisma.user.findUnique({
+      where: { id: otherUserId },
+      select: {
+        id: true,
+        firstName: true,
+        lastName: true,
+        avatar: true
+      }
+    });
+
+    if (!otherUser) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    // Since your GroupMessage model doesn't have a receiverId field,
+    // I'll assume you want to implement this as a direct message system
+    // For now, I'll get all messages from both users and sort them chronologically
+    
+    // Note: This is a simplified approach. For proper direct messaging,
+    // you should add a receiverId field to GroupMessage or create a separate DirectMessage model
+    
     const messages = await prisma.groupMessage.findMany({
+      where: {
+        OR: [
+          { senderId: currentUser.id },
+          { senderId: otherUserId }
+        ]
+      },
       include: {
         sender: {
           select: {
             id: true,
             firstName: true,
             lastName: true,
-            avatar: true,
-            image: true
+            avatar: true
           }
         }
       },
@@ -37,10 +70,10 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // Mark messages as read for current user (if you want to track read status per user)
+    // Mark messages as read (messages from the other user to current user)
     await prisma.groupMessage.updateMany({
       where: {
-        senderId: { not: currentUser.id },
+        senderId: otherUserId,
         read: false
       },
       data: {
@@ -48,120 +81,106 @@ export async function GET(req: NextRequest) {
       }
     });
 
-    // Format messages for the frontend
-    const formattedMessages = messages.map(message => ({
-      id: message.id,
-      content: message.message,
-      senderId: message.senderId,
-      timestamp: message.timestamp,
-      read: message.read,
-      sender: {
-        id: message.sender.id,
-        name: `${message.sender.firstName} ${message.sender.lastName}`,
-        avatar: message.sender.avatar || message.sender.image
-      },
-      isCurrentUser: message.senderId === currentUser.id,
-      formattedTime: formatMessageTime(message.timestamp)
-    }));
-
     return NextResponse.json({
-      messages: formattedMessages,
-      totalMessages: messages.length
+      messages,
+      otherUser
     });
 
   } catch (error) {
-    console.error('Error fetching group messages:', error);
-    return NextResponse.json({ error: 'حدث خطأ في جلب الرسائل' }, { status: 500 });
+    console.error('Error fetching messages:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
-// POST /api/messages - Send a message to group chat
-export async function POST(req: NextRequest) {
-  try {
-    const currentUser = await getCurrentUser(req);
-    if (!currentUser) {
-      return NextResponse.json({ error: 'غير مصرح' }, { status: 401 });
-    }
 
-    const { message } = await req.json();
 
-    if (!message || message.trim().length === 0) {
-      return NextResponse.json({ error: 'الرسالة لا يمكن أن تكون فارغة' }, { status: 400 });
-    }
 
-    // Create the group message
-    const newMessage = await prisma.groupMessage.create({
-      data: {
-        senderId: currentUser.id,
-        message: message.trim(),
-        timestamp: new Date(),
-        read: false,
-        avatar: currentUser.avatar || currentUser.image
-      },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            avatar: true,
-            image: true
+
+
+
+export async function POST(
+    req: NextRequest,
+    { params }: { params: { id: string } }
+  ) {
+    try {
+      const currentUser = await getCurrentUser(req);
+      if (!currentUser) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+  
+      const { id: receiverId } = params;
+      const body = await req.json();
+      const { message } = body;
+  
+      // Validate message content
+      if (!message || typeof message !== 'string' || message.trim().length === 0) {
+        return NextResponse.json({ error: 'Message content is required' }, { status: 400 });
+      }
+  
+      // Verify the receiver exists
+      const receiver = await prisma.user.findUnique({
+        where: { id: receiverId },
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          avatar: true
+        }
+      });
+  
+      if (!receiver) {
+        return NextResponse.json({ error: 'Receiver not found' }, { status: 404 });
+      }
+  
+      // Check if users are friends (optional security check)
+      const friendship = await prisma.friendship.findFirst({
+        where: {
+          OR: [
+            { userId: currentUser.id, friendId: receiverId },
+            { userId: receiverId, friendId: currentUser.id }
+          ]
+        }
+      });
+  
+      if (!friendship) {
+        return NextResponse.json({ error: 'You can only message friends' }, { status: 403 });
+      }
+  
+      // Create the new message
+      const newMessage = await prisma.groupMessage.create({
+        data: {
+          senderId: currentUser.id,
+          message: message.trim(),
+          avatar: currentUser.avatar,
+          read: false
+        },
+        include: {
+          sender: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatar: true
+            }
           }
         }
-      }
-    });
-
-    // Format the response
-    const formattedMessage = {
-      id: newMessage.id,
-      content: newMessage.message,
-      senderId: newMessage.senderId,
-      timestamp: newMessage.timestamp,
-      read: newMessage.read,
-      sender: {
-        id: newMessage.sender.id,
-        name: `${newMessage.sender.firstName} ${newMessage.sender.lastName}`,
-        avatar: newMessage.sender.avatar || newMessage.sender.image
-      },
-      isCurrentUser: true,
-      formattedTime: formatMessageTime(newMessage.timestamp)
-    };
-
-    return NextResponse.json(formattedMessage, { status: 201 });
-
-  } catch (error) {
-    console.error('Error sending group message:', error);
-    return NextResponse.json({ error: 'حدث خطأ في إرسال الرسالة' }, { status: 500 });
-  }
-}
-
-// Helper function to format message time
-function formatMessageTime(date: Date): string {
-  const now = new Date();
-  const messageDate = new Date(date);
+      });
   
-  // If same day, show time
-  if (messageDate.toDateString() === now.toDateString()) {
-    return messageDate.toLocaleTimeString('ar-DZ', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: false 
-    });
-  }
+      // Create a notification for the receiver
+      await prisma.notification.create({
+        data: {
+          userId: receiverId,
+          type: 'message',
+          message: `${currentUser.firstName} ${currentUser.lastName} sent you a message`,
+          avatar: currentUser.avatar,
+          read: false
+        }
+      });
   
-  // If yesterday
-  const yesterday = new Date(now);
-  yesterday.setDate(yesterday.getDate() - 1);
-  if (messageDate.toDateString() === yesterday.toDateString()) {
-    return 'أمس';
-  }
+      return NextResponse.json({ message: newMessage }, { status: 201 });
   
-  // If within a week, show day name
-  const diffInDays = Math.floor((now.getTime() - messageDate.getTime()) / (1000 * 60 * 60 * 24));
-  if (diffInDays < 7) {
-    return messageDate.toLocaleDateString('ar-DZ', { weekday: 'long' });
+    } catch (error) {
+      console.error('Error sending message:', error);
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    }
   }
-  
-  // Otherwise show date
-  return messageDate.toLocaleDateString('ar-DZ');
-}

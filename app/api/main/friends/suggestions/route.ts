@@ -1,12 +1,27 @@
+// app/api/friends/suggestions/route.ts
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth"
+import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import type { NextRequest } from "next/server"
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url)
-    const userId = searchParams.get("userId")
-    if (!userId) throw new Error("Missing userId")
+    const session = await getServerSession(authOptions)
+    if (!session?.user?.email) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+    
+    // Get user ID from database using email
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email },
+      select: { id: true }
+    })
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
+    }
+
+    const userId = user.id
 
     // Get all user IDs that are already friends or pending
     const friends = await prisma.friendship.findMany({ where: { userId }, select: { friendId: true } })
@@ -37,4 +52,4 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     return NextResponse.json({ error: error.message || "Unknown error" }, { status: 400 })
   }
-} 
+}
