@@ -3,8 +3,7 @@ import { prisma } from "@/lib/prisma"
 
 export async function GET() {
   try {
-    // Ensure Prisma is connected before making queries
-    await prisma.$connect()
+
 
     // Total counts
     const [

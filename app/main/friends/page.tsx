@@ -3,9 +3,8 @@
 import { useEffect, useState } from "react"
 import Sidebar from "@/components/sidebar"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { UserPlus, Users, Search, Check, X } from "lucide-react"
+import { UserPlus, Users, Check, X } from "lucide-react"
 
 interface FriendRequest {
   id: number
@@ -53,11 +52,10 @@ export default function FriendsPage() {
     pendingRequests: { received: [], sent: [] }
   })
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState("")
 
   const fetchSuggestions = async () => {
     try {
-      const response = await fetch('/api/friends/suggestions')
+      const response = await fetch('/api/main/friends/suggestions')
       const data = await response.json()
       
       if (response.ok) {
@@ -75,7 +73,7 @@ export default function FriendsPage() {
 
   const fetchPendingRequests = async () => {
     try {
-      const response = await fetch('/api/friends/pending')
+      const response = await fetch('/api/main/friends/pending')
       const data = await response.json()
       
       if (response.ok) {
@@ -96,7 +94,7 @@ export default function FriendsPage() {
 
   const handleSendFriendRequest = async (receiverId: number) => {
     try {
-      const response = await fetch('/api/friends/request', {
+      const response = await fetch('/api/main/friends/request', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +120,7 @@ export default function FriendsPage() {
 
   const handleAcceptFriendRequest = async (senderId: number, receiverId: number) => {
     try {
-      const response = await fetch('/api/friends/accept', {
+      const response = await fetch('/api/main/friends/accept', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -152,7 +150,7 @@ export default function FriendsPage() {
 
   const handleDeclineFriendRequest = async (senderId: number, receiverId: number) => {
     try {
-      const response = await fetch('/api/friends/decline', {
+      const response = await fetch('/api/main/friends/decline', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -190,13 +188,6 @@ export default function FriendsPage() {
   useEffect(() => {
     loadAllData()
   }, [])
-
-  const filteredSuggestions = friendsData.suggestions.filter(
-    (suggestion) =>
-      `${suggestion.firstName} ${suggestion.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      suggestion.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      suggestion.occupation.toLowerCase().includes(searchQuery.toLowerCase()),
-  )
 
   if (loading) {
     return (
@@ -306,20 +297,8 @@ export default function FriendsPage() {
         </div>
       )}
 
-      {/* Search Bar */}
-      <div className="mb-4 relative">
-        <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-        <Input
-          type="text"
-          placeholder="ابحث عن أشخاص لإضافتهم"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pr-10 form-input-mobile"
-        />
-      </div>
-
-      {/* Friend Suggestions */}
-      <div className="bg-white rounded-lg border">
+      {/* Friend Suggestions - Mobile Only */}
+      <div className="bg-white rounded-lg border sm:hidden">
         <div className="p-3 sm:p-4 border-b">
           <h3 className="font-semibold text-[#4531fc] flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-[#4531fc]" />
@@ -327,8 +306,8 @@ export default function FriendsPage() {
           </h3>
         </div>
         <div className="divide-y">
-          {filteredSuggestions.length > 0 ? (
-            filteredSuggestions.map((suggestion) => (
+          {friendsData.suggestions.length > 0 ? (
+            friendsData.suggestions.map((suggestion) => (
               <div key={suggestion.id} className="p-3 sm:p-4 hover:bg-gray-50">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div className="flex items-center gap-3">
@@ -360,7 +339,7 @@ export default function FriendsPage() {
             ))
           ) : (
             <div className="p-6 sm:p-8 text-center text-gray-500">
-              {searchQuery ? "لا توجد نتائج للبحث" : "لا توجد اقتراحات جديدة"}
+              لا توجد اقتراحات جديدة
             </div>
           )}
         </div>
