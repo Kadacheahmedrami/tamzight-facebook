@@ -76,7 +76,7 @@ export function PostCardMedia({ mediaItems, title }: PostCardMediaProps) {
     if (mediaCount === 1) {
       return (
         <div className="mb-3 relative cursor-pointer" onClick={() => handleMediaClick(0)}>
-          {renderMediaItem(mediaItems[0], "w-full h-40 sm:h-48 object-cover rounded-lg", "h-12 w-12")}
+          {renderMediaItem(mediaItems[0], "w-full h-72 object-cover rounded-lg", "h-12 w-12")}
         </div>
       )
     }
@@ -86,7 +86,7 @@ export function PostCardMedia({ mediaItems, title }: PostCardMediaProps) {
         <div className="mb-3 grid grid-cols-2 gap-2">
           {mediaItems.slice(0, 2).map((item, index) => (
             <div key={item.id} className="cursor-pointer" onClick={() => handleMediaClick(index)}>
-              {renderMediaItem(item, "w-full h-32 sm:h-40 object-cover rounded-lg")}
+              {renderMediaItem(item, "w-full h-72 object-cover rounded-lg")}
             </div>
           ))}
         </div>
@@ -115,11 +115,11 @@ export function PostCardMedia({ mediaItems, title }: PostCardMediaProps) {
       <div className="mb-3 grid grid-cols-2 gap-2">
         {mediaItems.slice(0, 3).map((item, index) => (
           <div key={item.id} className="cursor-pointer" onClick={() => handleMediaClick(index)}>
-            {renderMediaItem(item, "w-full h-32 sm:h-40 object-cover rounded-lg")}
+            {renderMediaItem(item, "w-full h-72 object-cover rounded-lg")}
           </div>
         ))}
         <div 
-          className="relative cursor-pointer bg-gray-100 rounded-lg flex items-center justify-center h-32 sm:h-40"
+          className="relative cursor-pointer bg-gray-100 rounded-lg flex items-center justify-center h-72"
           onClick={() => handleMediaClick(3)}
         >
           <div className="text-center">
