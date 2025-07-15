@@ -143,8 +143,8 @@ export default function PostCard({
         </p>
       </div>
 
-      {/* Actions Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between pt-3 border-t border-gray-100 gap-3">
+      {/* Actions Bar - Fixed to stay in one row on mobile */}
+      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
         <div className="flex items-center gap-2 sm:gap-4">
           <Button 
             variant="ghost" 
@@ -178,7 +178,7 @@ export default function PostCard({
           </Button>
         </div>
 
-        <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
+        <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
           <span className="flex items-center gap-1">
             <i className="fa fa-eye text-xs sm:text-sm"></i>
             {stats.views}
@@ -213,7 +213,11 @@ export default function PostCard({
                 <div 
                   className="absolute bg-white rounded-full shadow-xl border border-gray-200 p-2 flex items-center gap-1 pointer-events-auto"
                   style={{
-                    left: reactionsRef.current ? reactionsRef.current.getBoundingClientRect().left + (reactionsRef.current.offsetWidth / 2) - 120 : 0,
+                    left: reactionsRef.current ? 
+                      Math.max(8, Math.min(
+                        reactionsRef.current.getBoundingClientRect().left + (reactionsRef.current.offsetWidth / 2) - 120,
+                        window.innerWidth - 248
+                      )) : 0,
                     top: reactionsRef.current ? reactionsRef.current.getBoundingClientRect().top - 60 : 0
                   }}
                 >
@@ -291,4 +295,4 @@ export default function PostCard({
       )}
     </div>
   )
-}
+} 
