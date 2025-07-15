@@ -11,6 +11,38 @@ async function getCurrentUser(req: NextRequest) {
   return user;
 }
 
+// GET /api/main/posts/[id] - Get a specific post
+export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const post = await prisma.post.findUnique({
+      where: { id: params.id },
+      include: {
+        author: {
+          select: {
+            id: true,
+            email: true,
+            image: true,
+          },
+        },
+        _count: {
+          select: {
+            comments: true,
+            likes: true,
+          },
+        },
+      },
+    });
+
+    if (!post) {
+      return NextResponse.json({ error: 'Post not found' }, { status: 404 });
+    }
+
+    return NextResponse.json({ post });
+  } catch (error) {
+    return NextResponse.json({ error: 'Internal server error', details: (error as Error).message }, { status: 500 });
+  }
+}
+
 // DELETE /api/main/posts/[id] - Only author can delete
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -63,4 +95,4 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error', details: (error as Error).message }, { status: 500 });
   }
-} 
+}
