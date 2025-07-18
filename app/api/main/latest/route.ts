@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-
 import { prisma } from '@/lib/prisma';
 
 interface ContentItem {
@@ -20,7 +19,7 @@ interface ContentItem {
   image?: string | null;
   views: number;
   type: string;
-  likes: Array<{ id: number; emoji: string; userId: number }>;
+  likes: Array<{ id: number; emoji: string; userId: number; user: { firstName: string; lastName: string } }>;
   comments: Array<{ id: number; content: string; userId: number }>;
   shares: Array<{ id: number; userId: number }>;
   _count: {
@@ -28,6 +27,12 @@ interface ContentItem {
     comments: number;
     shares: number;
   };
+  // Product specific fields
+  price?: number;
+  currency?: string;
+  inStock?: boolean;
+  sizes?: string[];
+  colors?: string[];
 }
 
 const baseSelect = {
@@ -50,6 +55,12 @@ const baseSelect = {
       id: true,
       emoji: true,
       userId: true,
+      user: {
+        select: {
+          firstName: true,
+          lastName: true,
+        },
+      },
     },
   },
   comments: {
@@ -75,17 +86,62 @@ const baseSelect = {
   },
 };
 
-// Fixed select configurations - removed subcategory from image and product
+// Model-specific select configurations based on actual schema
 const selectConfigs = {
-  post: { ...baseSelect, content: true, subcategory: true, image: true },
-  book: { ...baseSelect, content: true, subcategory: true, image: true },
-  idea: { ...baseSelect, content: true },
-  image: { ...baseSelect, description: true, image: true }, // removed subcategory
-  video: { ...baseSelect, content: true, subcategory: true, image: true },
-  truth: { ...baseSelect, content: true, subcategory: true, image: true },
-  question: { ...baseSelect, content: true },
-  ad: { ...baseSelect, content: true, subcategory: true, image: true },
-  product: { ...baseSelect, content: true, image: true }, // removed subcategory
+  post: { 
+    ...baseSelect, 
+    content: true, 
+    subcategory: true, 
+    image: true
+  },
+  book: { 
+    ...baseSelect, 
+    content: true, 
+    subcategory: true, 
+    image: true
+  },
+  idea: { 
+    ...baseSelect, 
+    content: true
+  },
+  image: { 
+    ...baseSelect, 
+    description: true, 
+    image: true
+  },
+  video: { 
+    ...baseSelect, 
+    content: true, 
+    subcategory: true, 
+    image: true
+  },
+  truth: { 
+    ...baseSelect, 
+    content: true, 
+    subcategory: true, 
+    image: true
+  },
+  question: { 
+    ...baseSelect, 
+    content: true
+  },
+  ad: { 
+    ...baseSelect, 
+    content: true, 
+    subcategory: true, 
+    image: true
+  },
+  product: { 
+    ...baseSelect, 
+    content: true, 
+    image: true,
+    subcategory: true,
+    price: true,
+    currency: true,
+    inStock: true,
+    sizes: true,
+    colors: true
+  },
 };
 
 // Enhanced connection handling
@@ -119,6 +175,12 @@ const normalizeContent = (items: any[], type: string): ContentItem[] => {
     image: item.image || null,
     content: item.content || item.description || null,
     description: type === 'image' ? item.description : undefined,
+    // Product specific fields
+    price: item.price || undefined,
+    currency: item.currency || undefined,
+    inStock: item.inStock !== undefined ? item.inStock : undefined,
+    sizes: item.sizes || undefined,
+    colors: item.colors || undefined,
   }));
 };
 
@@ -129,11 +191,9 @@ export async function GET(request: NextRequest) {
     
     const { searchParams } = new URL(request.url);
     
-    // استخراج معلمات الترقيم
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = 5; // حجم الصفحة ثابت = 5
-    const offset = (page - 1) * limit;
-    
+    // Extract pagination parameters (using offset-based pagination to match frontend)
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = parseInt(searchParams.get('offset') || '0');
     const type = searchParams.get('type') || 'all';
 
     const orderBy = { timestamp: 'desc' as const };
@@ -145,8 +205,9 @@ export async function GET(request: NextRequest) {
     const modelsToQuery = type === 'all' ? models : models.filter(model => model === type);
     
     console.log('Querying models:', modelsToQuery);
+    console.log('Pagination params:', { limit, offset, type });
     
-    // Fixed query - remove take and skip from individual model queries
+    // Query all models without pagination first
     const results = await Promise.all(
       modelsToQuery.map(model => 
         safeQuery(async () => {
@@ -174,47 +235,51 @@ export async function GET(request: NextRequest) {
       return acc;
     }, {} as Record<string, number>));
 
+    // Sort all content by timestamp
     const sortedContent = allContent.sort((a, b) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
 
-    // Apply pagination ONLY here, after combining and sorting
+    // Apply pagination after sorting
     const paginatedContent = sortedContent.slice(offset, offset + limit);
     const totalItems = sortedContent.length;
-    const totalPages = Math.ceil(totalItems / limit);
-    const hasNextPage = page < totalPages;
-    const hasPreviousPage = page > 1;
+    const hasMore = offset + limit < totalItems;
 
     console.log('Pagination Debug:', {
       totalItems,
-      requestedPage: page,
+      requestedOffset: offset,
       requestedLimit: limit,
       returnedItems: paginatedContent.length,
-      totalPages,
-      hasNextPage,
-      hasPreviousPage
+      hasMore,
+      nextOffset: offset + limit
     });
 
+    // Return data in the format expected by frontend
     return NextResponse.json({
       success: true,
       data: paginatedContent,
-      pagination: {
-        currentPage: page,
-        totalPages: totalPages,
-        totalItems: totalItems,
-        itemsPerPage: limit,
-        hasNextPage: hasNextPage,
-        hasPreviousPage: hasPreviousPage,
-      },
       meta: {
-        type,
+        total: totalItems,
+        limit: limit,
+        offset: offset,
+        hasMore: hasMore,
+        type: type,
       },
+      error: null,
     });
   } catch (error) {
     console.error('Error fetching latest content:', error);
     return NextResponse.json(
       {
         success: false,
+        data: [],
+        meta: {
+          total: 0,
+          limit: 0,
+          offset: 0,
+          hasMore: false,
+          type: 'all',
+        },
         error: 'Failed to fetch latest content',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
@@ -252,6 +317,19 @@ export async function POST(request: NextRequest) {
           firstName: true,
           lastName: true,
           avatar: true,
+        },
+      },
+      likes: {
+        select: {
+          id: true,
+          emoji: true,
+          userId: true,
+          user: {
+            select: {
+              firstName: true,
+              lastName: true,
+            },
+          },
         },
       },
       _count: {

@@ -56,11 +56,9 @@ export default function LatestPostsPage() {
   const [selectedType, setSelectedType] = useState("all")
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [pagination, setPagination] = useState({
-    limit: 20,
-    offset: 0,
-    total: 0
-  })
+  const [currentOffset, setCurrentOffset] = useState(0)
+  const [totalItems, setTotalItems] = useState(0)
+  const limit = 20
 
   // Refs for intersection observer
   const observerRef = useRef<IntersectionObserver | null>(null)
@@ -143,7 +141,7 @@ export default function LatestPostsPage() {
 
     try {
       const params = new URLSearchParams({
-        limit: pagination.limit.toString(),
+        limit: limit.toString(),
         offset: offset.toString()
       })
       
@@ -176,23 +174,21 @@ export default function LatestPostsPage() {
             console.log(`Adding ${newPosts.length} new posts to existing ${prev.length} posts`)
             return [...prev, ...newPosts]
           })
+          
+          // Update offset for next load
+          setCurrentOffset(offset + transformedPosts.length)
         } else {
           // Replace posts for new type/filter
           setPosts(transformedPosts)
+          setCurrentOffset(transformedPosts.length)
           console.log(`Replaced with ${transformedPosts.length} posts`)
         }
         
-        // Update pagination state with current offset
-        setPagination({
-          limit: data.meta.limit,
-          offset: data.meta.offset,
-          total: data.meta.total
-        })
-        
-        // Update hasMore based on API response
+        // Update total items and hasMore
+        setTotalItems(data.meta.total)
         setHasMore(data.meta.hasMore)
         
-        console.log(`Loaded ${transformedPosts.length} posts, hasMore: ${data.meta.hasMore}, offset: ${data.meta.offset}`)
+        console.log(`Loaded ${transformedPosts.length} posts, hasMore: ${data.meta.hasMore}, newOffset: ${isLoadMore ? offset + transformedPosts.length : transformedPosts.length}`)
       } else {
         throw new Error(data.error || 'Failed to fetch posts')
       }
@@ -220,7 +216,7 @@ export default function LatestPostsPage() {
         abortControllerRef.current = null
       }
     }
-  }, [pagination.limit, transformPost])
+  }, [limit, transformPost])
 
   const formatTimestamp = useCallback((timestamp: string | Date) => {
     if (!timestamp) return 'منذ وقت قصير'
@@ -245,19 +241,18 @@ export default function LatestPostsPage() {
   // Load more posts when intersection observer triggers
   const loadMore = useCallback(() => {
     if (!loadingMore && !isLoadingRef.current && hasMore && posts.length > 0) {
-      // Use the next offset from pagination state
-      const nextOffset = pagination.offset + pagination.limit
-      console.log(`Loading more posts with offset: ${nextOffset}, current posts: ${posts.length}`)
-      fetchPosts(selectedType, nextOffset, true)
+      console.log(`Loading more posts with offset: ${currentOffset}, current posts: ${posts.length}`)
+      fetchPosts(selectedType, currentOffset, true)
     }
-  }, [loadingMore, hasMore, posts.length, selectedType, fetchPosts, pagination.offset, pagination.limit])
+  }, [loadingMore, hasMore, posts.length, selectedType, fetchPosts, currentOffset])
 
   // Handle type change
   const handleTypeChange = useCallback((type: string) => {
     console.log(`Changing type to: ${type}`)
     setSelectedType(type)
     setHasMore(true)
-    setPagination(prev => ({ ...prev, offset: 0 }))
+    setCurrentOffset(0)
+    setTotalItems(0)
     fetchPosts(type, 0, false)
   }, [fetchPosts])
 
@@ -265,7 +260,8 @@ export default function LatestPostsPage() {
   const refreshPosts = useCallback(() => {
     console.log('Refreshing posts')
     setHasMore(true)
-    setPagination(prev => ({ ...prev, offset: 0 }))
+    setCurrentOffset(0)
+    setTotalItems(0)
     fetchPosts(selectedType, 0, false)
   }, [selectedType, fetchPosts])
 
@@ -459,7 +455,9 @@ export default function LatestPostsPage() {
                 <div className="bg-gray-50 rounded-lg p-6">
                   <div className="text-gray-400 text-4xl mb-2">🎉</div>
                   <p className="text-gray-600 text-sm">تم عرض جميع المنشورات</p>
-                  <p className="text-gray-500 text-xs mt-1">المجموع: {posts.length} منشور</p>
+                  <p className="text-gray-500 text-xs mt-1">
+                    المجموع: {posts.length} من {totalItems} منشور
+                  </p>
                 </div>
               </div>
             )}

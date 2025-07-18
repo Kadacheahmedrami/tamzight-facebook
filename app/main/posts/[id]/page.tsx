@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import PostDetailClient from '@/components/pages/PostDetailClient'
+import PostDetailClient from '@/components/pages/id/PostDetailClient'
 
 interface PostDetailPageProps {
   params: { id: string }

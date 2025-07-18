@@ -5,6 +5,22 @@ import { PostCardProps, reactions } from './types'
 import { getCurrentRoute, combineMediaSources, truncateContent } from './utils'
 import { PostCardMedia } from './PostCardMedia'
 
+// Add reaction interface
+interface PostReaction {
+  id: string
+  emoji: string
+  userId: string
+  user: {
+    firstName: string
+    lastName: string
+  }
+}
+
+// Updated PostCardProps interface
+interface PostCardPropsWithReactions extends PostCardProps {
+  reactions?: PostReaction[]
+}
+
 export default function PostCard({ 
   id, 
   title, 
@@ -18,12 +34,14 @@ export default function PostCard({
   image,
   images = [],
   baseRoute = 'posts', 
-  stats 
-}: PostCardProps) {
+  stats,
+  reactions: postReactions = []
+}: PostCardPropsWithReactions) {
   const [selectedReaction, setSelectedReaction] = useState<string | null>(null)
   const [showReactions, setShowReactions] = useState(false)
   const [showComments, setShowComments] = useState(false)
   const [showFullContent, setShowFullContent] = useState(false)
+  const [showReactionsList, setShowReactionsList] = useState(false)
   
   const reactionsRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
@@ -32,6 +50,29 @@ export default function PostCard({
   const mediaItems = combineMediaSources(media, image, images, title)
   const { isLong: isLongContent, truncated: truncatedContent } = truncateContent(content)
   const displayContent = showFullContent ? content : truncatedContent
+
+  // Group reactions by emoji and count them
+  const groupedReactions = postReactions.reduce((acc, reaction) => {
+    const emoji = reaction.emoji
+    if (!acc[emoji]) {
+      acc[emoji] = {
+        emoji,
+        count: 0,
+        users: []
+      }
+    }
+    acc[emoji].count++
+    acc[emoji].users.push(reaction.user)
+    return acc
+  }, {} as Record<string, { emoji: string, count: number, users: Array<{ firstName: string, lastName: string }> }>)
+
+  // Get top 3 reactions
+  const topReactions = Object.values(groupedReactions)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3)
+
+  // Total reactions count
+  const totalReactionsCount = postReactions.length
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -143,6 +184,32 @@ export default function PostCard({
         </p>
       </div>
 
+      {/* Reactions Display */}
+      {totalReactionsCount > 0 && (
+        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100">
+          <div className="flex items-center gap-1">
+            {topReactions.map((reaction, index) => (
+              <span 
+                key={reaction.emoji}
+                className="text-sm bg-gray-100 rounded-full w-6 h-6 flex items-center justify-center"
+                style={{ zIndex: 10 - index }}
+              >
+                {reaction.emoji}
+              </span>
+            ))}
+          </div>
+          <button
+            onClick={(e) => {
+              e.stopPropagation()
+              setShowReactionsList(!showReactionsList)
+            }}
+            className="text-xs text-gray-500 hover:text-blue-600 transition-colors"
+          >
+            {totalReactionsCount} {totalReactionsCount === 1 ? 'تفاعل' : 'تفاعلات'}
+          </button>
+        </div>
+      )}
+
       {/* Actions Bar - Fixed to stay in one row on mobile */}
       <div className="flex items-center justify-between pt-3 border-t border-gray-100">
         <div className="flex items-center gap-2 sm:gap-4">
@@ -238,6 +305,46 @@ export default function PostCard({
         </div>
       </div>
 
+      {/* Reactions List Modal */}
+      {showReactionsList && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg w-full max-w-md max-h-[60vh] overflow-hidden">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="font-semibold text-lg">التفاعلات</h3>
+              <button
+                onClick={() => setShowReactionsList(false)}
+                className="text-gray-500 hover:text-gray-700 text-xl"
+              >
+                ×
+              </button>
+            </div>
+            
+            <div className="p-4 max-h-80 overflow-y-auto">
+              {Object.values(groupedReactions).map((reaction) => (
+                <div key={reaction.emoji} className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">{reaction.emoji}</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {reaction.count} {reaction.count === 1 ? 'شخص' : 'أشخاص'}
+                    </span>
+                  </div>
+                  <div className="space-y-2 ml-8">
+                    {reaction.users.map((user, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <div className="w-6 h-6 bg-gray-200 rounded-full flex-shrink-0"></div>
+                        <span className="text-sm text-gray-700">
+                          {user.firstName} {user.lastName}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Comments Modal */}
       {showComments && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
@@ -295,4 +402,4 @@ export default function PostCard({
       )}
     </div>
   )
-} 
+}
