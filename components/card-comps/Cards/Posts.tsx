@@ -5,12 +5,8 @@ import { useRouter } from "next/navigation"
 import { reactions, PostCardProps } from "@/components/card-comps/types"
 
 interface SimplePostCardProps extends PostCardProps {
-  reactions?: Array<{
-    id: string
-    emoji: string
-    userId: string
-    user: { firstName: string; lastName: string }
-  }>
+  userHasLiked?: boolean
+  userReaction?: string | null
   session?: {
     user?: { id?: string; email?: string; name?: string }
   } | null
@@ -32,7 +28,8 @@ interface Comment {
 }
 
 export default function SimplePostCard({ 
-  id, title, content, author, authorId, timestamp, category, subCategory, image, stats, reactions: postReactions = [],
+  id, title, content, author, authorId, timestamp, category, subCategory, image, stats, 
+  userHasLiked = false, userReaction = null, // NEW: User interaction props
   session, onDelete, onUpdate
 }: SimplePostCardProps) {
   // Content display states
@@ -48,7 +45,7 @@ export default function SimplePostCard({
   
   // Data states
   const [currentStats, setCurrentStats] = useState(stats)
-  const [userReaction, setUserReaction] = useState<string | null>(null)
+  const [currentUserReaction, setCurrentUserReaction] = useState<string | null>(userReaction)
   const [comments, setComments] = useState<Comment[]>([])
   const [newComment, setNewComment] = useState('')
   
@@ -58,16 +55,14 @@ export default function SimplePostCard({
   const reactionsRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
-  // Find user's existing reaction on mount
+  // Sync with props when they change
   useEffect(() => {
-    if (session?.user?.id) {
-        const userId = (session.user as { id?: string })?.id;
-        const existingReaction = postReactions.find(r => r.userId === userId);
-        if (existingReaction) {
-        setUserReaction(existingReaction.emoji)
-      }
-    }   
-  }, [postReactions, session?.user?.id])
+    setCurrentUserReaction(userReaction)
+  }, [userReaction])
+
+  useEffect(() => {
+    setCurrentStats(stats)
+  }, [stats])
 
   // Close reactions dropdown when clicking outside
   useEffect(() => {
@@ -107,13 +102,17 @@ export default function SimplePostCard({
       await callApi('POST', { action: 'like', emoji })
       
       // Update local state
-      setUserReaction(emoji || null)
+      setCurrentUserReaction(emoji || null)
       
       // Update like count
-      if (emoji && !userReaction) {
+      if (emoji && !currentUserReaction) {
+        // Adding a new reaction
         setCurrentStats(prev => ({ ...prev, likes: prev.likes + 1 }))
-      } else if (!emoji && userReaction) {
+      } else if (!emoji && currentUserReaction) {
+        // Removing existing reaction
         setCurrentStats(prev => ({ ...prev, likes: prev.likes - 1 }))
+      } else if (emoji && currentUserReaction) {
+        // Changing existing reaction (count remains the same)
       }
       
     } catch (error) {
@@ -375,14 +374,14 @@ export default function SimplePostCard({
             <Button 
               variant="ghost" 
               size="sm" 
-              className={`p-2 ${userReaction ? 'text-red-500' : 'text-gray-500 hover:text-red-500'}`}
+              className={`p-2 ${currentUserReaction ? 'text-red-500' : 'text-gray-500 hover:text-red-500'}`}
               onClick={(e) => {
                 e.stopPropagation()
                 handleReaction()
               }}
               disabled={isLoading}
             >
-              <i className={`fa ${userReaction ? 'fa-heart' : 'fa-heart-o'} text-sm mr-1`}></i>
+              <i className={`fa ${currentUserReaction ? 'fa-heart' : 'fa-heart-o'} text-sm mr-1`}></i>
               <span className="text-sm">{currentStats.likes}</span>
             </Button>
 
@@ -427,16 +426,16 @@ export default function SimplePostCard({
             <div className="relative" ref={reactionsRef}>
               <span 
                 className={`flex items-center gap-1 cursor-pointer transition-all px-2 py-1 rounded-full hover:bg-gray-100 ${
-                  userReaction ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'
+                  currentUserReaction ? 'text-blue-600' : 'text-gray-500 hover:text-blue-600'
                 }`}
                 onClick={(e) => {
                   e.stopPropagation()
                   setShowReactions(!showReactions)
                 }}
               >
-                {userReaction ? (
+                {currentUserReaction ? (
                   <>
-                    <span className="text-sm">{userReaction}</span>
+                    <span className="text-sm">{currentUserReaction}</span>
                     <span>بصمة</span>
                   </>
                 ) : (

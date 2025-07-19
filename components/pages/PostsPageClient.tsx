@@ -26,6 +26,9 @@ interface Post {
     comments: number
     shares: number
   }
+  // New fields from API
+  userHasLiked: boolean
+  userReaction: string | null
   reactions?: Array<{
     id: string
     emoji: string
@@ -208,6 +211,9 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
           comments: post.stats?.comments || 0,
           shares: post.stats?.shares || 0
         },
+        // NEW: Add user interaction information
+        userHasLiked: post.userHasLiked || false,
+        userReaction: post.userReaction || null,
         reactions: [] // Backend doesn't provide reactions data
       })) || []
 
@@ -265,7 +271,6 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       content: newPost.content || "محتوى غير متوفر",
       author: session?.user?.name || session?.user?.email || "مستخدم غير معروف",
       authorId: (session?.user as { id?: string })?.id || "unknown",
-
       timestamp: new Date().toLocaleDateString('ar-SA', {
         year: 'numeric',
         month: 'long',
@@ -282,6 +287,9 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
         comments: 0,
         shares: 0
       },
+      // NEW: Default values for new posts
+      userHasLiked: false,
+      userReaction: null,
       reactions: []
     }
     
@@ -594,6 +602,9 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
                 session={extendedSession}
                 onDelete={handlePostDelete}
                 onUpdate={handlePostUpdate}
+                // NEW: Pass user interaction info
+                userHasLiked={post.userHasLiked}
+                userReaction={post.userReaction}
               />
             ))}
             

@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from '@/lib/auth';
+
+// Define a custom session type that includes the user ID
+type CustomSession = {
+    user?: {
+        id: string;
+        name?: string | null;
+        email?: string | null;
+        image?: string | null;
+    };
+};
 
 export async function GET(request: NextRequest) {
   try {
+    // Get current session with custom type
+    const session = (await getServerSession(authOptions)) as CustomSession | null;
+    const currentUserId = session?.user?.id || null;
+
     const { searchParams } = new URL(request.url)
     const category = searchParams.get("category")
     const search = searchParams.get("search")
@@ -80,22 +96,6 @@ export async function GET(request: NextRequest) {
             avatar: true
           }
         },
-        likes: {
-          select: {
-            id: true,
-            emoji: true
-          }
-        },
-        comments: {
-          select: {
-            id: true
-          }
-        },
-        shares: {
-          select: {
-            id: true
-          }
-        },
         _count: {
           select: {
             likes: true,
@@ -110,6 +110,27 @@ export async function GET(request: NextRequest) {
       skip: offset,
       take: limit
     })
+
+    // Get current user's likes for these posts
+    let userLikesMap = new Map<string, string | null>();
+    if (currentUserId && posts.length > 0) {
+      const postIds = posts.map(post => post.id);
+      const userLikes = await prisma.like.findMany({
+        where: {
+          userId: currentUserId,
+          postId: { in: postIds }
+        },
+        select: {
+          postId: true,
+          emoji: true
+        }
+      });
+
+      // Create a map of postId -> emoji with type safety
+      userLikesMap = new Map(
+        userLikes.map(like => [like.postId as string, like.emoji])
+      );
+    }
 
     // Define the type for the post object from database
     type PostFromDb = {
@@ -127,16 +148,6 @@ export async function GET(request: NextRequest) {
         lastName: string;
         avatar: string | null;
       };
-      likes: Array<{
-        id: string;
-        emoji: string;
-      }>;
-      comments: Array<{
-        id: string;
-      }>;
-      shares: Array<{
-        id: string;
-      }>;
       _count: {
         likes: number;
         comments: number;
@@ -148,18 +159,21 @@ export async function GET(request: NextRequest) {
     const transformedPosts = posts.map((post: PostFromDb) => ({
       id: post.id,
       title: post.title,
-      content: post.content || "", // Handle null content
+      content: post.content || "",
       author: `${post.author.firstName} ${post.author.lastName}`,
       timestamp: `نشر بتاريخ ${post.createdAt.toLocaleDateString('ar-EG')} الساعة ${post.createdAt.toLocaleTimeString('ar-EG')}`,
       category: post.category,
-      subcategory: post.subcategory || "", // Handle null subcategory
-      image: post.image || "/placeholder.svg?height=300&width=600", // Handle null image
+      subcategory: post.subcategory || "",
+      image: post.image || "/placeholder.svg?height=300&width=600",
       stats: {
         views: post.views,
         likes: post._count.likes,
         comments: post._count.comments,
         shares: post._count.shares
-      }
+      },
+      // Add user interaction information
+      userHasLiked: currentUserId ? userLikesMap.has(post.id) : false,
+      userReaction: currentUserId ? userLikesMap.get(post.id) || null : null
     }))
 
     // Return paginated response

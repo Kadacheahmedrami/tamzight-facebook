@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
+// Revalidate every 60 seconds
+export const revalidate = 60
+
 export async function GET() {
   try {
-
-
     // Total counts
     const [
       totalPosts,
@@ -28,7 +29,6 @@ export async function GET() {
       prisma.idea.count()
     ])
 
-
     // Section counts
     const stats = {
       posts: totalPosts,
@@ -43,16 +43,21 @@ export async function GET() {
       support: 0 // No support model in schema
     }
 
-  
-
-
     return NextResponse.json(stats)
+
   } catch (error) {
     console.error('Stats API Error:', error)
-    return NextResponse.json({ 
-      error: 'Failed to fetch stats', 
-      details: (error as Error).message 
-    }, { status: 500 })
+    
+    const errorResponse = NextResponse.json(
+      { 
+        error: 'Failed to fetch stats', 
+        details: (error as Error).message 
+      }, 
+      { status: 500 }
+    )
+    
+    return errorResponse
+    
   } finally {
     // Ensure connection is properly closed
     await prisma.$disconnect()

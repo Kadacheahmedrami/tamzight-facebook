@@ -12,18 +12,19 @@ async function getCurrentUser(req: NextRequest) {
 }
 
 // GET /api/main/posts/[id] - Get a specific post with full details
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const currentUser = await getCurrentUser(req);
     
     // Increment view count
     await prisma.post.update({
-      where: { id: params.id },
+      where: { id },
       data: { views: { increment: 1 } }
     });
 
     const post = await prisma.post.findUnique({
-      where: { id: params.id },
+      where: { id },
       include: {
         author: {
           select: {
@@ -122,21 +123,23 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // POST /api/main/posts/[id] - Handle likes and reactions
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { action, emoji } = await req.json();
+    const body = await req.json();
+    const { action, emoji, content } = body;
 
     if (action === 'like') {
       // Check if user already liked this post
       const existingLike = await prisma.like.findFirst({
         where: {
           userId: user.id,
-          postId: params.id
+          postId: id
         }
       });
 
@@ -168,14 +171,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         await prisma.like.create({
           data: {
             userId: user.id,
-            postId: params.id,
+            postId: id,
             emoji: emoji || null
           }
         });
 
         // Create notification for post author (but not for own posts)
         const post = await prisma.post.findUnique({
-          where: { id: params.id },
+          where: { id },
           select: { authorId: true, title: true }
         });
 
@@ -205,7 +208,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const existingLike = await prisma.like.findFirst({
         where: {
           userId: user.id,
-          postId: params.id
+          postId: id
         }
       });
 
@@ -231,7 +234,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const existingShare = await prisma.share.findFirst({
         where: {
           userId: user.id,
-          postId: params.id
+          postId: id
         }
       });
 
@@ -251,13 +254,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       await prisma.share.create({
         data: {
           userId: user.id,
-          postId: params.id
+          postId: id
         }
       });
 
       // Create notification for post author (but not for own posts)
       const post = await prisma.post.findUnique({
-        where: { id: params.id },
+        where: { id },
         select: { authorId: true, title: true }
       });
 
@@ -280,7 +283,6 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
 
     if (action === 'comment') {
-      const { content } = await req.json();
       
       if (!content || content.trim() === '') {
         return NextResponse.json({ error: 'Comment content is required' }, { status: 400 });
@@ -295,7 +297,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         data: {
           content: content.trim(),
           userId: user.id,
-          postId: params.id
+          postId: id
         },
         include: {
           user: {
@@ -312,7 +314,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
       // Create notification for post author (but not for own posts)
       const post = await prisma.post.findUnique({
-        where: { id: params.id },
+        where: { id },
         select: { authorId: true, title: true }
       });
 
@@ -341,14 +343,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 }
 
 // DELETE /api/main/posts/[id] - Only author can delete
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const post = await prisma.post.findUnique({ where: { id: params.id } });
+    const post = await prisma.post.findUnique({ where: { id } });
     if (!post) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
@@ -357,7 +360,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'Forbidden: Only the author can delete this post.' }, { status: 403 });
     }
     
-    await prisma.post.delete({ where: { id: params.id } });
+    await prisma.post.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error', details: (error as Error).message }, { status: 500 });
@@ -365,14 +368,15 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 }
 
 // PATCH /api/main/posts/[id] - Only author can edit
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const { id } = await params;
     const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
-    const post = await prisma.post.findUnique({ where: { id: params.id } });
+    const post = await prisma.post.findUnique({ where: { id } });
     if (!post) {
       return NextResponse.json({ error: 'Post not found' }, { status: 404 });
     }
@@ -394,7 +398,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
     
     const updatedPost = await prisma.post.update({
-      where: { id: params.id },
+      where: { id },
       data: updateData,
       include: {
         author: {

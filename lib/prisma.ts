@@ -1,22 +1,11 @@
-// lib/prisma.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client'
 
-declare global {
-  // Prevent creating multiple instances in development
-  // (especially when using hot‑reload / Fast Refresh)
-  // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined;
-}
+const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
 export const prisma =
-  global.prisma ||
-  new PrismaClient();
+  globalForPrisma.prisma ||
+  new PrismaClient({
+    log: ['error', 'warn'], // Optional: log queries for debugging
+  })
 
-if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma;
-}
-
-// Graceful shutdown
-process.on('beforeExit', async () => {
-  await prisma.$disconnect();
-});
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
