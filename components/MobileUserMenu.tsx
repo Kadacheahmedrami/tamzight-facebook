@@ -6,31 +6,6 @@ import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { useStats } from "@/lib/StatsContext"  // import shared stats context
 
-interface StatsResponse {
-  totalPosts: number
-  todayPosts: number
-  trendingPosts: number
-  totalUsers: number
-  activeUsers: number
-  totalViews: number
-  totalLikes: number
-  totalComments: number
-  totalShares: number
-  sections: {
-    posts: number
-    truth: number
-    questions: number
-    books: number
-    videos: number
-    images: number
-    ads: number
-    shop: number
-    ideas: number
-    support: number
-  }
-}
-
-
 interface UnifiedNavigationProps {
   user?: any
   unreadMessages?: number
@@ -38,15 +13,12 @@ interface UnifiedNavigationProps {
 }
 
 export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }: UnifiedNavigationProps) {
-
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const [statsError, setStatsError] = useState<string | null>(null)
-  const {stats} = useStats()
+  const { stats } = useStats()
   const pathname = usePathname()
-
-
 
   // Close mobile menu when pathname changes
   useEffect(() => {
@@ -56,18 +28,16 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true)
-      
-      // Call custom logout function if provided
+
       if (onLogout) {
         await onLogout()
       }
-      
-      // Use NextAuth signOut
+
       await signOut({
-        callbackUrl: "/", // Redirect to home page after logout
+        callbackUrl: "/",
         redirect: true
       })
-      
+
       setMobileMenuOpen(false)
     } catch (error) {
       console.error("Error during logout:", error)
@@ -83,70 +53,19 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
     if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`
     return count.toString()
   }
-  
 
   const sidebarLinks = [
     { href: "/main", icon: "fa-home", label: "أحدث المنشورات", badge: null },
-    { 
-      href: "/main/posts", 
-      icon: "fa-edit", 
-      label: "منشورات امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.posts)
-    },
-    { 
-      href: "/main/truth", 
-      icon: "fa-sun", 
-      label: "حقيقة امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.truth)
-    },
-    {
-      href: "/main/questions",
-      icon: "fa-question-circle",
-      label: "اسئلة امازيغية",
-      badge: formatStatsBadge(stats?.sections?.questions)
-    },
-    { 
-      href: "/main/books", 
-      icon: "fa-book", 
-      label: "كُتب امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.books)
-    },
-    { 
-      href: "/main/images", 
-      icon: "fa-images", 
-      label: "صور امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.images)
-    },
-    { 
-      href: "/main/videos", 
-      icon: "fa-tv", 
-      label: "فيديوهات امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.videos)
-    },
-    { 
-      href: "/main/ads", 
-      icon: "fa-bullhorn", 
-      label: "اعلانات امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.ads)
-    },
-    { 
-      href: "/main/shop", 
-      icon: "fa-store", 
-      label: "تسوق منتجات امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.shop)
-    },
-    {
-      href: "/main/ideas",
-      icon: "fa-lightbulb",
-      label: "اقتراحات لتطوير المنصة",
-      badge: formatStatsBadge(stats?.sections?.ideas)
-    },
-    { 
-      href: "/main/support", 
-      icon: "fa-archive", 
-      label: "صندوق دعم الامازيغ", 
-      badge: formatStatsBadge(stats?.sections?.support)
-    },
+    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: formatStatsBadge(stats.posts) },
+    { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: formatStatsBadge(stats.truth) },
+    { href: "/main/questions", icon: "fa-question-circle", label: "اسئلة امازيغية", badge: formatStatsBadge(stats.questions) },
+    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: formatStatsBadge(stats.books) },
+    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: formatStatsBadge(stats.images) },
+    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: formatStatsBadge(stats.videos) },
+    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: formatStatsBadge(stats.ads) },
+    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: formatStatsBadge(stats.shop) },
+    { href: "/main/ideas", icon: "fa-lightbulb", label: "اقتراحات لتطوير المنصة", badge: formatStatsBadge(stats.ideas) },
+    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: formatStatsBadge(stats.support) },
   ]
 
   const isActiveLink = (href: string) => {

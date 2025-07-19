@@ -5,21 +5,21 @@ import Link from "next/link"
 import { useStats } from "@/lib/StatsContext"
 
 export default function Sidebar() {
-  const { stats } = useStats() // ✅ Destructure correctly
+  const { stats } = useStats()
   const pathname = usePathname()
 
   const sidebarLinks = [
     { href: "/main", icon: "fa-home", label: " أحدث المنشورات", badge: null },
-    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: stats.sections.posts.toString() },
-    { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: stats.sections.truth.toString() },
-    { href: "/main/questions", icon: "fa-question-circle", label: "اسئلة امازيغية", badge: stats.sections.questions.toString() },
-    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: stats.sections.books.toString() },
-    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: stats.sections.images.toString() },
-    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: stats.sections.videos.toString() },
-    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: stats.sections.ads.toString() },
-    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: stats.sections.shop.toString() },
-    { href: "/main/ideas", icon: "fa-lightbulb", label: "اقتراحات لتطوير المنصة", badge: stats.sections.ideas.toString() },
-    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: stats.sections.support.toString() },
+    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: stats.posts.toString() },
+    { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: stats.truth.toString() },
+    { href: "/main/questions", icon: "fa-question-circle", label: "اسئلة امازيغية", badge: stats.questions.toString() },
+    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: stats.books.toString() },
+    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: stats.images.toString() },
+    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: stats.videos.toString() },
+    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: stats.ads.toString() },
+    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: stats.shop.toString() },
+    { href: "/main/ideas", icon: "fa-lightbulb", label: "اقتراحات لتطوير المنصة", badge: stats.ideas.toString() },
+    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: stats.support.toString() },
   ]
 
   const isActiveLink = (href: string) => {

@@ -1,81 +1,79 @@
 "use client"
+
 import {
   createContext,
   useContext,
   useState,
   useEffect,
+  useRef,
   ReactNode,
 } from "react"
 
-// Define the shape of your stats
+// Define the shape of your stats (matches API response)
 export interface StatsResponse {
-  totalPosts: number
-  todayPosts: number
-  trendingPosts: number
-  totalUsers: number
-  activeUsers: number
-  totalViews: number
-  totalLikes: number
-  totalComments: number
-  totalShares: number
-  sections: Record<string, number>
+  posts: number
+  truth: number
+  questions: number
+  books: number
+  videos: number
+  images: number
+  ads: number
+  shop: number
+  ideas: number
+  support: number
 }
 
-// Default empty stats so UI stays stable
+// Default stats
 const defaultStats: StatsResponse = {
-  totalPosts: 0,
-  todayPosts: 0,
-  trendingPosts: 0,
-  totalUsers: 0,
-  activeUsers: 0,
-  totalViews: 0,
-  totalLikes: 0,
-  totalComments: 0,
-  totalShares: 0,
-  sections: {
-    posts: 0,
-    truth: 0,
-    questions: 0,
-    books: 0,
-    videos: 0,
-    images: 0,
-    ads: 0,
-    shop: 0,
-    ideas: 0,
-    support: 0,
-  },
+  posts: 0,
+  truth: 0,
+  questions: 0,
+  books: 0,
+  videos: 0,
+  images: 0,
+  ads: 0,
+  shop: 0,
+  ideas: 0,
+  support: 0,
 }
 
-// Extended context type
+// Context type
 interface StatsContextType {
   stats: StatsResponse
   loading: boolean
   error: string | null
 }
 
-// Create context with defaultStats
+// Create context with defaults
 const StatsContext = createContext<StatsContextType>({
   stats: defaultStats,
   loading: true,
   error: null,
 })
 
+// Provider
 export function StatsProvider({ children }: { children: ReactNode }) {
   const [stats, setStats] = useState<StatsResponse>(defaultStats)
   const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
+  // Prevent double-fetch in StrictMode
+  const hasFetched = useRef(false)
+
   useEffect(() => {
+    if (hasFetched.current) return
+    hasFetched.current = true
+
     fetch("/api/main/stats")
-      .then((r) => {
-        if (!r.ok) throw new Error(`Failed to fetch: ${r.status}`)
-        return r.json()
+      .then((res) => {
+        if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`)
+        return res.json()
       })
       .then((data: StatsResponse) => {
         setStats(data)
       })
       .catch((err) => {
-        console.error(err)
+        console.error("Stats fetch error:", err)
         setError(err.message)
       })
       .finally(() => {
@@ -90,6 +88,7 @@ export function StatsProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// Hook
 export function useStats() {
   const context = useContext(StatsContext)
   if (!context) throw new Error("useStats must be used within a StatsProvider")
