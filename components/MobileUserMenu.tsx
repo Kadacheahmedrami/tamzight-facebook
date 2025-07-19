@@ -36,67 +36,34 @@ interface UnifiedNavigationProps {
 }
 
 export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }: UnifiedNavigationProps) {
-  const [stats, setStats] = useState<StatsResponse | null>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  // Stats states
   const [isLoadingStats, setIsLoadingStats] = useState(true)
   const [statsError, setStatsError] = useState<string | null>(null)
+  const [stats, setStats] = useState<StatsResponse | null>(null)
+
   const pathname = usePathname()
 
+  // Fetch stats on mount
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setIsLoadingStats(true)
-        setStatsError(null)
-        
-        const response = await fetch("/api/main/stats")
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
-        }
-        
-        const data = await response.json()
-        
-        // Check if response has error property
-        if (data.error) {
-          throw new Error(data.error)
-        }
-        
+    setIsLoadingStats(true)
+    fetch('/api/main/stats')
+      .then((res) => {
+        if (!res.ok) throw new Error(`Error ${res.status}`)
+        return res.json()
+      })
+      .then((data: StatsResponse) => {
         setStats(data)
-      } catch (error) {
-        console.error("Error fetching sidebar stats:", error)
-        setStatsError(error instanceof Error ? error.message : "Unknown error")
-        
-        // Set default stats if fetch fails
-        setStats({
-          totalPosts: 0,
-          todayPosts: 0,
-          trendingPosts: 0,
-          totalUsers: 0,
-          activeUsers: 0,
-          totalViews: 0,
-          totalLikes: 0,
-          totalComments: 0,
-          totalShares: 0,
-          sections: {
-            posts: 0,
-            truth: 0,
-            questions: 0,
-            books: 0,
-            videos: 0,
-            images: 0,
-            ads: 0,
-            shop: 0,
-            ideas: 0,
-            support: 0
-          }
-        })
-      } finally {
+      })
+      .catch((err) => {
+        console.error('Failed to load stats', err)
+        setStatsError(err.message)
+      })
+      .finally(() => {
         setIsLoadingStats(false)
-      }
-    }
-
-    fetchStats()
+      })
   }, [])
 
   // Close mobile menu when pathname changes
@@ -107,141 +74,84 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true)
-      
-      // Call custom logout function if provided
-      if (onLogout) {
-        await onLogout()
-      }
-      
-      // Use NextAuth signOut
-      await signOut({
-        callbackUrl: "/", // Redirect to home page after logout
-        redirect: true
-      })
-      
+      if (onLogout) await onLogout()
+      await signOut({ callbackUrl: '/', redirect: true })
       setMobileMenuOpen(false)
     } catch (error) {
-      console.error("Error during logout:", error)
+      console.error('Error during logout:', error)
     } finally {
       setIsLoggingOut(false)
     }
   }
 
-  const formatStatsBadge = (count: number | undefined): string => {
-    if (isLoadingStats) return "..."
-    if (count === undefined || count === null) return "0"
-    
-    // Format large numbers
-    if (count >= 1000000) {
-      return `${(count / 1000000).toFixed(1)}M`
-    } else if (count >= 1000) {
-      return `${(count / 1000).toFixed(1)}K`
-    }
-    
+  const formatStatsBadge = (count?: number): string => {
+    if (isLoadingStats) return '...'
+    if (count == null) return '0'
+    if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`
+    if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`
     return count.toString()
   }
 
   const sidebarLinks = [
-    { href: "/main", icon: "fa-home", label: "أحدث المنشورات", badge: null },
-    { 
-      href: "/main/posts", 
-      icon: "fa-edit", 
-      label: "منشورات امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.posts)
-    },
-    { 
-      href: "/main/truth", 
-      icon: "fa-sun", 
-      label: "حقيقة امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.truth)
-    },
-    {
-      href: "/main/questions",
-      icon: "fa-question-circle",
-      label: "اسئلة امازيغية",
-      badge: formatStatsBadge(stats?.sections?.questions)
-    },
-    { 
-      href: "/main/books", 
-      icon: "fa-book", 
-      label: "كُتب امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.books)
-    },
-    { 
-      href: "/main/images", 
-      icon: "fa-images", 
-      label: "صور امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.images)
-    },
-    { 
-      href: "/main/videos", 
-      icon: "fa-tv", 
-      label: "فيديوهات امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.videos)
-    },
-    { 
-      href: "/main/ads", 
-      icon: "fa-bullhorn", 
-      label: "اعلانات امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.ads)
-    },
-    { 
-      href: "/main/shop", 
-      icon: "fa-store", 
-      label: "تسوق منتجات امازيغية", 
-      badge: formatStatsBadge(stats?.sections?.shop)
-    },
-    {
-      href: "/main/ideas",
-      icon: "fa-lightbulb",
-      label: "اقتراحات لتطوير المنصة",
-      badge: formatStatsBadge(stats?.sections?.ideas)
-    },
-    { 
-      href: "/main/support", 
-      icon: "fa-archive", 
-      label: "صندوق دعم الامازيغ", 
-      badge: formatStatsBadge(stats?.sections?.support)
-    },
+    { href: '/main', icon: 'fa-home', label: 'أحدث المنشورات', badge: null },
+    { href: '/main/posts', icon: 'fa-edit', label: 'منشورات امازيغية', badge: formatStatsBadge(stats?.sections.posts) },
+    { href: '/main/truth', icon: 'fa-sun', label: 'حقيقة امازيغية', badge: formatStatsBadge(stats?.sections.truth) },
+    { href: '/main/questions', icon: 'fa-question-circle', label: 'اسئلة امازيغية', badge: formatStatsBadge(stats?.sections.questions) },
+    { href: '/main/books', icon: 'fa-book', label: 'كُتب امازيغية', badge: formatStatsBadge(stats?.sections.books) },
+    { href: '/main/images', icon: 'fa-images', label: 'صور امازيغية', badge: formatStatsBadge(stats?.sections.images) },
+    { href: '/main/videos', icon: 'fa-tv', label: 'فيديوهات امازيغية', badge: formatStatsBadge(stats?.sections.videos) },
+    { href: '/main/ads', icon: 'fa-bullhorn', label: 'اعلانات امازيغية', badge: formatStatsBadge(stats?.sections.ads) },
+    { href: '/main/shop', icon: 'fa-store', label: 'تسوق منتجات امازيغية', badge: formatStatsBadge(stats?.sections.shop) },
+    { href: '/main/ideas', icon: 'fa-lightbulb', label: 'اقتراحات لتطوير المنصة', badge: formatStatsBadge(stats?.sections.ideas) },
+    { href: '/main/support', icon: 'fa-archive', label: 'صندوق دعم الامازيغ', badge: formatStatsBadge(stats?.sections.support) },
   ]
 
-  const isActiveLink = (href: string) => {
-    if (href === "/main" && pathname === "/main") return true
-    if (href !== "/main" && pathname.startsWith(href)) return true
-    return false
+  const isActiveLink = (href: string) =>
+    (href === '/main' && pathname === '/main') ||
+    (href !== '/main' && pathname.startsWith(href))
+
+  const renderErrorBanner = () => {
+    if (!statsError) return null
+    return (
+      <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <div className="flex items-center gap-2 text-red-700">
+          <i className="fa fa-exclamation-triangle text-sm" />
+          <span className="text-sm">خطأ في تحميل الإحصائيات: {statsError}</span>
+        </div>
+      </div>
+    )
   }
 
-  const NavigationLinks = ({ isMobile = false }) => (
+  const NavigationLinks = ({ isMobile = false }: { isMobile?: boolean }) => (
     <>
       {sidebarLinks.map((link) => {
         const isActive = isActiveLink(link.href)
         return (
-          <Link 
-            key={link.href} 
+          <Link
+            key={link.href}
             href={link.href}
             onClick={isMobile ? () => setMobileMenuOpen(false) : undefined}
             className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-200 ${
-              isActive 
-                ? isMobile 
+              isActive
+                ? isMobile
                   ? "bg-blue-50 text-blue-700"
-                  : "bg-blue-50 text-blue-700 border-r-4 border-blue-700" 
+                  : "bg-blue-50 text-blue-700 border-r-4 border-blue-700"
                 : isMobile
-                  ? "text-gray-700 hover:bg-gray-50"
-                  : "text-gray-700 hover:bg-gray-50"
+                ? "text-gray-700 hover:bg-gray-50"
+                : "text-gray-700 hover:bg-gray-50"
             }`}
+            
           >
-            <i className={`fa ${link.icon} h-5 w-5 ${
-              isActive ? "text-blue-700" : "text-gray-500"
-            }`}></i>
+            <i className={`fa ${link.icon} h-5 w-5 ${isActive ? "text-blue-700" : "text-gray-500"}`} />
             <span className="flex-1 text-sm font-medium">{link.label}</span>
             {link.badge && (
               <span
                 className={`text-xs px-2 py-1 rounded-full min-w-[2rem] text-center ${
-                  link.badge === "جديد" 
-                    ? "bg-green-100 text-green-800" 
+                  link.badge === "جديد"
+                    ? "bg-green-100 text-green-800"
                     : isActive
-                      ? "bg-blue-200 text-blue-900"
-                      : "bg-gray-100 text-gray-700"
+                    ? "bg-blue-200 text-blue-900"
+                    : "bg-gray-100 text-gray-700"
                 }`}
               >
                 {link.badge}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState, useCallback, useMemo } from "react"
+import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import { Session } from "next-auth"
 import SimplePostCard from "@/components/card-comps/Cards/Posts"
@@ -18,6 +18,7 @@ interface Post {
   authorId: string
   timestamp: string
   category: string
+  subCategory?: string
   image?: string
   stats: {
     views: number
@@ -25,6 +26,15 @@ interface Post {
     comments: number
     shares: number
   }
+  reactions?: Array<{
+    id: string
+    emoji: string
+    userId: string
+    user: {
+      firstName: string
+      lastName: string
+    }
+  }>
 }
 
 interface PaginationInfo {
@@ -45,6 +55,15 @@ interface PostsPageClientProps {
   }
 }
 
+// Extended session type for SimplePostCard compatibility
+interface ExtendedSession {
+  user?: {
+    id?: string
+    email?: string
+    name?: string
+  }
+}
+
 export default function PostsPageClient({ session, searchParams }: PostsPageClientProps) {
   const router = useRouter()
   
@@ -52,17 +71,18 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
-  const [selectedCategory, setSelectedCategory] = useState(searchParams.category || "all")
-  const [searchQuery, setSearchQuery] = useState(searchParams.search || "")
-  const [currentPage, setCurrentPage] = useState(parseInt(searchParams.page || "1"))
+  const [selectedCategory, setSelectedCategory] = useState("all")
+  const [searchQuery, setSearchQuery] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [initialized, setInitialized] = useState(false)
 
   const POSTS_PER_PAGE = 10
 
   // Debounced search query
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery)
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -82,6 +102,29 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
     { value: "news", label: "أخبار" },
     { value: "tradition", label: "تراثية" }
   ], [])
+
+  // Initialize state from URL params
+  useEffect(() => {
+    if (!initialized) {
+      setSelectedCategory(searchParams.category || "all")
+      setSearchQuery(searchParams.search || "")
+      setCurrentPage(parseInt(searchParams.page || "1"))
+      setInitialized(true)
+    }
+  }, [searchParams, initialized])
+
+  // Convert session to compatible format
+  const extendedSession: ExtendedSession | null = useMemo(() => {
+    if (!session) return null
+    
+    return {
+      user: {
+        id: (session.user as { id?: string })?.id || undefined,
+        email: session.user?.email || undefined,
+        name: session.user?.name || undefined
+      }
+    }
+  }, [session])
 
   // Loading skeleton component
   const LoadingSkeleton = () => (
@@ -122,8 +165,8 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
     router.replace(`/main/posts${url}`, { scroll: false })
   }, [router])
 
-  // Fetch posts function
-  const fetchPosts = async (category = "all", search = "", page = 1, append = false) => {
+  // Fetch posts function - UPDATED TO MATCH BACKEND RESPONSE
+  const fetchPosts = useCallback(async (category = "all", search = "", page = 1, append = false) => {
     if (page === 1) {
       setLoading(true)
       setError(null)
@@ -151,19 +194,21 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       // Transform the data to match SimplePostCard expected format
       const transformedPosts = data.posts?.map((post: any) => ({
         id: post.id?.toString() || Math.random().toString(36).substr(2, 9),
-        title: post.title,
-        content: post.content,
-        author: post.author,
-        authorId: post.authorId || post.author?.toLowerCase().replace(/\s+/g, '_') || 'unknown',
-        timestamp: post.timestamp,
-        category: post.subcategory || post.category || "منشور",
-        image: post.image || post.images?.[0] || undefined,
+        title: post.title || "عنوان غير محدد",
+        content: post.content || "محتوى غير متوفر",
+        author: post.author || "مستخدم غير معروف",
+        authorId: post.authorId || 'unknown',
+        timestamp: post.timestamp || "غير محدد",
+        category: post.category || "عام",
+        subCategory: post.subcategory || undefined,
+        image: post.image || undefined,
         stats: {
           views: post.stats?.views || 0,
           likes: post.stats?.likes || 0,
           comments: post.stats?.comments || 0,
           shares: post.stats?.shares || 0
-        }
+        },
+        reactions: [] // Backend doesn't provide reactions data
       })) || []
 
       setPagination(data.pagination)
@@ -191,7 +236,61 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       setLoadingMore(false)
       setIsRefreshing(false)
     }
-  }
+  }, [POSTS_PER_PAGE, updateURL])
+
+  // Handle post deletion
+  const handlePostDelete = useCallback((postId: string) => {
+    setPosts(prev => prev.filter(post => post.id !== postId))
+    // Optionally update pagination count
+    setPagination(prev => prev ? {
+      ...prev,
+      totalPosts: prev.totalPosts - 1
+    } : null)
+  }, [])
+
+  // Handle post update
+  const handlePostUpdate = useCallback((postId: string, updatedData: any) => {
+    setPosts(prev => prev.map(post => 
+      post.id === postId 
+        ? { ...post, ...updatedData }
+        : post
+    ))
+  }, [])
+
+  // Handle new post creation
+  const handleNewPost = useCallback((newPost: any) => {
+    const transformedPost = {
+      id: newPost.id?.toString() || Math.random().toString(36).substr(2, 9),
+      title: newPost.title || "عنوان غير محدد",
+      content: newPost.content || "محتوى غير متوفر",
+      author: session?.user?.name || session?.user?.email || "مستخدم غير معروف",
+      authorId: (session?.user as { id?: string })?.id || "unknown",
+
+      timestamp: new Date().toLocaleDateString('ar-SA', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }),
+      category: newPost.category || "عام",
+      subCategory: newPost.subcategory || undefined,
+      image: newPost.image || undefined,
+      stats: {
+        views: 0,
+        likes: 0,
+        comments: 0,
+        shares: 0
+      },
+      reactions: []
+    }
+    
+    setPosts(prev => [transformedPost, ...prev])
+    setPagination(prev => prev ? {
+      ...prev,
+      totalPosts: prev.totalPosts + 1
+    } : null)
+  }, [session])
 
   // Scroll event handler for infinite scrolling
   const handleScroll = useCallback(() => {
@@ -207,7 +306,7 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       setCurrentPage(nextPage)
       fetchPosts(selectedCategory, debouncedSearchQuery, nextPage, true)
     }
-  }, [currentPage, selectedCategory, debouncedSearchQuery, loadingMore, pagination])
+  }, [currentPage, selectedCategory, debouncedSearchQuery, loadingMore, pagination, fetchPosts])
 
   // Effect for scroll listener
   useEffect(() => {
@@ -215,12 +314,29 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
     return () => window.removeEventListener('scroll', handleScroll)
   }, [handleScroll])
 
+  // Ref to skip initial filter effect
+  const skipInitialFilter = useRef(true)
+
   // Effect for initial load and filter changes
   useEffect(() => {
+    if (!initialized) return
+    
+    if (skipInitialFilter.current) {
+      skipInitialFilter.current = false
+      return
+    }
+    
     setCurrentPage(1)
     setPosts([])
     fetchPosts(selectedCategory, debouncedSearchQuery, 1, false)
-  }, [selectedCategory, debouncedSearchQuery])
+  }, [selectedCategory, debouncedSearchQuery, initialized, fetchPosts])
+
+  // Initial data fetch
+  useEffect(() => {
+    if (initialized) {
+      fetchPosts(selectedCategory, debouncedSearchQuery, currentPage, false)
+    }
+  }, [initialized, selectedCategory, debouncedSearchQuery, currentPage, fetchPosts])
 
   // Handle category change
   const handleCategoryChange = (category: string) => {
@@ -261,7 +377,7 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
     return categories.find(cat => cat.value === selectedCategory)?.label || "الجميع"
   }
 
-  if (loading && posts.length === 0) {
+  if (!initialized || (loading && posts.length === 0)) {
     return (
       <div className="max-w-2xl mx-auto">
         {/* Breadcrumb */}
@@ -471,9 +587,13 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
                 authorId={post.authorId}
                 timestamp={post.timestamp}
                 category={post.category}
+                subCategory={post.subCategory}
                 image={post.image}
                 stats={post.stats}
-                session={session}
+                reactions={post.reactions || []}
+                session={extendedSession}
+                onDelete={handlePostDelete}
+                onUpdate={handlePostUpdate}
               />
             ))}
             

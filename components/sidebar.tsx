@@ -1,71 +1,29 @@
 "use client"
 
-import { useEffect, useState } from "react"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-// Using Font Awesome icons instead of Lucide React
-
-interface SidebarStats {
-  sections: {
-    posts: number
-    truth: number
-    questions: number
-    books: number
-    videos: number
-    images: number
-    ads: number
-    shop: number
-    ideas: number
-    support: number
-    friends: number
-    messages: number
-  }
-}
+import { useStats } from "@/lib/StatsContext"
 
 export default function Sidebar() {
-  const [stats, setStats] = useState<SidebarStats | null>(null)
+  const { stats } = useStats() // ✅ Destructure correctly
   const pathname = usePathname()
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const response = await fetch("/api/main/stats")
-        const data = await response.json()
-        setStats(data)
-      } catch (error) {
-        console.error("Error fetching sidebar stats:", error)
-      }
-    }
-
-    fetchStats()
-  }, [])
 
   const sidebarLinks = [
     { href: "/main", icon: "fa-home", label: " أحدث المنشورات", badge: null },
-    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: stats?.sections.posts?.toString() || "05" },
-    { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: stats?.sections.truth?.toString() || "05" },
-    {
-      href: "/main/questions",
-      icon: "fa-question-circle",
-      label: "اسئلة امازيغية",
-      badge: stats?.sections.questions?.toString() || "05",
-    },
-    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: stats?.sections.books?.toString() || "05" },
-    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: stats?.sections.images?.toString() || "05" },
-    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: stats?.sections.videos?.toString() || "05" },
-    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: stats?.sections.ads?.toString() || "05" },
-    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: stats?.sections.shop?.toString() || "05" },
-    {
-      href: "/main/ideas",
-      icon: "fa-lightbulb",
-      label: "اقتراحات لتطوير المنصة",
-      badge: stats?.sections.ideas?.toString() || "05",
-    },
-    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: stats?.sections.support?.toString() || "05" },
+    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: stats.sections.posts.toString() },
+    { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: stats.sections.truth.toString() },
+    { href: "/main/questions", icon: "fa-question-circle", label: "اسئلة امازيغية", badge: stats.sections.questions.toString() },
+    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: stats.sections.books.toString() },
+    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: stats.sections.images.toString() },
+    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: stats.sections.videos.toString() },
+    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: stats.sections.ads.toString() },
+    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: stats.sections.shop.toString() },
+    { href: "/main/ideas", icon: "fa-lightbulb", label: "اقتراحات لتطوير المنصة", badge: stats.sections.ideas.toString() },
+    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: stats.sections.support.toString() },
   ]
 
   const isActiveLink = (href: string) => {
-    if(href === "/" ) return false
+    if (href === "/") return false
     if (href === "/main" && pathname === "/main") return true
     if (href !== "/main" && pathname.startsWith(href)) return true
     return false
@@ -78,12 +36,12 @@ export default function Sidebar() {
           {sidebarLinks.map((link) => {
             const isActive = isActiveLink(link.href)
             return (
-              <Link 
-                key={link.href} 
-                href={link.href} 
+              <Link
+                key={link.href}
+                href={link.href}
                 className={`sidebar-link transition-colors duration-200 flex items-center gap-3 p-3 rounded-lg text-sm font-medium ${
-                  isActive 
-                    ? "bg-blue-50 text-[#4531fc] border-l-4 border-[#4531fc]" 
+                  isActive
+                    ? "bg-blue-50 text-[#4531fc] border-l-4 border-[#4531fc]"
                     : "hover:bg-gray-50 text-gray-700"
                 }`}
               >
@@ -92,9 +50,7 @@ export default function Sidebar() {
                 {link.badge && (
                   <span
                     className={`text-xs px-2 py-1 rounded-full ${
-                      isActive
-                        ? "bg-blue-200 text-blue-900"
-                        : "bg-blue-100 text-blue-800"
+                      isActive ? "bg-blue-200 text-blue-900" : "bg-blue-100 text-blue-800"
                     }`}
                   >
                     {link.badge}
@@ -112,8 +68,8 @@ export default function Sidebar() {
               <div className="space-y-2 text-gray-600">
                 {/* First row: الشروط and الخصوصية */}
                 <div className="flex gap-2">
-                  <Link 
-                    href="/main/policy" 
+                  <Link
+                    href="/main/policy"
                     className={`flex items-center gap-1 flex-1 transition-colors duration-200 ${
                       pathname === "/main/policy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
@@ -121,8 +77,8 @@ export default function Sidebar() {
                     <i className="fa fa-file-contract text-sm"></i>
                     الشروط
                   </Link>
-                  <Link 
-                    href="/main/privacy" 
+                  <Link
+                    href="/main/privacy"
                     className={`flex items-center gap-1 flex-1 transition-colors duration-200 ${
                       pathname === "/main/privacy" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
@@ -131,10 +87,10 @@ export default function Sidebar() {
                     الخصوصية
                   </Link>
                 </div>
-                
+
                 {/* Second row: ملفات تعريف الارتباط alone */}
-                <Link 
-                  href="/main/cookies" 
+                <Link
+                  href="/main/cookies"
                   className={`flex items-center gap-2 transition-colors duration-200 ${
                     pathname === "/main/cookies" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                   }`}
@@ -142,11 +98,11 @@ export default function Sidebar() {
                   <i className="fa fa-cookie-bite text-sm"></i>
                   ملفات تعريف الارتباط
                 </Link>
-                
+
                 {/* Third row: المساعدة and تواصل معنا */}
                 <div className="flex gap-2">
-                  <Link 
-                    href="/main/help" 
+                  <Link
+                    href="/main/help"
                     className={`flex items-center gap-1 flex-1 transition-colors duration-200 ${
                       pathname === "/main/help" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}
@@ -154,8 +110,8 @@ export default function Sidebar() {
                     <i className="fa fa-question-circle text-sm"></i>
                     المساعدة
                   </Link>
-                  <Link 
-                    href="/main/contact" 
+                  <Link
+                    href="/main/contact"
                     className={`flex items-center gap-1 flex-1 transition-colors duration-200 ${
                       pathname === "/main/contact" ? "text-blue-600 font-medium" : "hover:text-blue-600"
                     }`}

@@ -1,14 +1,14 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import { getServerSession } from "next-auth"
-import { authOptions } from "@/lib/auth"
+import type React from "react";
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
+import Header from "@/components/header";
+import ClientProviders from "@/components/ClientProviders"; // ✅ Import this
 
-import Header from "@/components/header"
-
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Tamazight - الأمازيغية هويتنا",
@@ -45,20 +45,20 @@ export const metadata: Metadata = {
     images: ["/og-image.jpg"],
   },
   themeColor: "#00796B",
-}
+};
 
 export default async function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions)
+  const session = await getServerSession(authOptions);
 
   return (
     <html lang="ar" dir="rtl">
       <head>
-        <link 
-          rel="stylesheet" 
+        <link
+          rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
           integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA=="
           crossOrigin="anonymous"
@@ -66,13 +66,13 @@ export default async function RootLayout({
         />
       </head>
       <body className={`${inter.className} h-screen overflow-hidden`}>
-        <div className="h-full flex flex-col">
-          <Header user={session?.user || null} />
-          <main className="flex-1 overflow-hidden">
-            {children}
-          </main>
-        </div>
+        <ClientProviders>
+          <div className="h-full flex flex-col">
+            <Header user={session?.user || null} />
+            <main className="flex-1 overflow-hidden">{children}</main>
+          </div>
+        </ClientProviders>
       </body>
     </html>
-  )
+  );
 }

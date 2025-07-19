@@ -360,7 +360,7 @@ model Product {
 model Like {
   id        String   @id @default(cuid())
   userId    String
-  emoji     String   @default("👍") // User can specify emoji
+  emoji     String?   // User can choose to add an emoji or not
   createdAt DateTime @default(now())
   
   // Polymorphic relations - only one should be set
