@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import { Session } from "next-auth"
-import SimplePostCard from "@/components/card-comps/Cards/Posts"
+import PostCard from "@/components/card-comps/Cards/Posts"
 import CreatePostModal from "@/components/create-post/create-post-modal"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -58,7 +58,7 @@ interface PostsPageClientProps {
   }
 }
 
-// Extended session type for SimplePostCard compatibility
+// Extended session type for PostCard compatibility
 interface ExtendedSession {
   user?: {
     id?: string
@@ -194,7 +194,7 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       
       const data = await response.json()
       
-      // Transform the data to match SimplePostCard expected format
+      // Transform the data to match PostCard expected format
       const transformedPosts = data.posts?.map((post: any) => ({
         id: post.id?.toString() || Math.random().toString(36).substr(2, 9),
         title: post.title || "عنوان غير محدد",
@@ -585,27 +585,27 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       <div className="space-y-4">
         {posts.length > 0 ? (
           <>
-            {posts.map((post) => (
-              <SimplePostCard 
-                key={post.id} 
-                id={post.id}
-                title={post.title}
-                content={post.content}
-                author={post.author}
-                authorId={post.authorId}
-                timestamp={post.timestamp}
-                category={post.category}
-                subCategory={post.subCategory}
-                image={post.image}
-                stats={post.stats}
-                reactions={post.reactions || []}
-                session={extendedSession}
-                onDelete={handlePostDelete}
-                onUpdate={handlePostUpdate}
-                // NEW: Pass user interaction info
-                userHasLiked={post.userHasLiked}
-                userReaction={post.userReaction}
-              />
+         {posts.map((post) => (
+            <PostCard 
+                 key={post.id}
+                 id={post.id}
+                 title={post.title}
+                 content={post.content}
+                 author={post.author}
+                 authorId={post.authorId}
+                 timestamp={post.timestamp}
+                 category={post.category}
+                 subCategory={post.subCategory}
+                 image={post.image}
+                 stats={post.stats}
+                 // Remove this line: reactions={post.reactions || []}
+                 session={extendedSession}
+                 onDelete={handlePostDelete}
+                 onUpdate={handlePostUpdate}
+                 userHasLiked={post.userHasLiked}
+                 userReaction={post.userReaction}
+                 apiEndpoint={"posts"}
+                 detailsRoute={"/main/posts"}            />
             ))}
             
             {/* Load More Indicator */}
