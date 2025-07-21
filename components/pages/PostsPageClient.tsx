@@ -2,81 +2,14 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useRouter } from 'next/navigation'
-import { Session } from "next-auth"
 import PostCard from "@/components/Cards/Posts"
-import CreatePostModal from "@/components/CreateModals/create-post-modal"
+import {ExtendedSession,PaginationInfo,Post,PostsPageClientProps,ReactionSummary,ReactionUser,ReactionsData} from "./types"
+import {PostUploadModal} from "@/components/UploadModals/PostUploadModal"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RefreshCw } from "lucide-react"
-
-// Define the reaction types based on your API response
-interface ReactionUser {
-  userId: string
-  userName: string
-  userAvatar?: string
-  createdAt: Date
-}
-
-interface ReactionSummary {
-  emoji: string
-  count: number
-  users: ReactionUser[]
-}
-
-interface ReactionsData {
-  total: number
-  summary: ReactionSummary[]
-  details: Record<string, ReactionUser[]>
-}
-
-interface Post {
-  id: string
-  title: string
-  content: string
-  author: string
-  authorId: string
-  timestamp: string
-  category: string
-  subCategory?: string
-  image?: string
-  stats: {
-    views: number
-    likes: number
-    comments: number
-    shares: number
-  }
-  // User interaction fields
-  userHasLiked: boolean
-  userReaction: string | null
-  // Updated reactions field to match API response
-  reactions: ReactionsData
-}
-
-interface PaginationInfo {
-  currentPage: number
-  totalPages: number
-  totalPosts: number
-  hasNextPage: boolean
-  hasPreviousPage: boolean
-  limit: number
-}
-
-interface PostsPageClientProps {
-  session: Session | null
-  searchParams: { 
-    category?: string
-    page?: string
-  }
-}
-
-// Extended session type for PostCard compatibility
-interface ExtendedSession {
-  user?: {
-    id?: string
-    email?: string
-    name?: string
-  }
-}
 
 export default function PostsPageClient({ session, searchParams }: PostsPageClientProps) {
   const router = useRouter()
@@ -90,16 +23,17 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [initialized, setInitialized] = useState(false)
+  const [isPostModalOpen, setIsPostModalOpen] = useState(false)
 
   const POSTS_PER_PAGE = 10
 
   // Refs for intersection observer and request management
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
-  const isLoadingRef = useRef(false) // Prevent multiple simultaneous requests
-  const abortControllerRef = useRef<AbortController | null>(null) // For request cancellation
+  const isLoadingRef = useRef(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Categories configuration - Updated to match your requirements
+  // Categories configuration
   const categories = useMemo(() => [
     { value: "all", label: "الجميع" },
     { value: "history", label: "تاريخية" },
@@ -170,23 +104,19 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
     router.replace(`/main/posts${url}`, { scroll: false })
   }, [router])
 
-  // Fetch posts function - UPDATED TO HANDLE REACTIONS DATA
+  // Fetch posts function
   const fetchPosts = useCallback(async (category = "all", page = 1, isLoadMore = false) => {
-    // Prevent multiple simultaneous requests
     if (isLoadingRef.current) {
       console.log('Request already in progress, skipping...')
       return
     }
 
-    // Cancel any existing request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
     }
 
-    // Create new abort controller
     const abortController = new AbortController()
     abortControllerRef.current = abortController
-
     isLoadingRef.current = true
 
     if (isLoadMore) {
@@ -217,7 +147,6 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       const data = await response.json()
       console.log("API Response data:", data)
       
-      // Transform the data to match PostCard expected format with proper reactions handling
       const transformedPosts = data.posts?.map((post: any) => ({
         id: post.id?.toString() || Math.random().toString(36).substr(2, 9),
         title: post.title || "عنوان غير محدد",
@@ -234,10 +163,8 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
           comments: post.stats?.comments || 0,
           shares: post.stats?.shares || 0
         },
-        // User interaction information
         userHasLiked: post.userHasLiked || false,
         userReaction: post.userReaction || null,
-        // UPDATED: Properly handle reactions data from API
         reactions: {
           total: post.reactions?.total || 0,
           summary: post.reactions?.summary || [],
@@ -248,9 +175,7 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       setPagination(data.pagination)
       
       if (isLoadMore) {
-        // Append new posts to existing ones
         setPosts(prev => {
-          // Prevent duplicates
           const existingIds = new Set(prev.map(p => p.id))
           const newPosts = transformedPosts.filter((p: Post) => !existingIds.has(p.id))
           console.log(`Adding ${newPosts.length} new posts to existing ${prev.length} posts`)
@@ -261,13 +186,11 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
         console.log(`Replaced with ${transformedPosts.length} posts`)
       }
 
-      // Update URL only for initial loads or category changes
       if (!isLoadMore) {
         updateURL(category, page)
       }
 
     } catch (error) {
-      // Don't show error if request was aborted
       if (error instanceof Error && error.name === 'AbortError') {
         console.log('Request was aborted')
         return
@@ -276,7 +199,6 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       console.error("Error fetching posts:", error)
       setError("فشل في تحميل المنشورات. يرجى المحاولة مرة أخرى.")
       
-      // Fallback for first page only
       if (page === 1 && !isLoadMore) {
         setPosts([])
         setPagination(null)
@@ -286,7 +208,6 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       setLoadingMore(false)
       isLoadingRef.current = false
       
-      // Clean up abort controller
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null
       }
@@ -305,7 +226,6 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
 
   // Set up intersection observer
   useEffect(() => {
-    // Clean up previous observer
     if (observerRef.current) {
       observerRef.current.disconnect()
     }
@@ -344,21 +264,19 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
   // Handle post deletion
   const handlePostDelete = useCallback((postId: string) => {
     setPosts(prev => prev.filter(post => post.id !== postId))
-    // Optionally update pagination count
     setPagination(prev => prev ? {
       ...prev,
       totalPosts: prev.totalPosts - 1
     } : null)
   }, [])
 
-  // Handle post update (including reaction updates)
+  // Handle post update
   const handlePostUpdate = useCallback((postId: string, updatedData: any) => {
     setPosts(prev => prev.map(post => 
       post.id === postId 
         ? { 
             ...post, 
             ...updatedData,
-            // Ensure reactions data is properly merged
             reactions: updatedData.reactions ? {
               ...post.reactions,
               ...updatedData.reactions
@@ -392,7 +310,6 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
         comments: 0,
         shares: 0
       },
-      // Default values for new posts
       userHasLiked: false,
       userReaction: null,
       reactions: {
@@ -430,6 +347,11 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
     fetchPosts(selectedCategory, 1, false)
   }, [selectedCategory, fetchPosts])
 
+  // Handle post upload success
+  const handlePostUploadSuccess = useCallback(() => {
+    handleRefresh()
+  }, [handleRefresh])
+
   // Initial data fetch
   useEffect(() => {
     if (initialized) {
@@ -463,7 +385,7 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
         </div>
       </nav>
 
-      {/* Filter - Always visible */}
+      {/* Filter */}
       <div className="bg-white rounded-lg p-4 mb-4 border">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <label className="text-sm font-medium whitespace-nowrap">اعرض اخر حقائق حول:</label>
@@ -503,8 +425,29 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
         </div>
       )}
 
-      {/* Create Post */}
-      <CreatePostModal />
+      {/* Create Post Dialog Trigger */}
+      {session && (
+        <Dialog open={isPostModalOpen} onOpenChange={setIsPostModalOpen}>
+          <DialogTrigger asChild>
+            <div className="border rounded-lg p-4 mb-4 cursor-pointer hover:bg-gray-50 transition-colors">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full"></div>
+                <Input
+                  placeholder="إنشاء محتوى جديد ونشره في هذا القسم"
+                  className="flex-1 cursor-pointer text-sm sm:text-base"
+                  readOnly
+                />
+              </div>
+            </div>
+          </DialogTrigger>
+          
+          <PostUploadModal 
+            isOpen={isPostModalOpen}
+            onClose={() => setIsPostModalOpen(false)}
+            onSuccess={handlePostUploadSuccess}
+          />
+        </Dialog>
+      )}
 
       {/* Error Message */}
       {error && (
@@ -551,7 +494,6 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
                 onUpdate={handlePostUpdate}
                 userHasLiked={post.userHasLiked}
                 userReaction={post.userReaction}
-                // UPDATED: Pass reactions data to PostCard
                 reactions={post.reactions}
                 apiEndpoint={"posts"}
                 detailsRoute={"/main/posts"}

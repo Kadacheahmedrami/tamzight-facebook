@@ -1,7 +1,6 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import React, { useState, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -9,44 +8,72 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { FormValidator } from './FormValidator'
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-export type ContentType = 'posts' | 'books' | 'ideas' | 'images' | 'videos' | 'truths' | 'questions' | 'ads' | 'products'
+type ContentType = 'posts' | 'books' | 'ideas' | 'images' | 'videos' | 'truths' | 'questions' | 'ads' | 'products'
 
-export interface FormData {
+interface FormData {
   title: string
   content: string
   category: string
   subcategory: string
   image: string
-  // Book specific
   pages: string
   language: string
   isbn: string
-  // Idea specific
   status: string
   priority: string
-  // Image specific
   description: string
   location: string
   resolution: string
   tags: string
-  // Video specific
   duration: string
   quality: string
-  // Ad specific
   targetAmount: string
   currentAmount: string
   deadline: string
-  // Product specific
   price: string
   currency: string
   inStock: boolean
   sizes: string
   colors: string
-  // Question specific
   type: string
+}
+
+interface InputFieldProps {
+  field: keyof FormData
+  value: string
+  handleInputChange: (field: keyof FormData, value: string | boolean) => void
+  error: string | null
+  placeholder?: string
+  type?: string
+  required?: boolean
+}
+
+interface TextareaFieldProps {
+  field: keyof FormData
+  value: string
+  handleInputChange: (field: keyof FormData, value: string | boolean) => void
+  error: string | null
+  placeholder?: string
+  required?: boolean
+  rows?: number
+}
+
+interface SelectFieldProps {
+  options: string[]
+  placeholder: string
+  field: keyof FormData
+  value: string
+  handleInputChange: (field: keyof FormData, value: string | boolean) => void
+  error: string | null
+}
+
+interface ContentFieldsProps {
+  contentType: ContentType
+  formData: FormData
+  handleInputChange: (field: keyof FormData, value: string | boolean) => void
+  renderError: (field: string) => string | null
 }
 
 const initialFormData: FormData = {
@@ -77,7 +104,7 @@ const initialFormData: FormData = {
   type: ''
 }
 
-const contentTypeLabels = {
+const contentTypeLabels: Record<ContentType, string> = {
   posts: 'منشور',
   books: 'كتاب',
   ideas: 'فكرة',
@@ -89,20 +116,313 @@ const contentTypeLabels = {
   products: 'منتج'
 }
 
+const categoryOptions = [
+  "الأمة الأمازيغية", "اللغة الأمازيغية", "شخصيات امازيغية",
+  "الحضارة الأمازيغية", "الفن الأمازيغي", "اللباس الأمازيغي",
+  "الاكل الأمازيغي", "الحرف الامازيغية"
+]
+
+const subcategoryOptions = ["تعريف", "تاريخ", "أصل", "ثقافة"]
+
+// Simple validation function
+const validateForm = (contentType: ContentType, formData: FormData) => {
+  const errors: Record<string, string> = {}
+  
+  if (!formData.title.trim()) errors.title = 'العنوان مطلوب'
+  if (!formData.category) errors.category = 'القسم الرئيسي مطلوب'
+  
+  if (contentType !== 'images' && !formData.content.trim()) {
+    errors.content = 'المحتوى مطلوب'
+  }
+  
+  if (contentType === 'images') {
+    if (!formData.image.trim()) errors.image = 'رابط الصورة مطلوب'
+    if (!formData.description.trim()) errors.description = 'وصف الصورة مطلوب'
+  }
+  
+  if (contentType === 'products' && !formData.price.trim()) {
+    errors.price = 'السعر مطلوب'
+  }
+  
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors
+  }
+}
+
+const InputField: React.FC<InputFieldProps> = ({ field, value, handleInputChange, error, ...props }) => (
+  <div>
+    <Input
+      value={value}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleInputChange(field, e.target.value)}
+      className="text-sm"
+      {...props}
+    />
+    {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+  </div>
+)
+
+const TextareaField: React.FC<TextareaFieldProps> = ({ field, value, handleInputChange, error, ...props }) => (
+  <div>
+    <Textarea
+      value={value}
+      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange(field, e.target.value)}
+      className="text-sm resize-none"
+      {...props}
+    />
+    {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+  </div>
+)
+
+const SelectField: React.FC<SelectFieldProps> = ({ options, placeholder, field, value, handleInputChange, error }) => (
+  <div>
+    <Select value={value} onValueChange={(value: string) => handleInputChange(field, value)}>
+      <SelectTrigger className="text-sm">
+        <SelectValue placeholder={placeholder} />
+      </SelectTrigger>
+      <SelectContent>
+        {options.map((option: string) => (
+          <SelectItem key={option} value={option}>{option}</SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+    {error && <p className="text-red-500 text-xs mt-1">{error}</p>}
+  </div>
+)
+
+const ContentFields: React.FC<ContentFieldsProps> = ({ contentType, formData, handleInputChange, renderError }) => {
+  switch (contentType) {
+    case 'books':
+      return (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <InputField
+              placeholder="عدد الصفحات"
+              type="number"
+              field="pages"
+              value={formData.pages}
+              handleInputChange={handleInputChange}
+              error={renderError('pages')}
+            />
+            <InputField
+              placeholder="اللغة"
+              field="language"
+              value={formData.language}
+              handleInputChange={handleInputChange}
+              error={renderError('language')}
+            />
+          </div>
+          <InputField
+            placeholder="ISBN (اختياري)"
+            field="isbn"
+            value={formData.isbn}
+            handleInputChange={handleInputChange}
+            error={renderError('isbn')}
+          />
+        </>
+      )
+    
+    case 'ideas':
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <SelectField
+            options={["قيد المراجعة", "مقبولة", "مرفوضة", "قيد التنفيذ"]}
+            placeholder="حالة الفكرة"
+            field="status"
+            value={formData.status}
+            handleInputChange={handleInputChange}
+            error={renderError('status')}
+          />
+          <SelectField
+            options={["منخفضة", "متوسطة", "عالية"]}
+            placeholder="الأولوية"
+            field="priority"
+            value={formData.priority}
+            handleInputChange={handleInputChange}
+            error={renderError('priority')}
+          />
+        </div>
+      )
+    
+    case 'images':
+      return (
+        <>
+          <InputField
+            placeholder="رابط الصورة *"
+            field="image"
+            value={formData.image}
+            handleInputChange={handleInputChange}
+            required
+            error={renderError('image')}
+          />
+          <TextareaField
+            placeholder="وصف الصورة *"
+            field="description"
+            value={formData.description}
+            handleInputChange={handleInputChange}
+            required
+            error={renderError('description')}
+          />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <InputField
+              placeholder="الموقع"
+              field="location"
+              value={formData.location}
+              handleInputChange={handleInputChange}
+              error={renderError('location')}
+            />
+            <InputField
+              placeholder="الدقة (مثل: 1920x1080)"
+              field="resolution"
+              value={formData.resolution}
+              handleInputChange={handleInputChange}
+              error={renderError('resolution')}
+            />
+          </div>
+          <InputField
+            placeholder="العلامات (مفصولة بفواصل)"
+            field="tags"
+            value={formData.tags}
+            handleInputChange={handleInputChange}
+            error={renderError('tags')}
+          />
+        </>
+      )
+    
+    case 'videos':
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <InputField
+            placeholder="المدة (HH:MM:SS)"
+            field="duration"
+            value={formData.duration}
+            handleInputChange={handleInputChange}
+            error={renderError('duration')}
+          />
+          <InputField
+            placeholder="الجودة"
+            field="quality"
+            value={formData.quality}
+            handleInputChange={handleInputChange}
+            error={renderError('quality')}
+          />
+          <InputField
+            placeholder="اللغة"
+            field="language"
+            value={formData.language}
+            handleInputChange={handleInputChange}
+            error={renderError('language')}
+          />
+        </div>
+      )
+    
+    case 'ads':
+      return (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <InputField
+              placeholder="المبلغ المطلوب"
+              type="number"
+              field="targetAmount"
+              value={formData.targetAmount}
+              handleInputChange={handleInputChange}
+              error={renderError('targetAmount')}
+            />
+            <InputField
+              placeholder="المبلغ الحالي"
+              type="number"
+              field="currentAmount"
+              value={formData.currentAmount}
+              handleInputChange={handleInputChange}
+              error={renderError('currentAmount')}
+            />
+          </div>
+          <InputField
+            placeholder="تاريخ الانتهاء"
+            type="date"
+            field="deadline"
+            value={formData.deadline}
+            handleInputChange={handleInputChange}
+            error={renderError('deadline')}
+          />
+        </>
+      )
+    
+    case 'products':
+      return (
+        <>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <InputField
+              placeholder="السعر *"
+              type="number"
+              field="price"
+              value={formData.price}
+              handleInputChange={handleInputChange}
+              required
+              error={renderError('price')}
+            />
+            <SelectField
+              options={["دينار ليبي", "دولار", "يورو"]}
+              placeholder="العملة *"
+              field="currency"
+              value={formData.currency}
+              handleInputChange={handleInputChange}
+              error={renderError('currency')}
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <InputField
+              placeholder="الأحجام (مفصولة بفواصل)"
+              field="sizes"
+              value={formData.sizes}
+              handleInputChange={handleInputChange}
+              error={renderError('sizes')}
+            />
+            <InputField
+              placeholder="الألوان (مفصولة بفواصل)"
+              field="colors"
+              value={formData.colors}
+              handleInputChange={handleInputChange}
+              error={renderError('colors')}
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="inStock"
+              checked={formData.inStock}
+              onCheckedChange={(value: boolean) => handleInputChange('inStock', value)}
+            />
+            <Label htmlFor="inStock">متوفر في المخزون</Label>
+          </div>
+        </>
+      )
+    
+    case 'questions':
+      return (
+        <SelectField
+          options={["يحتاج إجابة", "استطلاع رأي", "نقاش"]}
+          placeholder="نوع السؤال"
+          field="type"
+          value={formData.type}
+          handleInputChange={handleInputChange}
+          error={renderError('type')}
+        />
+      )
+    
+    default:
+      return null
+  }
+}
+
 export default function CreatePostModal() {
   const [isOpen, setIsOpen] = useState(false)
   const [contentType, setContentType] = useState<ContentType>('posts')
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [validationErrors, setValidationErrors] = useState<{[key: string]: string}>({})
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
 
-  const handleInputChange = (field: keyof FormData, value: string | boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }))
-    
-    // Clear validation error for this field
+  const handleInputChange = useCallback((field: keyof FormData, value: string | boolean) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
     if (validationErrors[field]) {
       setValidationErrors(prev => {
         const newErrors = { ...prev }
@@ -110,29 +430,20 @@ export default function CreatePostModal() {
         return newErrors
       })
     }
-  }
+  }, [validationErrors])
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     setFormData(initialFormData)
     setContentType('posts')
     setValidationErrors({})
-  }
+  }, [])
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async () => {
     setIsSubmitting(true)
-    setValidationErrors({})
-
-    // Validate and assemble data
-    const validationResult = FormValidator.validateAndAssemble(contentType, formData)
-
-    if (!validationResult.isValid) {
-      // Convert validation errors to display format
-      const errorMap: {[key: string]: string} = {}
-      validationResult.errors.forEach(error => {
-        errorMap[error.field] = error.message
-      })
-      setValidationErrors(errorMap)
+    
+    const validation = validateForm(contentType, formData)
+    if (!validation.isValid) {
+      setValidationErrors(validation.errors)
       setIsSubmitting(false)
       return
     }
@@ -140,29 +451,15 @@ export default function CreatePostModal() {
     try {
       const response = await fetch('/api/main/upload', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          type: contentType,
-          data: validationResult.data
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: contentType, data: formData })
       })
 
-      const result = await response.json()
-
       if (response.ok) {
-        console.log('Content created successfully:', result)
         setIsOpen(false)
         resetForm()
-        // You can add success notification here
       } else {
-        console.error('Error creating content:', result)
-        // Handle validation errors from server
-        if (result.details) {
-          console.error('Server validation errors:', result.details)
-          // You can set server validation errors here if needed
-        }
+        console.error('Error creating content:', await response.json())
       }
     } catch (error) {
       console.error('Network error:', error)
@@ -171,297 +468,12 @@ export default function CreatePostModal() {
     }
   }
 
-  const renderError = (field: string) => {
-    if (validationErrors[field]) {
-      return <p className="text-red-500 text-xs mt-1">{validationErrors[field]}</p>
-    }
-    return null
-  }
-
-  const renderSpecificFields = () => {
-    switch (contentType) {
-      case 'books':
-        return (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Input
-                  placeholder="عدد الصفحات"
-                  type="number"
-                  value={formData.pages}
-                  onChange={(e) => handleInputChange('pages', e.target.value)}
-                  className="form-input-mobile"
-                />
-                {renderError('pages')}
-              </div>
-              <div>
-                <Input
-                  placeholder="اللغة"
-                  value={formData.language}
-                  onChange={(e) => handleInputChange('language', e.target.value)}
-                  className="form-input-mobile"
-                />
-                {renderError('language')}
-              </div>
-            </div>
-            <div>
-              <Input
-                placeholder="ISBN (اختياري)"
-                value={formData.isbn}
-                onChange={(e) => handleInputChange('isbn', e.target.value)}
-                className="form-input-mobile"
-              />
-              {renderError('isbn')}
-            </div>
-          </>
-        )
-
-      case 'ideas':
-        return (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Select value={formData.status} onValueChange={(value) => handleInputChange('status', value)}>
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="حالة الفكرة" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="قيد المراجعة">قيد المراجعة</SelectItem>
-                  <SelectItem value="مقبولة">مقبولة</SelectItem>
-                  <SelectItem value="مرفوضة">مرفوضة</SelectItem>
-                  <SelectItem value="قيد التنفيذ">قيد التنفيذ</SelectItem>
-                </SelectContent>
-              </Select>
-              {renderError('status')}
-            </div>
-            <div>
-              <Select value={formData.priority} onValueChange={(value) => handleInputChange('priority', value)}>
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="الأولوية" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="منخفضة">منخفضة</SelectItem>
-                  <SelectItem value="متوسطة">متوسطة</SelectItem>
-                  <SelectItem value="عالية">عالية</SelectItem>
-                </SelectContent>
-              </Select>
-              {renderError('priority')}
-            </div>
-          </div>
-        )
-
-      case 'images':
-        return (
-          <>
-            <div>
-              <Input
-                placeholder="رابط الصورة *"
-                value={formData.image}
-                onChange={(e) => handleInputChange('image', e.target.value)}
-                className="form-input-mobile"
-                required
-              />
-              {renderError('image')}
-            </div>
-            <div>
-              <Textarea
-                placeholder="وصف الصورة *"
-                value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
-                rows={3}
-                className="form-input-mobile resize-none"
-                required
-              />
-              {renderError('description')}
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Input
-                  placeholder="الموقع"
-                  value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  className="form-input-mobile"
-                />
-                {renderError('location')}
-              </div>
-              <div>
-                <Input
-                  placeholder="الدقة (مثل: 1920x1080)"
-                  value={formData.resolution}
-                  onChange={(e) => handleInputChange('resolution', e.target.value)}
-                  className="form-input-mobile"
-                />
-                {renderError('resolution')}
-              </div>
-            </div>
-            <div>
-              <Input
-                placeholder="العلامات (مفصولة بفواصل)"
-                value={formData.tags}
-                onChange={(e) => handleInputChange('tags', e.target.value)}
-                className="form-input-mobile"
-              />
-              {renderError('tags')}
-            </div>
-          </>
-        )
-
-      case 'videos':
-        return (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div>
-              <Input
-                placeholder="المدة (HH:MM:SS)"
-                value={formData.duration}
-                onChange={(e) => handleInputChange('duration', e.target.value)}
-                className="form-input-mobile"
-              />
-              {renderError('duration')}
-            </div>
-            <div>
-              <Input
-                placeholder="الجودة"
-                value={formData.quality}
-                onChange={(e) => handleInputChange('quality', e.target.value)}
-                className="form-input-mobile"
-              />
-              {renderError('quality')}
-            </div>
-            <div>
-              <Input
-                placeholder="اللغة"
-                value={formData.language}
-                onChange={(e) => handleInputChange('language', e.target.value)}
-                className="form-input-mobile"
-              />
-              {renderError('language')}
-            </div>
-          </div>
-        )
-
-      case 'ads':
-        return (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Input
-                  placeholder="المبلغ المطلوب"
-                  type="number"
-                  value={formData.targetAmount}
-                  onChange={(e) => handleInputChange('targetAmount', e.target.value)}
-                  className="form-input-mobile"
-                />
-                {renderError('targetAmount')}
-              </div>
-              <div>
-                <Input
-                  placeholder="المبلغ الحالي"
-                  type="number"
-                  value={formData.currentAmount}
-                  onChange={(e) => handleInputChange('currentAmount', e.target.value)}
-                  className="form-input-mobile"
-                />
-                {renderError('currentAmount')}
-              </div>
-            </div>
-            <div>
-              <Input
-                placeholder="تاريخ الانتهاء"
-                type="date"
-                value={formData.deadline}
-                onChange={(e) => handleInputChange('deadline', e.target.value)}
-                className="form-input-mobile"
-              />
-              {renderError('deadline')}
-            </div>
-          </>
-        )
-
-      case 'products':
-        return (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Input
-                  placeholder="السعر *"
-                  type="number"
-                  value={formData.price}
-                  onChange={(e) => handleInputChange('price', e.target.value)}
-                  className="form-input-mobile"
-                  required
-                />
-                {renderError('price')}
-              </div>
-              <div>
-                <Select value={formData.currency} onValueChange={(value) => handleInputChange('currency', value)}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue placeholder="العملة *" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="دينار ليبي">دينار ليبي</SelectItem>
-                    <SelectItem value="دولار">دولار</SelectItem>
-                    <SelectItem value="يورو">يورو</SelectItem>
-                  </SelectContent>
-                </Select>
-                {renderError('currency')}
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <Input
-                  placeholder="الأحجام (مفصولة بفواصل)"
-                  value={formData.sizes}
-                  onChange={(e) => handleInputChange('sizes', e.target.value)}
-                  className="form-input-mobile"
-                />
-                {renderError('sizes')}
-              </div>
-              <div>
-                <Input
-                  placeholder="الألوان (مفصولة بفواصل)"
-                  value={formData.colors}
-                  onChange={(e) => handleInputChange('colors', e.target.value)}
-                  className="form-input-mobile"
-                />
-                {renderError('colors')}
-              </div>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="inStock"
-                checked={formData.inStock}
-                onCheckedChange={(value) => handleInputChange('inStock', value)}
-              />
-              <Label htmlFor="inStock">متوفر في المخزون</Label>
-            </div>
-          </>
-        )
-
-      case 'questions':
-        return (
-          <div>
-            <Select value={formData.type} onValueChange={(value) => handleInputChange('type', value)}>
-              <SelectTrigger className="text-sm">
-                <SelectValue placeholder="نوع السؤال" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="يحتاج إجابة">يحتاج إجابة</SelectItem>
-                <SelectItem value="استطلاع رأي">استطلاع رأي</SelectItem>
-                <SelectItem value="نقاش">نقاش</SelectItem>
-              </SelectContent>
-            </Select>
-            {renderError('type')}
-          </div>
-        )
-
-      default:
-        return null
-    }
-  }
+  const renderError = (field: string) => validationErrors[field] || null
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <div className="post-card mb-4 cursor-pointer hover:bg-gray-50 transition-colors">
+        <div className="border rounded-lg p-4 mb-4 cursor-pointer hover:bg-gray-50 transition-colors">
           <div className="flex items-center gap-2 sm:gap-3">
             <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full"></div>
             <Input
@@ -472,14 +484,15 @@ export default function CreatePostModal() {
           </div>
         </div>
       </DialogTrigger>
+      
       <DialogContent className="max-w-4xl mx-2 sm:mx-auto max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-[#4531fc] mx-auto text-lg sm:text-xl">
+          <DialogTitle className="text-blue-600 mx-auto text-lg sm:text-xl">
             إنشاء {contentTypeLabels[contentType]} جديد
           </DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div className="flex items-center gap-2 sm:gap-3 mb-4">
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 rounded-full"></div>
             <div>
@@ -488,139 +501,93 @@ export default function CreatePostModal() {
             </div>
           </div>
 
-          {/* Content Type Selection */}
           <Tabs value={contentType} onValueChange={(value) => setContentType(value as ContentType)}>
             <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-1 h-auto">
-              <TabsTrigger value="posts" className="text-xs sm:text-sm">منشور</TabsTrigger>
-              <TabsTrigger value="books" className="text-xs sm:text-sm">كتاب</TabsTrigger>
-              <TabsTrigger value="ideas" className="text-xs sm:text-sm">فكرة</TabsTrigger>
-              <TabsTrigger value="images" className="text-xs sm:text-sm">صورة</TabsTrigger>
-              <TabsTrigger value="videos" className="text-xs sm:text-sm">فيديو</TabsTrigger>
-              <TabsTrigger value="truths" className="text-xs sm:text-sm">حقيقة</TabsTrigger>
-              <TabsTrigger value="questions" className="text-xs sm:text-sm">سؤال</TabsTrigger>
-              <TabsTrigger value="ads" className="text-xs sm:text-sm">إعلان</TabsTrigger>
-              <TabsTrigger value="products" className="text-xs sm:text-sm">منتج</TabsTrigger>
+              {Object.entries(contentTypeLabels).map(([key, label]) => (
+                <TabsTrigger key={key} value={key} className="text-xs sm:text-sm">
+                  {label}
+                </TabsTrigger>
+              ))}
             </TabsList>
           </Tabs>
 
-          {/* Category Selection */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-            <div>
-              <Select value={formData.category} onValueChange={(value) => handleInputChange('category', value)}>
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="اختار قسم رئيسي *" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="الأمة الأمازيغية">الأمة الأمازيغية</SelectItem>
-                  <SelectItem value="اللغة الأمازيغية">اللغة الأمازيغية</SelectItem>
-                  <SelectItem value="شخصيات امازيغية">شخصيات امازيغية</SelectItem>
-                  <SelectItem value="الحضارة الأمازيغية">الحضارة الأمازيغية</SelectItem>
-                  <SelectItem value="الفن الأمازيغي">الفن الأمازيغي</SelectItem>
-                  <SelectItem value="اللباس الأمازيغي">اللباس الأمازيغي</SelectItem>
-                  <SelectItem value="الاكل الأمازيغي">الاكل الأمازيغي</SelectItem>
-                  <SelectItem value="الحرف الامازيغية">الحرف الامازيغية</SelectItem>
-                </SelectContent>
-              </Select>
-              {renderError('category')}
-            </div>
-
-            <div>
-              <Select value={formData.subcategory} onValueChange={(value) => handleInputChange('subcategory', value)}>
-                <SelectTrigger className="text-sm">
-                  <SelectValue placeholder="اختار قسم فرعي" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="تعريف">تعريف</SelectItem>
-                  <SelectItem value="تاريخ">تاريخ</SelectItem>
-                  <SelectItem value="أصل">أصل</SelectItem>
-                  <SelectItem value="ثقافة">ثقافة</SelectItem>
-                </SelectContent>
-              </Select>
-              {renderError('subcategory')}
-            </div>
-          </div>
-
-          {/* Common Fields */}
-          <div>
-            <Input
-              placeholder="اكتب العنوان هنا *"
-              value={formData.title}
-              onChange={(e) => handleInputChange('title', e.target.value)}
-              className="form-input-mobile"
-              required
+            <SelectField
+              options={categoryOptions}
+              placeholder="اختار قسم رئيسي *"
+              field="category"
+              value={formData.category}
+              handleInputChange={handleInputChange}
+              error={renderError('category')}
             />
-            {renderError('title')}
+            <SelectField
+              options={subcategoryOptions}
+              placeholder="اختار قسم فرعي"
+              field="subcategory"
+              value={formData.subcategory}
+              handleInputChange={handleInputChange}
+              error={renderError('subcategory')}
+            />
           </div>
 
+          <InputField
+            placeholder="اكتب العنوان هنا *"
+            field="title"
+            value={formData.title}
+            handleInputChange={handleInputChange}
+            required
+            error={renderError('title')}
+          />
+
           {contentType !== 'images' && (
-            <div>
-              <Textarea
-                placeholder="أكتب المحتوى هنا *"
-                value={formData.content}
-                onChange={(e) => handleInputChange('content', e.target.value)}
-                rows={4}
-                className="form-input-mobile resize-none"
-                required={contentType !== 'images'}
-              />
-              {renderError('content')}
-            </div>
+            <TextareaField
+              placeholder="أكتب المحتوى هنا *"
+              field="content"
+              value={formData.content}
+              handleInputChange={handleInputChange}
+              required={contentType !== 'images'}
+              rows={4}
+              error={renderError('content')}
+            />
           )}
 
-          {/* Image URL for non-image content */}
           {contentType !== 'images' && (
-            <div>
-              <Input
-                placeholder="رابط الصورة (اختياري)"
-                value={formData.image}
-                onChange={(e) => handleInputChange('image', e.target.value)}
-                className="form-input-mobile"
-              />
-              {renderError('image')}
-            </div>
+            <InputField
+              placeholder="رابط الصورة (اختياري)"
+              field="image"
+              value={formData.image}
+              handleInputChange={handleInputChange}
+              error={renderError('image')}
+            />
           )}
 
-          {/* Content Type Specific Fields */}
-          {renderSpecificFields()}
+          <ContentFields 
+            contentType={contentType}
+            formData={formData}
+            handleInputChange={handleInputChange}
+            renderError={renderError}
+          />
 
-          {/* Media Upload Options */}
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
-            <span className="text-sm font-medium">أضف للمحتوى:</span>
-            <div className="flex flex-wrap gap-2">
-              <Button type="button" variant="ghost" size="sm" className="text-xs sm:text-sm bg-transparent">
-                <i className="fa fa-image text-xs sm:text-sm mr-1"></i>
-                صورة
-              </Button>
-              <Button type="button" variant="ghost" size="sm" className="text-xs sm:text-sm bg-transparent">
-                <i className="fa fa-file-upload text-xs sm:text-sm mr-1"></i>
-                ملف
-              </Button>
-              <Button type="button" variant="ghost" size="sm" className="text-xs sm:text-sm bg-transparent">
-                <i className="fa fa-video text-xs sm:text-sm mr-1"></i>
-                فيديو
-              </Button>
-            </div>
-          </div>
-
-          {/* Submit Buttons */}
           <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-3">
             <Button
               type="button"
               variant="outline"
               onClick={() => setIsOpen(false)}
-              className="touch-target bg-transparent"
+              className="bg-transparent"
               disabled={isSubmitting}
             >
               إلغاء
             </Button>
             <Button 
-              type="submit" 
-              className="bg-[#4531fc] hover:bg-blue-800 touch-target"
+              type="button"
+              className="bg-blue-600 hover:bg-blue-700"
               disabled={isSubmitting}
+              onClick={handleSubmit}
             >
               {isSubmitting ? 'جاري النشر...' : `انشر ${contentTypeLabels[contentType]} الآن`}
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   )
