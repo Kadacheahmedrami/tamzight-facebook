@@ -132,6 +132,79 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Get all reactions for these posts with user details
+    let reactionsData = new Map<string, any>();
+    if (posts.length > 0) {
+      const postIds = posts.map(post => post.id);
+      const allReactions = await prisma.like.findMany({
+        where: {
+          postId: { in: postIds }
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatar: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      // Group reactions by post and emoji
+      const groupedReactions = allReactions.reduce((acc, reaction) => {
+        const postId = reaction.postId;
+        const emoji = reaction.emoji;
+        
+        // Skip if postId or emoji is null
+        if (!postId || !emoji) {
+          return acc;
+        }
+        
+        if (!acc[postId]) {
+          acc[postId] = {};
+        }
+        
+        if (!acc[postId][emoji]) {
+          acc[postId][emoji] = [];
+        }
+        
+        acc[postId][emoji].push({
+          userId: reaction.user.id,
+          userName: `${reaction.user.firstName} ${reaction.user.lastName}`,
+          userAvatar: reaction.user.avatar,
+          createdAt: reaction.createdAt
+        });
+        
+        return acc;
+      }, {} as Record<string, Record<string, any[]>>);
+
+      // Convert to Map and calculate reaction summary
+      reactionsData = new Map(
+        Object.entries(groupedReactions).map(([postId, reactions]) => {
+          // Calculate total reactions per emoji
+          const reactionSummary = Object.entries(reactions).map(([emoji, users]) => ({
+            emoji,
+            count: users.length,
+            users: users
+          }));
+
+          // Calculate total reactions for this post
+          const totalReactions = reactionSummary.reduce((sum, reaction) => sum + reaction.count, 0);
+
+          return [postId, {
+            summary: reactionSummary,
+            totalReactions,
+            byEmoji: reactions
+          }];
+        })
+      );
+    }
+
     // Define the type for the post object from database
     type PostFromDb = {
       id: string;
@@ -156,25 +229,35 @@ export async function GET(request: NextRequest) {
     };
 
     // Transform the data to match your frontend format
-    const transformedPosts = posts.map((post: PostFromDb) => ({
-      id: post.id,
-      title: post.title,
-      content: post.content || "",
-      author: `${post.author.firstName} ${post.author.lastName}`,
-      timestamp: `نشر بتاريخ ${post.createdAt.toLocaleDateString('ar-EG')} الساعة ${post.createdAt.toLocaleTimeString('ar-EG')}`,
-      category: post.category,
-      subcategory: post.subcategory || "",
-      image: post.image || "/placeholder.svg?height=300&width=600",
-      stats: {
-        views: post.views,
-        likes: post._count.likes,
-        comments: post._count.comments,
-        shares: post._count.shares
-      },
-      // Add user interaction information
-      userHasLiked: currentUserId ? userLikesMap.has(post.id) : false,
-      userReaction: currentUserId ? userLikesMap.get(post.id) || null : null
-    }))
+    const transformedPosts = posts.map((post: PostFromDb) => {
+      const postReactions = reactionsData.get(post.id);
+      
+      return {
+        id: post.id,
+        title: post.title,
+        content: post.content || "",
+        author: `${post.author.firstName} ${post.author.lastName}`,
+        timestamp: `نشر بتاريخ ${post.createdAt.toLocaleDateString('ar-EG')} الساعة ${post.createdAt.toLocaleTimeString('ar-EG')}`,
+        category: post.category,
+        subcategory: post.subcategory || "",
+        image: post.image || "/placeholder.svg?height=300&width=600",
+        stats: {
+          views: post.views,
+          likes: post._count.likes,
+          comments: post._count.comments,
+          shares: post._count.shares
+        },
+        // Add user interaction information
+        userHasLiked: currentUserId ? userLikesMap.has(post.id) : false,
+        userReaction: currentUserId ? userLikesMap.get(post.id) || null : null,
+        // Add detailed reactions data
+        reactions: {
+          total: postReactions?.totalReactions || 0,
+          summary: postReactions?.summary || [],
+          details: postReactions?.byEmoji || {}
+        }
+      }
+    })
 
     // Return paginated response
     return NextResponse.json({

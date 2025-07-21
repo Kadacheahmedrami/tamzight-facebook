@@ -5,23 +5,25 @@ import { useRouter } from "next/navigation"
 import { PostCardProps } from "@/components/card-comps/types"
 import InteractionsBar from "./InteractionsBar"
 import CommentsModal from "./CommentsModal"
+import ReactionsDisplay, { ReactionsData } from "./ReactionsDisplay"
 
 interface SimplePostCardProps extends PostCardProps {
   userHasLiked?: boolean
   userReaction?: string | null
+  reactions?: ReactionsData
   session?: {
     user?: { id?: string; email?: string; name?: string }
   } | null
   onDelete?: (postId: string) => void
   onUpdate?: (postId: string, updatedData: any) => void
   // New props for API routing
-  apiEndpoint: string // e.g., "posts", "images", "videos", apietc.
+  apiEndpoint: string // e.g., "posts", "images", "videos", etc.
   detailsRoute: string // e.g., "/main/posts", "/main/images", etc.
 }
 
 export default function PostCard({ 
   id, title, content, author, authorId, timestamp, category, subCategory, image, stats, 
-  userHasLiked = false, userReaction = null,
+  userHasLiked = false, userReaction = null, reactions,
   session, onDelete, onUpdate,
   apiEndpoint, detailsRoute
 }: SimplePostCardProps) {
@@ -39,6 +41,11 @@ export default function PostCard({
   const [currentStats, setCurrentStats] = useState(stats)
   const [currentUserReaction, setCurrentUserReaction] = useState<string | null>(userReaction)
   const [currentUserHasLiked, setCurrentUserHasLiked] = useState(userHasLiked)
+  const [currentReactions, setCurrentReactions] = useState<ReactionsData>(reactions || {
+    total: 0,
+    summary: [],
+    details: {}
+  })
   
   // Loading states
   const [isUpdating, setIsUpdating] = useState(false)
@@ -52,7 +59,8 @@ export default function PostCard({
     setCurrentUserReaction(userReaction)
     setCurrentUserHasLiked(userHasLiked)
     setCurrentStats(stats)
-  }, [userReaction, userHasLiked, stats])
+    setCurrentReactions(reactions || { total: 0, summary: [], details: {} })
+  }, [userReaction, userHasLiked, stats, reactions])
 
   // Close actions dropdown when clicking outside
   useEffect(() => {
@@ -136,9 +144,12 @@ export default function PostCard({
     setCurrentStats(newStats)
   }
 
-  const handleReactionUpdate = (reaction: string | null, hasLiked: boolean) => {
+  const handleReactionUpdate = (reaction: string | null, hasLiked: boolean, newReactions?: ReactionsData) => {
     setCurrentUserReaction(reaction)
     setCurrentUserHasLiked(hasLiked)
+    if (newReactions) {
+      setCurrentReactions(newReactions)
+    }
   }
 
   return (
@@ -146,12 +157,12 @@ export default function PostCard({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
         <div className="flex items-center gap-2">
-          <span className="text-blue-600 font-semibold text-sm">منشور</span>
-          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">{category}</span>
+          <span className="text-blue-600 font-semibold text-sm"></span>
+          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">منشور</span>
           {subCategory && (
             <>
               <span className="text-gray-400 text-xs">•</span>
-              <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">{subCategory}</span>
+              <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">{category}</span>
             </>
           )}
         </div>
@@ -297,6 +308,16 @@ export default function PostCard({
           </>
         )}
       </div>
+
+      {/* Reactions Preview - Left aligned in original position */}
+      {!isEditing && (
+        <div className="mb-3 flex justify-end">
+          <ReactionsDisplay
+            reactions={currentReactions}
+            session={session}
+          />
+        </div>
+      )}
 
       {/* Interactions Bar */}
       {!isEditing && (

@@ -7,8 +7,27 @@ import PostCard from "@/components/card-comps/Cards/Posts"
 import CreatePostModal from "@/components/create-post/create-post-modal"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
-import { Search, RefreshCw, Filter } from "lucide-react"
+import { RefreshCw } from "lucide-react"
+
+// Define the reaction types based on your API response
+interface ReactionUser {
+  userId: string
+  userName: string
+  userAvatar?: string
+  createdAt: Date
+}
+
+interface ReactionSummary {
+  emoji: string
+  count: number
+  users: ReactionUser[]
+}
+
+interface ReactionsData {
+  total: number
+  summary: ReactionSummary[]
+  details: Record<string, ReactionUser[]>
+}
 
 interface Post {
   id: string
@@ -26,18 +45,11 @@ interface Post {
     comments: number
     shares: number
   }
-  // New fields from API
+  // User interaction fields
   userHasLiked: boolean
   userReaction: string | null
-  reactions?: Array<{
-    id: string
-    emoji: string
-    userId: string
-    user: {
-      firstName: string
-      lastName: string
-    }
-  }>
+  // Updated reactions field to match API response
+  reactions: ReactionsData
 }
 
 interface PaginationInfo {
@@ -53,7 +65,6 @@ interface PostsPageClientProps {
   session: Session | null
   searchParams: { 
     category?: string
-    search?: string
     page?: string
   }
 }
@@ -75,42 +86,34 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [selectedCategory, setSelectedCategory] = useState("all")
-  const [searchQuery, setSearchQuery] = useState("")
   const [currentPage, setCurrentPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationInfo | null>(null)
-  const [isRefreshing, setIsRefreshing] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [initialized, setInitialized] = useState(false)
 
   const POSTS_PER_PAGE = 10
 
-  // Debounced search query
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("")
+  // Refs for intersection observer and request management
+  const observerRef = useRef<IntersectionObserver | null>(null)
+  const loadMoreRef = useRef<HTMLDivElement | null>(null)
+  const isLoadingRef = useRef(false) // Prevent multiple simultaneous requests
+  const abortControllerRef = useRef<AbortController | null>(null) // For request cancellation
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery)
-    }, 500)
-
-    return () => clearTimeout(timer)
-  }, [searchQuery])
-
-  // Categories configuration
+  // Categories configuration - Updated to match your requirements
   const categories = useMemo(() => [
     { value: "all", label: "الجميع" },
     { value: "history", label: "تاريخية" },
     { value: "culture", label: "ثقافية" },
     { value: "language", label: "لغوية" },
-    { value: "art", label: "فنية" },
-    { value: "news", label: "أخبار" },
-    { value: "tradition", label: "تراثية" }
+    { value: "geography", label: "جغرافية" },
+    { value: "traditions", label: "تقاليد" },
+    { value: "personalities", label: "شخصيات" }
   ], [])
 
   // Initialize state from URL params
   useEffect(() => {
     if (!initialized) {
       setSelectedCategory(searchParams.category || "all")
-      setSearchQuery(searchParams.search || "")
       setCurrentPage(parseInt(searchParams.page || "1"))
       setInitialized(true)
     }
@@ -155,11 +158,10 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
   )
 
   // Update URL with current filters
-  const updateURL = useCallback((category: string, search: string, page: number) => {
+  const updateURL = useCallback((category: string, page: number) => {
     const params = new URLSearchParams()
     
     if (category !== "all") params.set('category', category)
-    if (search) params.set('search', search)
     if (page > 1) params.set('page', page.toString())
     
     const queryString = params.toString()
@@ -168,13 +170,30 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
     router.replace(`/main/posts${url}`, { scroll: false })
   }, [router])
 
-  // Fetch posts function - UPDATED TO MATCH BACKEND RESPONSE
-  const fetchPosts = useCallback(async (category = "all", search = "", page = 1, append = false) => {
-    if (page === 1) {
+  // Fetch posts function - UPDATED TO HANDLE REACTIONS DATA
+  const fetchPosts = useCallback(async (category = "all", page = 1, isLoadMore = false) => {
+    // Prevent multiple simultaneous requests
+    if (isLoadingRef.current) {
+      console.log('Request already in progress, skipping...')
+      return
+    }
+
+    // Cancel any existing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+    }
+
+    // Create new abort controller
+    const abortController = new AbortController()
+    abortControllerRef.current = abortController
+
+    isLoadingRef.current = true
+
+    if (isLoadMore) {
+      setLoadingMore(true)
+    } else {
       setLoading(true)
       setError(null)
-    } else {
-      setLoadingMore(true)
     }
 
     try {
@@ -184,17 +203,21 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       })
       
       if (category !== "all") params.set('category', category)
-      if (search.trim()) params.set('search', search.trim())
       
-      const response = await fetch(`/api/main/posts?${params}`)
+      console.log(`Fetching posts: category=${category}, page=${page}, isLoadMore=${isLoadMore}`)
+      
+      const response = await fetch(`/api/main/posts?${params}`, {
+        signal: abortController.signal
+      })
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
       
       const data = await response.json()
+      console.log("API Response data:", data)
       
-      // Transform the data to match PostCard expected format
+      // Transform the data to match PostCard expected format with proper reactions handling
       const transformedPosts = data.posts?.map((post: any) => ({
         id: post.id?.toString() || Math.random().toString(36).substr(2, 9),
         title: post.title || "عنوان غير محدد",
@@ -211,38 +234,112 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
           comments: post.stats?.comments || 0,
           shares: post.stats?.shares || 0
         },
-        // NEW: Add user interaction information
+        // User interaction information
         userHasLiked: post.userHasLiked || false,
         userReaction: post.userReaction || null,
-        reactions: [] // Backend doesn't provide reactions data
+        // UPDATED: Properly handle reactions data from API
+        reactions: {
+          total: post.reactions?.total || 0,
+          summary: post.reactions?.summary || [],
+          details: post.reactions?.details || {}
+        }
       })) || []
 
       setPagination(data.pagination)
       
-      if (append) {
-        setPosts(prev => [...prev, ...transformedPosts])
+      if (isLoadMore) {
+        // Append new posts to existing ones
+        setPosts(prev => {
+          // Prevent duplicates
+          const existingIds = new Set(prev.map(p => p.id))
+          const newPosts = transformedPosts.filter((p: Post) => !existingIds.has(p.id))
+          console.log(`Adding ${newPosts.length} new posts to existing ${prev.length} posts`)
+          return [...prev, ...newPosts]
+        })
       } else {
         setPosts(transformedPosts)
+        console.log(`Replaced with ${transformedPosts.length} posts`)
       }
 
-      // Update URL
-      updateURL(category, search, page)
+      // Update URL only for initial loads or category changes
+      if (!isLoadMore) {
+        updateURL(category, page)
+      }
 
     } catch (error) {
+      // Don't show error if request was aborted
+      if (error instanceof Error && error.name === 'AbortError') {
+        console.log('Request was aborted')
+        return
+      }
+      
       console.error("Error fetching posts:", error)
       setError("فشل في تحميل المنشورات. يرجى المحاولة مرة أخرى.")
       
       // Fallback for first page only
-      if (page === 1) {
+      if (page === 1 && !isLoadMore) {
         setPosts([])
         setPagination(null)
       }
     } finally {
       setLoading(false)
       setLoadingMore(false)
-      setIsRefreshing(false)
+      isLoadingRef.current = false
+      
+      // Clean up abort controller
+      if (abortControllerRef.current === abortController) {
+        abortControllerRef.current = null
+      }
     }
   }, [POSTS_PER_PAGE, updateURL])
+
+  // Load more posts when intersection observer triggers
+  const loadMore = useCallback(() => {
+    if (!loadingMore && !isLoadingRef.current && pagination?.hasNextPage && posts.length > 0) {
+      const nextPage = currentPage + 1
+      console.log(`Loading more posts: page ${nextPage}`)
+      setCurrentPage(nextPage)
+      fetchPosts(selectedCategory, nextPage, true)
+    }
+  }, [loadingMore, pagination?.hasNextPage, posts.length, selectedCategory, currentPage, fetchPosts])
+
+  // Set up intersection observer
+  useEffect(() => {
+    // Clean up previous observer
+    if (observerRef.current) {
+      observerRef.current.disconnect()
+    }
+
+    if (!pagination?.hasNextPage || loadingMore || isLoadingRef.current) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const target = entries[0]
+        if (target.isIntersecting && !isLoadingRef.current && pagination?.hasNextPage) {
+          console.log('Intersection observer triggered')
+          loadMore()
+        }
+      },
+      {
+        root: null,
+        rootMargin: '200px',
+        threshold: 0.1
+      }
+    )
+
+    const currentRef = loadMoreRef.current
+    if (currentRef) {
+      observer.observe(currentRef)
+    }
+
+    observerRef.current = observer
+
+    return () => {
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [pagination?.hasNextPage, loadingMore, loadMore])
 
   // Handle post deletion
   const handlePostDelete = useCallback((postId: string) => {
@@ -254,11 +351,19 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
     } : null)
   }, [])
 
-  // Handle post update
+  // Handle post update (including reaction updates)
   const handlePostUpdate = useCallback((postId: string, updatedData: any) => {
     setPosts(prev => prev.map(post => 
       post.id === postId 
-        ? { ...post, ...updatedData }
+        ? { 
+            ...post, 
+            ...updatedData,
+            // Ensure reactions data is properly merged
+            reactions: updatedData.reactions ? {
+              ...post.reactions,
+              ...updatedData.reactions
+            } : post.reactions
+          }
         : post
     ))
   }, [])
@@ -287,10 +392,14 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
         comments: 0,
         shares: 0
       },
-      // NEW: Default values for new posts
+      // Default values for new posts
       userHasLiked: false,
       userReaction: null,
-      reactions: []
+      reactions: {
+        total: 0,
+        summary: [],
+        details: {}
+      }
     }
     
     setPosts(prev => [transformedPost, ...prev])
@@ -300,248 +409,85 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
     } : null)
   }, [session])
 
-  // Scroll event handler for infinite scrolling
-  const handleScroll = useCallback(() => {
-    if (loadingMore || !pagination?.hasNextPage) return
-
-    const scrollTop = window.pageYOffset || document.documentElement.scrollTop
-    const scrollHeight = document.documentElement.scrollHeight
-    const clientHeight = document.documentElement.clientHeight
-
-    // Load more when user scrolls to bottom (with 100px buffer)
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
-      const nextPage = currentPage + 1
-      setCurrentPage(nextPage)
-      fetchPosts(selectedCategory, debouncedSearchQuery, nextPage, true)
-    }
-  }, [currentPage, selectedCategory, debouncedSearchQuery, loadingMore, pagination, fetchPosts])
-
-  // Effect for scroll listener
-  useEffect(() => {
-    window.addEventListener('scroll', handleScroll)
-    return () => window.removeEventListener('scroll', handleScroll)
-  }, [handleScroll])
-
-  // Ref to skip initial filter effect
-  const skipInitialFilter = useRef(true)
-
-  // Effect for initial load and filter changes
-  useEffect(() => {
-    if (!initialized) return
-    
-    if (skipInitialFilter.current) {
-      skipInitialFilter.current = false
-      return
-    }
-    
+  // Handle category change
+  const handleCategoryChange = useCallback((category: string) => {
+    console.log(`Changing category to: ${category}`)
+    setSelectedCategory(category)
     setCurrentPage(1)
     setPosts([])
-    fetchPosts(selectedCategory, debouncedSearchQuery, 1, false)
-  }, [selectedCategory, debouncedSearchQuery, initialized, fetchPosts])
+    setPagination(null)
+    setError(null)
+    fetchPosts(category, 1, false)
+  }, [fetchPosts])
+
+  // Handle refresh
+  const handleRefresh = useCallback(() => {
+    console.log('Refreshing posts')
+    setCurrentPage(1)
+    setPosts([])
+    setPagination(null)
+    setError(null)
+    fetchPosts(selectedCategory, 1, false)
+  }, [selectedCategory, fetchPosts])
 
   // Initial data fetch
   useEffect(() => {
     if (initialized) {
-      fetchPosts(selectedCategory, debouncedSearchQuery, currentPage, false)
+      fetchPosts(selectedCategory, currentPage, false)
     }
-  }, [initialized, selectedCategory, debouncedSearchQuery, currentPage, fetchPosts])
+  }, [initialized])
 
-  // Handle category change
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category)
-    setCurrentPage(1)
-    setPosts([])
-    setError(null)
-  }
-
-  // Handle search
-  const handleSearchChange = (value: string) => {
-    setSearchQuery(value)
-    setCurrentPage(1)
-    setPosts([])
-    setError(null)
-  }
-
-  // Handle refresh
-  const handleRefresh = () => {
-    setIsRefreshing(true)
-    setCurrentPage(1)
-    setPosts([])
-    setError(null)
-    fetchPosts(selectedCategory, debouncedSearchQuery, 1, false)
-  }
-
-  // Clear filters
-  const clearFilters = () => {
-    setSelectedCategory("all")
-    setSearchQuery("")
-    setCurrentPage(1)
-    setPosts([])
-    setError(null)
-  }
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort()
+      }
+      if (observerRef.current) {
+        observerRef.current.disconnect()
+      }
+    }
+  }, [])
 
   // Get current category label
   const getCurrentCategoryLabel = () => {
     return categories.find(cat => cat.value === selectedCategory)?.label || "الجميع"
   }
 
-  if (!initialized || (loading && posts.length === 0)) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        {/* Breadcrumb */}
-        <nav className="mb-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <span>منشورات حول الامة الامازيغ</span>
-            {selectedCategory !== "all" && (
-              <>
-                <span>/</span>
-                <span className="text-blue-600">{getCurrentCategoryLabel()}</span>
-              </>
-            )}
-          </div>
-        </nav>
-
-        {/* Filters */}
-        <div className="bg-white rounded-lg p-4 mb-4 border">
-          <div className="flex flex-col gap-4">
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="ابحث في المنشورات..."
-                value={searchQuery}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            {/* Category and Actions */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="flex items-center gap-2">
-                <Filter className="h-4 w-4 text-gray-500" />
-                <label className="text-sm font-medium whitespace-nowrap">اعرض منشورات:</label>
-              </div>
-              
-              <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-                <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="اختار قسم" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map(category => (
-                    <SelectItem key={category.value} value={category.value}>
-                      {category.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              
-              <div className="flex gap-2 w-full sm:w-auto">
-                <Button 
-                  size="sm" 
-                  onClick={handleRefresh} 
-                  className="bg-[#4531fc] hover:bg-blue-800 flex-1 sm:flex-none"
-                  disabled={isRefreshing}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  {isRefreshing ? "جاري التحديث..." : "تحديث"}
-                </Button>
-                
-                {(selectedCategory !== "all" || searchQuery) && (
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={clearFilters}
-                    className="flex-1 sm:flex-none"
-                  >
-                    مسح الفلاتر
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Create Post */}
-        <CreatePostModal />
-
-        {/* Loading Skeleton */}
-        <LoadingSkeleton />
-      </div>
-    )
-  }
-
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       {/* Breadcrumb */}
       <nav className="mb-4">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <span>منشورات حول الامة الامازيغ</span>
-          {selectedCategory !== "all" && (
-            <>
-              <span>/</span>
-              <span className="text-blue-600">{getCurrentCategoryLabel()}</span>
-            </>
-          )}
+        <div className="flex items-center gap-2 text-xl md:text-2xl text-gray-600">
+          <span>حقائق امازيغية متنوعة</span>
         </div>
       </nav>
 
-      {/* Filters */}
+      {/* Filter - Always visible */}
       <div className="bg-white rounded-lg p-4 mb-4 border">
-        <div className="flex flex-col gap-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="ابحث في المنشورات..."
-              value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          
-          {/* Category and Actions */}
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-gray-500" />
-              <label className="text-sm font-medium whitespace-nowrap">اعرض منشورات:</label>
-            </div>
-            
-            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="اختار قسم" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map(category => (
-                  <SelectItem key={category.value} value={category.value}>
-                    {category.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Button 
-                size="sm" 
-                onClick={handleRefresh} 
-                className="bg-[#4531fc] hover:bg-blue-800 flex-1 sm:flex-none"
-                disabled={isRefreshing}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? "جاري التحديث..." : "تحديث"}
-              </Button>
-              
-              {(selectedCategory !== "all" || searchQuery) && (
-                <Button 
-                  size="sm" 
-                  variant="outline"
-                  onClick={clearFilters}
-                  className="flex-1 sm:flex-none"
-                >
-                  مسح الفلاتر
-                </Button>
-              )}
-            </div>
-          </div>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <label className="text-sm font-medium whitespace-nowrap">اعرض اخر حقائق حول:</label>
+          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+            <SelectTrigger className="w-full sm:w-48">
+              <SelectValue placeholder="اختار قسم لعرضه" />
+            </SelectTrigger>
+            <SelectContent>
+              {categories.map(category => (
+                <SelectItem key={category.value} value={category.value}>
+                  {category.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button 
+            size="sm" 
+            onClick={handleRefresh} 
+            className="bg-[#4531fc] hover:bg-blue-800 w-full sm:w-auto"
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+            {loading ? 'جاري التحميل...' : 'اعرض'}
+          </Button>
         </div>
       </div>
 
@@ -549,12 +495,9 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
       {pagination && (
         <div className="mb-4 text-sm text-gray-600">
           <span>
-            عرض {posts.length} من أصل {pagination.totalPosts} منشور
-            {(selectedCategory !== "all" || searchQuery) && (
-              <span className="mr-2">
-                {searchQuery && `• البحث: "${searchQuery}"`}
-                {selectedCategory !== "all" && `• القسم: ${getCurrentCategoryLabel()}`}
-              </span>
+            عرض {posts.length} من أصل {pagination.totalPosts} حقيقة
+            {selectedCategory !== "all" && (
+              <span className="mr-2">• القسم: {getCurrentCategoryLabel()}</span>
             )}
           </span>
         </div>
@@ -581,37 +524,52 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
         </div>
       )}
 
+      {/* Loading State */}
+      {loading && posts.length === 0 && (
+        <LoadingSkeleton />
+      )}
+
       {/* Posts Feed */}
       <div className="space-y-4">
         {posts.length > 0 ? (
           <>
-         {posts.map((post) => (
-            <PostCard 
-                 key={post.id}
-                 id={post.id}
-                 title={post.title}
-                 content={post.content}
-                 author={post.author}
-                 authorId={post.authorId}
-                 timestamp={post.timestamp}
-                 category={post.category}
-                 subCategory={post.subCategory}
-                 image={post.image}
-                 stats={post.stats}
-                 // Remove this line: reactions={post.reactions || []}
-                 session={extendedSession}
-                 onDelete={handlePostDelete}
-                 onUpdate={handlePostUpdate}
-                 userHasLiked={post.userHasLiked}
-                 userReaction={post.userReaction}
-                 apiEndpoint={"posts"}
-                 detailsRoute={"/main/posts"}            />
+            {posts.map((post, index) => (
+              <PostCard 
+                key={`${post.id}-${index}`}
+                id={post.id}
+                title={post.title}
+                content={post.content}
+                author={post.author}
+                authorId={post.authorId}
+                timestamp={post.timestamp}
+                category={post.category}
+                subCategory={post.subCategory}
+                image={post.image}
+                stats={post.stats}
+                session={extendedSession}
+                onDelete={handlePostDelete}
+                onUpdate={handlePostUpdate}
+                userHasLiked={post.userHasLiked}
+                userReaction={post.userReaction}
+                // UPDATED: Pass reactions data to PostCard
+                reactions={post.reactions}
+                apiEndpoint={"posts"}
+                detailsRoute={"/main/posts"}
+              />
             ))}
             
-            {/* Load More Indicator */}
-            {loadingMore && (
-              <div className="py-4">
-                <LoadingSkeleton />
+            {/* Infinite scroll trigger */}
+            {pagination?.hasNextPage && (
+              <div 
+                ref={loadMoreRef}
+                className="h-20 flex items-center justify-center"
+              >
+                {loadingMore && (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-sm">جاري تحميل المزيد...</span>
+                  </div>
+                )}
               </div>
             )}
             
@@ -620,43 +578,36 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
               <div className="text-center py-8">
                 <div className="bg-gray-50 rounded-lg p-6">
                   <div className="text-gray-400 text-4xl mb-2">✨</div>
-                  <p className="text-gray-600 text-sm">تم عرض جميع المنشورات</p>
+                  <p className="text-gray-600 text-sm">تم عرض جميع الحقائق</p>
                   {pagination.totalPosts > 0 && (
                     <p className="text-gray-500 text-xs mt-1">
-                      إجمالي {pagination.totalPosts} منشور
+                      إجمالي {pagination.totalPosts} حقيقة
                     </p>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* Load more error */}
+            {error && posts.length > 0 && (
+              <div className="text-center py-4">
+                <p className="text-red-500 mb-2">حدث خطأ أثناء تحميل المزيد من الحقائق</p>
+                <Button onClick={loadMore} variant="outline">
+                  إعادة المحاولة
+                </Button>
               </div>
             )}
           </>
         ) : !loading && (
           <div className="text-center py-8">
             <div className="bg-gray-50 rounded-lg p-8">
-              <div className="text-gray-400 text-6xl mb-4">
-                {searchQuery ? "🔍" : "📝"}
-              </div>
+              <div className="text-gray-400 text-6xl mb-4">📝</div>
               <p className="text-gray-600 text-lg mb-2">
-                {searchQuery 
-                  ? `لا توجد نتائج للبحث "${searchQuery}"`
-                  : "لا توجد منشورات في هذا القسم"
-                }
+                لا توجد حقائق في هذا القسم
               </p>
               <p className="text-gray-500 text-sm mb-4">
-                {searchQuery 
-                  ? "جرب كلمات مختلفة أو تحقق من الإملاء"
-                  : "جرب تغيير الفئة أو ابحث عن محتوى آخر"
-                }
+                جرب تغيير الفئة لعرض محتوى آخر
               </p>
-              {(selectedCategory !== "all" || searchQuery) && (
-                <Button 
-                  size="sm" 
-                  onClick={clearFilters}
-                  variant="outline"
-                >
-                  مسح الفلاتر
-                </Button>
-              )}
             </div>
           </div>
         )}
