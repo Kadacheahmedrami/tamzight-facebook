@@ -3,9 +3,9 @@ import { Button } from "@/components/ui/button"
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { PostCardProps } from "@/components/LatestSactionCards/types"
-import InteractionsBar from "./InteractionsBar"
-import CommentsModal from "./CommentsModal"
-import ReactionsDisplay, { ReactionsData } from "./ReactionsDisplay"
+import InteractionsBar from "@/components/Cards/InteractionsBar"
+import CommentsModal from "@/components/Cards/CommentsModal"
+import ReactionsDisplay, { ReactionsData } from "@/components/Cards/ReactionsDisplay"
 
 interface SimplePostCardProps extends PostCardProps {
   userHasLiked?: boolean

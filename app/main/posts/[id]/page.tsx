@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import PostDetailClient from '@/components/pages/id/PostDetailClient'
+import { redirect } from "next/navigation"
 
 interface PostDetailPageProps {
   params: { id: string }
@@ -9,15 +10,17 @@ interface PostDetailPageProps {
 export default async function PostDetailPage({ params }: PostDetailPageProps) {
   const session = await getServerSession(authOptions)
   
-  // If you need authentication, uncomment this:
-  // if (!session) {
-  //   redirect('/auth/signin')
-  // }
+ 
+  if (!session) {
+    redirect('/auth/signin')
+  }
+  else {
+    return (
+      <PostDetailClient 
+        session={session}
+        postId={params.id}
+      />
+    )
+  }
 
-  return (
-    <PostDetailClient 
-      session={session}
-      postId={params.id}
-    />
-  )
 }

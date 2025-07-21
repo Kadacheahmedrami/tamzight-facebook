@@ -1,5 +1,15 @@
 import { Session } from "next-auth"
 
+declare module "next-auth" {
+  interface Session {
+    user?: {
+      id?: string;
+      email?: string | null;
+      name?: string | null;
+      image?: string | null;
+    };
+  }
+}
 // Define the reaction types based on your API response
 export interface ReactionUser {
   userId: string
