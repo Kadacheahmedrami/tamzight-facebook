@@ -1,6 +1,6 @@
 "use client"
 import { useState } from "react"
-import PostCard from "@/components/card-comps/post-card"
+import PostCard from "@/components/LatestSactionCards/post-card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 const samplePosts = [

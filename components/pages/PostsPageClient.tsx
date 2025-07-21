@@ -3,8 +3,8 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import { Session } from "next-auth"
-import PostCard from "@/components/card-comps/Cards/Posts"
-import CreatePostModal from "@/components/create-post/create-post-modal"
+import PostCard from "@/components/Cards/Posts"
+import CreatePostModal from "@/components/CreateModals/create-post-modal"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RefreshCw } from "lucide-react"

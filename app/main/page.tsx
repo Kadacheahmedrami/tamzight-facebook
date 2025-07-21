@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState, useRef, useCallback } from "react"
-import PostCard from "@/components/card-comps/post-card"
-import CreatePostModal from "@/components/create-post/create-post-modal"
+import PostCard from "@/components/LatestSactionCards/post-card"
+import CreatePostModal from "@/components/CreateModals/create-post-modal"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 

@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button"
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { PostCardProps } from "@/components/card-comps/types"
+import { PostCardProps } from "@/components/LatestSactionCards/types"
 import InteractionsBar from "./InteractionsBar"
 import CommentsModal from "./CommentsModal"
 import ReactionsDisplay, { ReactionsData } from "./ReactionsDisplay"

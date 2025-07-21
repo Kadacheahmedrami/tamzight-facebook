@@ -1,7 +1,7 @@
 "use client"
 import { Button } from "@/components/ui/button"
 import { useState, useRef, useEffect } from "react"
-import { reactions } from "@/components/card-comps/types"
+import { reactions } from "@/components/LatestSactionCards/types"
 
 interface InteractionsBarProps {
   postId: string

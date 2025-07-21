@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Eye, Heart, MessageCircle, Share2, Calendar, MapPin, DollarSign } from "lucide-react"
 import Image from "next/image"
-import CreatePostModal from "@/components/create-post/create-post-modal"
+import CreatePostModal from "@/components/CreateModals/create-post-modal"
 
 
 interface AdData {

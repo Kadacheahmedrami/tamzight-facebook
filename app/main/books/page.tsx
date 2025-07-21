@@ -12,7 +12,7 @@ import {
   Eye,
   Star,
 } from "lucide-react"
-import CreatePostModal from "@/components/create-post/create-post-modal"
+import CreatePostModal from "@/components/CreateModals/create-post-modal"
 
 interface BookData {
   id: number
