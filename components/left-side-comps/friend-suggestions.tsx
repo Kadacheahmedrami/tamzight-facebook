@@ -3,8 +3,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { UserPlus, Check, X } from "lucide-react"
+import { UserPlus } from "lucide-react"
 
 interface User {
   id: number
@@ -15,96 +14,46 @@ interface User {
   avatar: string | null
 }
 
-interface FriendRequest {
-  id: number
-  senderId: number
-  receiverId: number
-  sender: User
-  receiver: User
+interface FriendSuggestionsProps {
+  userId: string
+  onFriendRequestSent: (friendId: string) => void
 }
 
-interface FriendsData {
-  suggestions: User[]
-  pendingRequests: {
-    received: FriendRequest[]
-    sent: FriendRequest[]
-  }
-}
-
-export default function FriendsPage() {
-  const [data, setData] = useState<FriendsData>({ 
-    suggestions: [], 
-    pendingRequests: { received: [], sent: [] } 
-  })
+export default function FriendSuggestions({ userId, onFriendRequestSent }: FriendSuggestionsProps) {
+  const [suggestions, setSuggestions] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  const fetchData = async () => {
+  const fetchSuggestions = async () => {
     try {
-      const [suggestionsRes, pendingRes] = await Promise.all([
-        fetch('/api/main/friends/suggestions'),
-        fetch('/api/main/friends/pending')
-      ])
-      
-      const suggestions = suggestionsRes.ok ? (await suggestionsRes.json()).suggestions || [] : []
-      const pending = pendingRes.ok ? await pendingRes.json() : { received: [], sent: [] }
-      
-      setData({ suggestions, pendingRequests: { received: pending.received || [], sent: pending.sent || [] } })
+      const res = await fetch(`/api/main/friends/suggestions?userId=${userId}`)
+      setSuggestions(res.ok ? (await res.json()).suggestions || [] : [])
     } catch (error) {
-      console.error("Error fetching data:", error)
+      console.error("Error fetching suggestions:", error)
     } finally {
       setLoading(false)
     }
   }
 
-  const apiCall = async (endpoint: string, body: any) => {
+  const sendRequest = async (receiverId: number) => {
+    setSuggestions(prev => prev.filter(s => s.id !== receiverId))
+    onFriendRequestSent(receiverId.toString())
     try {
-      const res = await fetch(endpoint, {
+      await fetch('/api/main/friends/request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
+        body: JSON.stringify({ senderId: userId, receiverId })
       })
-      if (res.ok) fetchData()
-      else console.error("API Error:", await res.json())
     } catch (error) {
-      console.error("Request failed:", error)
+      console.error("Error sending request:", error)
     }
   }
 
-  const sendRequest = (receiverId: number) => {
-    setData(prev => ({ ...prev, suggestions: prev.suggestions.filter(s => s.id !== receiverId) }))
-    apiCall('/api/main/friends/request', { receiverId })
-  }
+  useEffect(() => { fetchSuggestions() }, [])
 
-  const handleRequest = (action: string, senderId: number, receiverId: number) => {
-    setData(prev => ({
-      ...prev,
-      pendingRequests: {
-        ...prev.pendingRequests,
-        received: prev.pendingRequests.received.filter(r => r.senderId !== senderId)
-      }
-    }))
-    apiCall(`/api/main/friends/${action}`, { senderId, receiverId })
-  }
-
-  const viewProfile = (userId: number) => {
-    router.push(`/main/member/${userId}`)
-  }
-
-  useEffect(() => { fetchData() }, [])
-
-  if (loading) return <div className="p-8 text-center">جاري التحميل...</div>
-
-  const UserCard = ({ user, children, showBadge = false }: { 
-    user: User, 
-    children?: React.ReactNode, 
-    showBadge?: boolean 
-  }) => (
+  const UserCard = ({ user, children }: { user: User, children?: React.ReactNode }) => (
     <div className="flex items-center justify-between p-4 hover:bg-gray-50 border-b last:border-b-0">
-      <div 
-        className="flex items-center gap-3 cursor-pointer flex-1"
-        onClick={() => viewProfile(user.id)}
-      >
+      <div className="flex items-center gap-3 cursor-pointer flex-1" onClick={() => router.push(`/main/member/${user.id}`)}>
         <img
           src={user.avatar || "/placeholder.svg"}
           alt={`${user.firstName} ${user.lastName}`}
@@ -112,24 +61,31 @@ export default function FriendsPage() {
         />
         <div>
           <p className="font-medium">{user.firstName} {user.lastName}</p>
-          <p className="text-sm text-gray-500">{user.location}</p>
-          <p className="text-sm text-gray-600">{user.occupation}</p>
-          {showBadge && <Badge variant="secondary" className="text-xs bg-yellow-100 text-yellow-800 mt-1">في انتظار الرد</Badge>}
+          {user.location && <p className="text-sm text-gray-500">{user.location}</p>}
+          {user.occupation && <p className="text-sm text-gray-600">{user.occupation}</p>}
         </div>
       </div>
       <div className="flex gap-2">{children}</div>
     </div>
   )
 
-  const Section = ({ title, count, children, color = "text-[#4531fc]" }: {
-    title: string,
-    count: number,
-    children: React.ReactNode,
-    color?: string
-  }) => (
+  const SkeletonCard = () => (
+    <div className="flex items-center justify-between p-4 border-b last:border-b-0 animate-pulse">
+      <div className="flex items-center gap-3 flex-1">
+        <div className="w-12 h-12 bg-gray-200 rounded-full"></div>
+        <div className="flex flex-col gap-2 w-full">
+          <div className="h-3 bg-gray-200 rounded w-32"></div>
+          <div className="h-3 bg-gray-200 rounded w-24"></div>
+        </div>
+      </div>
+      <div className="w-8 h-8 bg-gray-200 rounded"></div>
+    </div>
+  )
+
+  const Section = ({ title, count, children }: { title: string, count: number, children: React.ReactNode }) => (
     <div className="bg-white rounded-lg border mb-6 overflow-hidden">
       <div className="p-4 border-b bg-gray-50">
-        <h3 className={`font-semibold ${color} flex items-center gap-2`}>
+        <h3 className="font-semibold text-[#4531fc] flex items-center gap-2">
           <UserPlus className="h-5 w-5" />
           {title} {count > 0 && `(${count})`}
         </h3>
@@ -140,35 +96,15 @@ export default function FriendsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      {/* Pending Requests */}
-      {data.pendingRequests.received.length > 0 && (
-        <Section title="طلبات الصداقة" count={data.pendingRequests.received.length}>
-          {data.pendingRequests.received.map(req => (
-            <UserCard key={req.id} user={req.sender}>
-              <Button size="sm" className="bg-[#4531fc] hover:bg-blue-900 p-2" onClick={() => handleRequest('accept', req.senderId, req.receiverId)}>
-                <Check className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700 p-2" onClick={() => handleRequest('decline', req.senderId, req.receiverId)}>
-                <X className="h-4 w-4" />
-              </Button>
-            </UserCard>
-          ))}
-        </Section>
-      )}
-
-      {/* Sent Requests */}
-      {data.pendingRequests.sent.length > 0 && (
-        <Section title="طلبات مرسلة" count={data.pendingRequests.sent.length} color="text-gray-600">
-          {data.pendingRequests.sent.map(req => (
-            <UserCard key={req.id} user={req.receiver} showBadge />
-          ))}
-        </Section>
-      )}
-
-      {/* Suggestions */}
-      <Section title="أشخاص قد تعرفهم" count={0}>
-        {data.suggestions.length > 0 ? (
-          data.suggestions.map(suggestion => (
+      <Section title="أشخاص قد تعرفهم" count={suggestions.length}>
+        {loading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : suggestions.length > 0 ? (
+          suggestions.map(suggestion => (
             <UserCard key={suggestion.id} user={suggestion}>
               <Button size="sm" className="bg-[#4531fc] hover:bg-blue-900 p-2" onClick={() => sendRequest(suggestion.id)}>
                 <UserPlus className="h-4 w-4" />
@@ -176,9 +112,7 @@ export default function FriendsPage() {
             </UserCard>
           ))
         ) : (
-          <div className="p-8 text-center text-gray-500">
-            لا توجد اقتراحات جديدة
-          </div>
+          <div className="p-8 text-center text-gray-500">لا توجد اقتراحات جديدة</div>
         )}
       </Section>
     </div>

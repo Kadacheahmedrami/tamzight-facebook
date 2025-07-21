@@ -416,7 +416,7 @@ const ContentFields: React.FC<ContentFieldsProps> = ({ contentType, formData, ha
 
 export default function CreatePostModal() {
   const [isOpen, setIsOpen] = useState(false)
-  const [contentType, setContentType] = useState<ContentType>('posts')
+  const [contentType, setContentType] = useState<ContentType>('posts');
   const [formData, setFormData] = useState<FormData>(initialFormData)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
@@ -501,15 +501,21 @@ export default function CreatePostModal() {
             </div>
           </div>
 
-          <Tabs value={contentType} onValueChange={(value) => setContentType(value as ContentType)}>
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-1 h-auto">
-              {Object.entries(contentTypeLabels).map(([key, label]) => (
-                <TabsTrigger key={key} value={key} className="text-xs sm:text-sm">
-                  {label}
-                </TabsTrigger>
-              ))}
-            </TabsList>
-          </Tabs>
+
+          <Tabs
+          value={contentType}
+          onValueChange={(value) => setContentType(value as ContentType)}
+        >
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-1 h-auto">
+            {(Object.entries(contentTypeLabels) as [ContentType, string][]).map(([key, label]) => (
+              <TabsTrigger key={key} value={key} className="text-xs sm:text-sm">
+                {label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+
+
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             <SelectField
@@ -539,17 +545,21 @@ export default function CreatePostModal() {
             error={renderError('title')}
           />
 
-          {contentType !== 'images' && (
-            <TextareaField
-              placeholder="أكتب المحتوى هنا *"
-              field="content"
-              value={formData.content}
-              handleInputChange={handleInputChange}
-              required={contentType !== 'images'}
-              rows={4}
-              error={renderError('content')}
-            />
-          )}
+          
+      {(contentType as ContentType) !== 'images' && (
+        
+          <TextareaField
+            placeholder="أكتب المحتوى هنا *"
+            field="content"
+            value={formData.content}
+            handleInputChange={handleInputChange}
+            required={contentType !== 'images'}
+            rows={4}
+            error={renderError('content')}
+          />
+        )}
+
+
 
           {contentType !== 'images' && (
             <InputField

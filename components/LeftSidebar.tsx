@@ -1,58 +1,58 @@
-"use client"
+  "use client"
 
-import { useEffect, useState } from "react"
-import { usePathname } from "next/navigation"
-import { TrendingUp, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import FriendSuggestions from "@/components/left-side-comps/friend-suggestions"
-import { Session } from "next-auth"
+  import { useEffect, useState } from "react"
+  import { usePathname } from "next/navigation"
+  import { TrendingUp, Loader2 } from "lucide-react"
+  import { Button } from "@/components/ui/button"
+  import FriendSuggestions from "@/components/left-side-comps/friend-suggestions"
+  import { Session } from "next-auth"
 
-interface TrendingTopic {
-  id: number
-  hashtag: string
-  count: number
-  color: string
-}
-
-interface LeftSidebarProps {
-  session?: Session | null
-}
-
-export default function LeftSidebar({ session }: LeftSidebarProps) {
-  const pathname = usePathname()
-  const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([])
-  const [loading, setLoading] = useState(true)
-  const [topicsLoading, setTopicsLoading] = useState(true)
-  const [userId, setUserId] = useState<string>("")
-
-  // Color mapping for trending topics
-  const getColorClasses = (color: string) => {
-    const colorMap: { [key: string]: string } = {
-      'blue': 'bg-blue-50 text-blue-800',
-      'green': 'bg-green-50 text-green-800',
-      'red': 'bg-red-50 text-red-800',
-      'yellow': 'bg-yellow-50 text-yellow-800',
-      'purple': 'bg-purple-50 text-purple-800',
-      'pink': 'bg-pink-50 text-pink-800',
-      'indigo': 'bg-indigo-50 text-indigo-800',
-      'gray': 'bg-gray-50 text-gray-800',
-    }
-    return colorMap[color] || 'bg-gray-50 text-gray-800'
+  interface TrendingTopic {
+    id: number
+    hashtag: string
+    count: number
+    color: string
   }
 
-  // Check if current page is friends page
-  const isFriendsPage = pathname.includes('/main/friends')
+  interface LeftSidebarProps {
+    session?: Session | null
+  }
 
-  // Get current user ID from session
-  const getCurrentUserId = () => {
-    if (session?.user) {
-      // Try to get id from session (might be in sub property or email as fallback)
-      const userId = (session.user as any).id || session.user.email
-      if (userId) {
-        setUserId(userId)
+  export default function LeftSidebar({ session }: LeftSidebarProps) {
+    const pathname = usePathname()
+    const [trendingTopics, setTrendingTopics] = useState<TrendingTopic[]>([])
+    const [loading, setLoading] = useState(true)
+    const [topicsLoading, setTopicsLoading] = useState(true)
+    const [userId, setUserId] = useState<string>("")
+
+    // Color mapping for trending topics
+    const getColorClasses = (color: string) => {
+      const colorMap: { [key: string]: string } = {
+        'blue': 'bg-blue-50 text-blue-800',
+        'green': 'bg-green-50 text-green-800',
+        'red': 'bg-red-50 text-red-800',
+        'yellow': 'bg-yellow-50 text-yellow-800',
+        'purple': 'bg-purple-50 text-purple-800',
+        'pink': 'bg-pink-50 text-pink-800',
+        'indigo': 'bg-indigo-50 text-indigo-800',
+        'gray': 'bg-gray-50 text-gray-800',
+      }
+      return colorMap[color] || 'bg-gray-50 text-gray-800'
+    }
+
+    // Check if current page is friends page
+    const isFriendsPage = pathname.includes('/main/friends')
+
+    // Get current user ID from session
+    const getCurrentUserId = () => {
+      if (session?.user) {
+        // Try to get id from session (might be in sub property or email as fallback)
+        const userId = (session.user as any).id || session.user.email
+        if (userId) {
+          setUserId(userId)
+        }
       }
     }
-  }
 
   // Fetch trending topics
   const fetchTrendingTopics = async () => {
@@ -94,13 +94,13 @@ export default function LeftSidebar({ session }: LeftSidebarProps) {
     <div className="hidden lg:block w-80 h-full overflow-y-auto p-4">
       {/* Conditional Content - Friends Suggestions or Ads */}
       {isFriendsPage ? (
-        <div className="mb-4">
-          <FriendSuggestions 
-            userId={userId}
-            onFriendRequestSent={handleFriendRequestSent}
-          />
-        </div>
-      ) : (
+          <div className="mb-4">
+            <FriendSuggestions 
+              userId={userId}
+              onFriendRequestSent={handleFriendRequestSent}
+            />
+          </div>
+        ) : (
         <div className="bg-white rounded-lg p-4 border mb-4">
           <h3 className="font-semibold mb-2">ساحة اعلانات</h3>
           <div className="h-32 bg-gray-100 rounded-lg mb-2"></div>
