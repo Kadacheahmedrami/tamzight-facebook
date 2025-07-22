@@ -430,11 +430,11 @@ export default function PostCard(props: PostCardProps) {
       {/* Interactions */}
       {!isEditing && (
         <footer>
-          {reactionData.total > 0 && (
+  
             <div className="mb-3 flex justify-end">
               <ReactionsDisplay reactions={reactionData} stats={currentStats} session={session} />
             </div>
-          )}
+      
 
           <InteractionsBar
             postId={id}
