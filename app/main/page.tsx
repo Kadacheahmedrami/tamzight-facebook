@@ -16,6 +16,13 @@ interface MediaItem {
   resolution?: string
 }
 
+interface Reaction {
+  id: number
+  emoji: string
+  userId: number
+  user: { firstName: string; lastName: string }
+}
+
 interface Post {
   id: string
   title: string
@@ -23,11 +30,12 @@ interface Post {
   author: string
   authorId: string
   timestamp: string
-  category: string
-  subCategory?: string
+  type: string // Content type (post, book, idea, etc.)
+  category: string // Original category from API
   media?: MediaItem[]
   image?: string
   images?: string[]
+  reactions: Reaction[]
   stats: {
     views: number
     likes: number
@@ -37,7 +45,6 @@ interface Post {
 }
 
 interface ApiResponse {
-  error: string
   success: boolean
   data: any[]
   meta: {
@@ -47,7 +54,23 @@ interface ApiResponse {
     hasMore: boolean
     type: string
   }
+  error: string | null
 }
+
+const CONTENT_TYPES = [
+  { value: "all", label: "الجميع" },
+  { value: "post", label: "المنشورات" },
+  { value: "book", label: "الكتب" },
+  { value: "idea", label: "الأفكار" },
+  { value: "image", label: "الصور" },
+  { value: "video", label: "الفيديوهات" },
+  { value: "truth", label: "الحقائق" },
+  { value: "question", label: "الأسئلة" },
+  { value: "ad", label: "الإعلانات" },
+  { value: "product", label: "المنتجات" }
+]
+
+const LIMIT = 20
 
 export default function LatestPostsPage() {
   const [posts, setPosts] = useState<Post[]>([])
@@ -58,41 +81,32 @@ export default function LatestPostsPage() {
   const [error, setError] = useState<string | null>(null)
   const [currentOffset, setCurrentOffset] = useState(0)
   const [totalItems, setTotalItems] = useState(0)
-  const limit = 20
 
-  // Refs for intersection observer
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
-  const isLoadingRef = useRef(false) // Prevent multiple simultaneous requests
-  const abortControllerRef = useRef<AbortController | null>(null) // For request cancellation
+  const isLoadingRef = useRef(false)
+  const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Mapping of content types to Arabic categories
-  const getArabicCategory = useCallback((type: string): string => {
-    const categoryMap: { [key: string]: string } = {
-      'post': 'منشور',
-      'book': 'كتاب',
-      'idea': 'فكرة',
-      'image': 'صورة',
-      'video': 'فيديو',
-      'truth': 'حقيقة',
-      'question': 'سؤال',
-      'ad': 'إعلان',
-      'product': 'منتج',
-      'story': 'قصة',
-      'article': 'مقال',
-      'news': 'خبر',
-      'poem': 'قصيدة',
-      'quote': 'اقتباس',
-      'event': 'حدث',
-      'tutorial': 'درس',
-      'review': 'مراجعة',
-      'discussion': 'نقاش',
-      'announcement': 'إعلان'
-    }
-    return categoryMap[type] || 'عام'
+  const formatTimestamp = useCallback((timestamp: string | Date) => {
+    if (!timestamp) return 'منذ وقت قصير'
+    
+    const date = new Date(timestamp)
+    const now = new Date()
+    const diffInMs = now.getTime() - date.getTime()
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+    const diffInDays = Math.floor(diffInHours / 24)
+    
+    if (diffInHours < 1) return 'منذ وقت قصير'
+    if (diffInHours < 24) return `منذ ${diffInHours} ساعة`
+    if (diffInDays < 7) return `منذ ${diffInDays} يوم`
+    
+    return date.toLocaleDateString('ar-SA', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    })
   }, [])
 
-  // Transform API data to match PostCard format
   const transformPost = useCallback((item: any): Post => ({
     id: item.id?.toString() || Math.random().toString(36).substr(2, 9),
     title: item.title || 'بدون عنوان',
@@ -100,48 +114,37 @@ export default function LatestPostsPage() {
     author: item.author ? `${item.author.firstName} ${item.author.lastName}` : 'مجهول',
     authorId: item.author?.id?.toString() || 'unknown',
     timestamp: formatTimestamp(item.timestamp),
-    category: getArabicCategory(item.type || 'post'), // Main category in Arabic
-    subCategory: item.category || undefined, // Original category becomes subcategory
+    type: item.type, // Keep original type
+    category: item.category || 'عام', // Keep original category
     media: [],
     image: item.image || undefined,
     images: item.images || [],
+    reactions: item.reactions || [], // Pass reactions from API
     stats: {
       views: item.views || Math.floor(Math.random() * 1000) + 100,
       likes: item._count?.likes || 0,
       comments: item._count?.comments || 0,
       shares: item._count?.shares || 0
     }
-  }), [getArabicCategory])
+  }), [formatTimestamp])
 
   const fetchPosts = useCallback(async (type = "all", offset = 0, isLoadMore = false) => {
-    // Prevent multiple simultaneous requests
-    if (isLoadingRef.current) {
-      console.log('Request already in progress, skipping...')
-      return
-    }
+    if (isLoadingRef.current) return
 
-    // Cancel any existing request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
     }
 
-    // Create new abort controller
     const abortController = new AbortController()
     abortControllerRef.current = abortController
-
     isLoadingRef.current = true
 
-    if (isLoadMore) {
-      setLoadingMore(true)
-    } else {
-      setLoading(true)
-    }
-    
+    isLoadMore ? setLoadingMore(true) : setLoading(true)
     setError(null)
 
     try {
       const params = new URLSearchParams({
-        limit: limit.toString(),
+        limit: LIMIT.toString(),
         offset: offset.toString()
       })
       
@@ -149,10 +152,7 @@ export default function LatestPostsPage() {
         params.append('type', type)
       }
 
-      const url = `/api/main/latest?${params.toString()}`
-      console.log(`Fetching: ${url}`)
-      
-      const response = await fetch(url, {
+      const response = await fetch(`/api/main/latest?${params.toString()}`, {
         signal: abortController.signal
       })
       
@@ -166,38 +166,24 @@ export default function LatestPostsPage() {
         const transformedPosts = data.data.map(transformPost)
         
         if (isLoadMore) {
-          // Append new posts to existing ones
           setPosts(prev => {
-            // Prevent duplicates
             const existingIds = new Set(prev.map(p => p.id))
             const newPosts = transformedPosts.filter(p => !existingIds.has(p.id))
-            console.log(`Adding ${newPosts.length} new posts to existing ${prev.length} posts`)
             return [...prev, ...newPosts]
           })
-          
-          // Update offset for next load
           setCurrentOffset(offset + transformedPosts.length)
         } else {
-          // Replace posts for new type/filter
           setPosts(transformedPosts)
           setCurrentOffset(transformedPosts.length)
-          console.log(`Replaced with ${transformedPosts.length} posts`)
         }
         
-        // Update total items and hasMore
         setTotalItems(data.meta.total)
         setHasMore(data.meta.hasMore)
-        
-        console.log(`Loaded ${transformedPosts.length} posts, hasMore: ${data.meta.hasMore}, newOffset: ${isLoadMore ? offset + transformedPosts.length : transformedPosts.length}`)
       } else {
         throw new Error(data.error || 'Failed to fetch posts')
       }
     } catch (error) {
-      // Don't show error if request was aborted
-      if (error instanceof Error && error.name === 'AbortError') {
-        console.log('Request was aborted')
-        return
-      }
+      if (error instanceof Error && error.name === 'AbortError') return
       
       console.error("Error fetching posts:", error)
       setError(error instanceof Error ? error.message : 'حدث خطأ في تحميل المنشورات')
@@ -211,44 +197,19 @@ export default function LatestPostsPage() {
       setLoadingMore(false)
       isLoadingRef.current = false
       
-      // Clean up abort controller
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null
       }
     }
-  }, [limit, transformPost])
+  }, [transformPost])
 
-  const formatTimestamp = useCallback((timestamp: string | Date) => {
-    if (!timestamp) return 'منذ وقت قصير'
-    
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffInMs = now.getTime() - date.getTime()
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
-    const diffInDays = Math.floor(diffInHours / 24)
-    
-    if (diffInHours < 1) return 'منذ وقت قصير'
-    if (diffInHours < 24) return `منذ ${diffInHours} ساعة${diffInHours > 1 ? '' : ''}`
-    if (diffInDays < 7) return `منذ ${diffInDays} يوم${diffInDays > 1 ? '' : ''}`
-    
-    return date.toLocaleDateString('ar-SA', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
-    })
-  }, [])
-
-  // Load more posts when intersection observer triggers
   const loadMore = useCallback(() => {
     if (!loadingMore && !isLoadingRef.current && hasMore && posts.length > 0) {
-      console.log(`Loading more posts with offset: ${currentOffset}, current posts: ${posts.length}`)
       fetchPosts(selectedType, currentOffset, true)
     }
   }, [loadingMore, hasMore, posts.length, selectedType, fetchPosts, currentOffset])
 
-  // Handle type change
   const handleTypeChange = useCallback((type: string) => {
-    console.log(`Changing type to: ${type}`)
     setSelectedType(type)
     setHasMore(true)
     setCurrentOffset(0)
@@ -256,18 +217,15 @@ export default function LatestPostsPage() {
     fetchPosts(type, 0, false)
   }, [fetchPosts])
 
-  // Refresh posts
   const refreshPosts = useCallback(() => {
-    console.log('Refreshing posts')
     setHasMore(true)
     setCurrentOffset(0)
     setTotalItems(0)
     fetchPosts(selectedType, 0, false)
   }, [selectedType, fetchPosts])
 
-  // Set up intersection observer
+  // Intersection Observer for infinite scroll
   useEffect(() => {
-    // Clean up previous observer
     if (observerRef.current) {
       observerRef.current.disconnect()
     }
@@ -276,22 +234,15 @@ export default function LatestPostsPage() {
 
     const observer = new IntersectionObserver(
       (entries) => {
-        const target = entries[0]
-        if (target.isIntersecting && !isLoadingRef.current && hasMore) {
-          console.log('Intersection observer triggered')
+        if (entries[0].isIntersecting && !isLoadingRef.current && hasMore) {
           loadMore()
         }
       },
-      {
-        root: null,
-        rootMargin: '200px',
-        threshold: 0.1
-      }
+      { root: null, rootMargin: '200px', threshold: 0.1 }
     )
 
-    const currentRef = loadMoreRef.current
-    if (currentRef) {
-      observer.observe(currentRef)
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current)
     }
 
     observerRef.current = observer
@@ -308,7 +259,7 @@ export default function LatestPostsPage() {
     fetchPosts()
   }, [])
 
-  // Cleanup on unmount
+  // Cleanup
   useEffect(() => {
     return () => {
       if (abortControllerRef.current) {
@@ -320,7 +271,6 @@ export default function LatestPostsPage() {
     }
   }, [])
 
-  // Loading skeleton component
   const LoadingSkeleton = () => (
     <div className="space-y-4">
       {[...Array(3)].map((_, i) => (
@@ -336,43 +286,60 @@ export default function LatestPostsPage() {
           <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
           <div className="h-32 bg-gray-200 rounded mb-3"></div>
           <div className="flex gap-4">
-            <div className="h-3 bg-gray-200 rounded w-12"></div>
-            <div className="h-3 bg-gray-200 rounded w-12"></div>
-            <div className="h-3 bg-gray-200 rounded w-12"></div>
+            {[...Array(3)].map((_, j) => (
+              <div key={j} className="h-3 bg-gray-200 rounded w-12"></div>
+            ))}
           </div>
         </div>
       ))}
     </div>
   )
 
-  // Error component
   const ErrorDisplay = () => (
     <div className="text-center py-8">
       <div className="bg-red-50 rounded-lg p-8">
         <div className="text-red-400 text-6xl mb-4">⚠️</div>
         <p className="text-red-600 text-lg mb-2">حدث خطأ في تحميل المنشورات</p>
         <p className="text-red-500 text-sm mb-4">{error}</p>
-        <Button 
-          onClick={refreshPosts}
-          variant="outline"
-          className="border-red-300 text-red-600 hover:bg-red-50"
-        >
+        <Button onClick={refreshPosts} variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
           إعادة المحاولة
         </Button>
       </div>
     </div>
   )
 
+  const EmptyState = () => (
+    <div className="text-center py-8">
+      <div className="bg-gray-50 rounded-lg p-8">
+        <div className="text-gray-400 text-6xl mb-4">📝</div>
+        <p className="text-gray-600 text-lg mb-2">لا توجد منشورات في هذا القسم</p>
+        <p className="text-gray-500 text-sm">جرب تغيير الفئة أو أضف منشوراً جديداً</p>
+      </div>
+    </div>
+  )
+
+  const EndOfPosts = () => (
+    <div className="text-center py-8">
+      <div className="bg-gray-50 rounded-lg p-6">
+        <div className="text-gray-400 text-4xl mb-2">🎉</div>
+        <p className="text-gray-600 text-sm">تم عرض جميع المنشورات</p>
+        <p className="text-gray-500 text-xs mt-1">المجموع: {posts.length} من {totalItems} منشور</p>
+      </div>
+    </div>
+  )
+
+
+  
   return (
     <div className="max-w-2xl mx-auto">
-      {/* Breadcrumb - Always visible */}
+      {/* Breadcrumb */}
       <nav className="mb-4">
         <div className="flex items-center gap-2 text-sm text-gray-600">
           <span>منشورات حول الامة الامازيغ</span>
         </div>
       </nav>
 
-      {/* Filter - Always visible */}
+      {/* Filter */}
       <div className="bg-white rounded-lg p-4 mb-4 border">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <label className="text-sm font-medium whitespace-nowrap">اعرض اخر منشورات حول:</label>
@@ -381,16 +348,11 @@ export default function LatestPostsPage() {
               <SelectValue placeholder="اختار قسم لعرضه" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">الجميع</SelectItem>
-              <SelectItem value="post">المنشورات</SelectItem>
-              <SelectItem value="book">الكتب</SelectItem>
-              <SelectItem value="idea">الأفكار</SelectItem>
-              <SelectItem value="image">الصور</SelectItem>
-              <SelectItem value="video">الفيديوهات</SelectItem>
-              <SelectItem value="truth">الحقائق</SelectItem>
-              <SelectItem value="question">الأسئلة</SelectItem>
-              <SelectItem value="ad">الإعلانات</SelectItem>
-              <SelectItem value="product">المنتجات</SelectItem>
+              {CONTENT_TYPES.map(type => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
           <Button 
@@ -404,7 +366,7 @@ export default function LatestPostsPage() {
         </div>
       </div>
 
-      {/* Create Post - Always visible */}
+      {/* Create Post */}
       <CreatePostModal />
 
       {/* Posts Feed */}
@@ -424,22 +386,20 @@ export default function LatestPostsPage() {
                 author={post.author}
                 authorId={post.authorId}
                 timestamp={post.timestamp}
+                type={post.type}
                 category={post.category}
-                subCategory={post.subCategory}
                 media={post.media}
                 image={post.image}
                 images={post.images}
-                baseRoute="/main/posts"
+                reactions={post.reactions}
+                baseRoute={`/main/${post.type}s`} // Dynamic route based on type
                 stats={post.stats}
               />
             ))}
             
             {/* Infinite scroll trigger */}
             {hasMore && (
-              <div 
-                ref={loadMoreRef}
-                className="h-20 flex items-center justify-center"
-              >
+              <div ref={loadMoreRef} className="h-20 flex items-center justify-center">
                 {loadingMore && (
                   <div className="flex items-center gap-2 text-gray-500">
                     <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
@@ -450,36 +410,18 @@ export default function LatestPostsPage() {
             )}
             
             {/* End of posts indicator */}
-            {!hasMore && posts.length > 0 && (
-              <div className="text-center py-8">
-                <div className="bg-gray-50 rounded-lg p-6">
-                  <div className="text-gray-400 text-4xl mb-2">🎉</div>
-                  <p className="text-gray-600 text-sm">تم عرض جميع المنشورات</p>
-                  <p className="text-gray-500 text-xs mt-1">
-                    المجموع: {posts.length} من {totalItems} منشور
-                  </p>
-                </div>
-              </div>
-            )}
+            {!hasMore && <EndOfPosts />}
             
             {/* Load more error */}
             {error && posts.length > 0 && (
               <div className="text-center py-4">
                 <p className="text-red-500 mb-2">حدث خطأ أثناء تحميل المزيد من المنشورات</p>
-                <Button onClick={loadMore} variant="outline">
-                  إعادة المحاولة
-                </Button>
+                <Button onClick={loadMore} variant="outline">إعادة المحاولة</Button>
               </div>
             )}
           </>
         ) : (
-          <div className="text-center py-8">
-            <div className="bg-gray-50 rounded-lg p-8">
-              <div className="text-gray-400 text-6xl mb-4">📝</div>
-              <p className="text-gray-600 text-lg mb-2">لا توجد منشورات في هذا القسم</p>
-              <p className="text-gray-500 text-sm">جرب تغيير الفئة أو أضف منشوراً جديداً</p>
-            </div>
-          </div>
+          <EmptyState />
         )}
       </div>
     </div>

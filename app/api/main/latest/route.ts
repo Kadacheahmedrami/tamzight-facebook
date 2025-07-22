@@ -4,15 +4,10 @@ import { prisma } from '@/lib/prisma';
 interface ContentItem {
   id: number;
   title: string;
-  content?: string;
-  description?: string;
+  content?: string | null;
+  description?: string | null;
   authorId: number;
-  author: {
-    id: number;
-    firstName: string;
-    lastName: string;
-    avatar?: string | null;
-  };
+  author: { id: number; firstName: string; lastName: string; avatar?: string | null };
   timestamp: Date;
   category: string;
   subcategory?: string | null;
@@ -22,367 +17,216 @@ interface ContentItem {
   likes: Array<{ id: number; emoji: string; userId: number; user: { firstName: string; lastName: string } }>;
   comments: Array<{ id: number; content: string; userId: number }>;
   shares: Array<{ id: number; userId: number }>;
-  _count: {
-    likes: number;
-    comments: number;
-    shares: number;
-  };
-  // Product specific fields
+  _count: { likes: number; comments: number; shares: number };
   price?: number;
   currency?: string;
   inStock?: boolean;
   sizes?: string[];
   colors?: string[];
+  reactions?: Array<{ id: number; emoji: string; userId: number; user: { firstName: string; lastName: string } }>;
 }
 
 const baseSelect = {
-  id: true,
-  title: true,
-  authorId: true,
-  author: {
-    select: {
-      id: true,
-      firstName: true,
-      lastName: true,
-      avatar: true,
-    },
-  },
-  timestamp: true,
-  category: true,
-  views: true,
-  likes: {
-    select: {
-      id: true,
-      emoji: true,
-      userId: true,
-      user: {
-        select: {
-          firstName: true,
-          lastName: true,
-        },
-      },
-    },
-  },
-  comments: {
-    select: {
-      id: true,
-      content: true,
-      userId: true,
-    },
-    take: 3,
-  },
-  shares: {
-    select: {
-      id: true,
-      userId: true,
-    },
-  },
-  _count: {
-    select: {
-      likes: true,
-      comments: true,
-      shares: true,
-    },
-  },
+  id: true, title: true, authorId: true,
+  author: { select: { id: true, firstName: true, lastName: true, avatar: true } },
+  timestamp: true, category: true, views: true,
+  likes: { select: { id: true, emoji: true, userId: true, user: { select: { firstName: true, lastName: true } } } },
+  comments: { select: { id: true, content: true, userId: true }, take: 3 },
+  shares: { select: { id: true, userId: true } },
+  _count: { select: { likes: true, comments: true, shares: true } },
 };
 
-// Model-specific select configurations based on actual schema
 const selectConfigs = {
-  post: { 
-    ...baseSelect, 
-    content: true, 
-    subcategory: true, 
-    image: true
-  },
-  book: { 
-    ...baseSelect, 
-    content: true, 
-    subcategory: true, 
-    image: true
-  },
-  idea: { 
-    ...baseSelect, 
-    content: true
-  },
-  image: { 
-    ...baseSelect, 
-    description: true, 
-    image: true
-  },
-  video: { 
-    ...baseSelect, 
-    content: true, 
-    subcategory: true, 
-    image: true
-  },
-  truth: { 
-    ...baseSelect, 
-    content: true, 
-    subcategory: true, 
-    image: true
-  },
-  question: { 
-    ...baseSelect, 
-    content: true
-  },
-  ad: { 
-    ...baseSelect, 
-    content: true, 
-    subcategory: true, 
-    image: true
-  },
-  product: { 
-    ...baseSelect, 
-    content: true, 
-    image: true,
-    subcategory: true,
-    price: true,
-    currency: true,
-    inStock: true,
-    sizes: true,
-    colors: true
-  },
+  post: { ...baseSelect, content: true, subcategory: true, image: true },
+  book: { ...baseSelect, content: true, subcategory: true, image: true },
+  idea: { ...baseSelect, content: true },
+  image: { ...baseSelect, description: true, image: true },
+  video: { ...baseSelect, content: true, subcategory: true, image: true },
+  truth: { ...baseSelect, content: true, subcategory: true, image: true },
+  question: { ...baseSelect, content: true },
+  ad: { ...baseSelect, content: true, subcategory: true, image: true },
+  product: { ...baseSelect, content: true, image: true, subcategory: true, price: true, currency: true, inStock: true, sizes: true, colors: true },
 };
 
-// Enhanced connection handling
-const ensurePrismaConnection = async () => {
+const foreignKeyMap = {
+  post: 'postId', book: 'bookId', idea: 'ideaId', image: 'imageId',
+  video: 'videoId', truth: 'truthId', question: 'questionId', ad: 'adId', product: 'productId',
+};
+
+const safeQuery = async <T>(queryFn: () => Promise<T>): Promise<T> => {
   try {
-    await prisma.$connect();
-    console.log('Prisma connected successfully');
+    return await queryFn();
   } catch (error) {
-    console.error('Failed to connect to Prisma:', error);
-    throw new Error('Database connection failed');
+    console.error('Query error:', error);
+    return [] as T;
   }
 };
 
-const safeQuery = async (queryFn: () => Promise<any>, modelName: string) => {
-  try {
-    const result = await queryFn();
-    console.log(`${modelName} query result:`, result?.length || 0, 'items');
-    return result;
-  } catch (error) {
-    console.error(`Error querying ${modelName}:`, error);
-    return [];
+const fetchReactions = async (content: ContentItem[]): Promise<Map<string, any[]>> => {
+  const reactionsData = new Map();
+  if (!content.length) return reactionsData;
+  
+  const contentByType = content.reduce((acc: Record<string, number[]>, item) => {
+    if (!acc[item.type]) acc[item.type] = [];
+    acc[item.type].push(item.id);
+    return acc;
+  }, {});
+  
+  for (const [type, ids] of Object.entries(contentByType)) {
+    const foreignKey = foreignKeyMap[type as keyof typeof foreignKeyMap];
+    if (!foreignKey) continue;
+    
+    try {
+      const reactions = await prisma.like.findMany({
+        where: { [foreignKey]: { in: ids } },
+        include: { user: { select: { firstName: true, lastName: true } } },
+        orderBy: { createdAt: 'desc' }
+      });
+      
+      reactions.forEach(reaction => {
+        const contentId = reaction[foreignKey as keyof typeof reaction] as number;
+        const key = `${type}-${contentId}`;
+        if (!reactionsData.has(key)) reactionsData.set(key, []);
+        reactionsData.get(key)!.push({
+          id: reaction.id,
+          emoji: reaction.emoji,
+          userId: reaction.userId,
+          user: { firstName: reaction.user.firstName, lastName: reaction.user.lastName },
+        });
+      });
+    } catch (error) {
+      console.error(`Error fetching reactions for ${type}:`, error);
+    }
   }
-};
-
-const normalizeContent = (items: any[], type: string): ContentItem[] => {
-  return items.map((item: any) => ({
-    ...item,
-    type,
-    // Set subcategory to null for models that don't have it
-    subcategory: item.subcategory || null,
-    image: item.image || null,
-    content: item.content || item.description || null,
-    description: type === 'image' ? item.description : undefined,
-    // Product specific fields
-    price: item.price || undefined,
-    currency: item.currency || undefined,
-    inStock: item.inStock !== undefined ? item.inStock : undefined,
-    sizes: item.sizes || undefined,
-    colors: item.colors || undefined,
-  }));
+  
+  return reactionsData;
 };
 
 export async function GET(request: NextRequest) {
   try {
-    // Ensure Prisma connection is established
-    await ensurePrismaConnection();
+    await prisma.$connect();
     
     const { searchParams } = new URL(request.url);
-    
-    // Extract pagination parameters (using offset-based pagination to match frontend)
     const limit = parseInt(searchParams.get('limit') || '20');
     const offset = parseInt(searchParams.get('offset') || '0');
     const type = searchParams.get('type') || 'all';
-
-    const orderBy = { timestamp: 'desc' as const };
     
-    // Use English model names that match your Prisma schema
     const models = ['post', 'book', 'idea', 'image', 'video', 'truth', 'question', 'ad', 'product'] as const;
-
-    // Filter models based on type parameter
-    const modelsToQuery = type === 'all' ? models : models.filter(model => model === type);
     
-    console.log('Querying models:', modelsToQuery);
-    console.log('Pagination params:', { limit, offset, type });
+    if (type !== 'all' && !models.includes(type as any)) {
+      return NextResponse.json({
+        success: false, data: [], meta: { total: 0, limit, offset, hasMore: false, type },
+        error: `Invalid type: ${type}. Valid types are: ${models.join(', ')}`,
+      }, { status: 400 });
+    }
     
-    // Query all models without pagination first
+    const modelsToQuery = type === 'all' ? models : [type as typeof models[number]];
+    
     const results = await Promise.all(
       modelsToQuery.map(model => 
         safeQuery(async () => {
-          // Add connection check for each query
-          const modelClient = prisma[model] as any;
-          if (!modelClient) {
-            throw new Error(`Model ${model} not found in Prisma client`);
-          }
-          
+          const modelClient = (prisma as any)[model];
+          if (!modelClient) throw new Error(`Model ${model} not found`);
           return await modelClient.findMany({
             select: selectConfigs[model],
-            orderBy,
+            orderBy: { timestamp: 'desc' },
           });
-        }, model)
+        })
       )
     );
-
+    
     const allContent: ContentItem[] = results.flatMap((items, i) => 
-      normalizeContent(items || [], modelsToQuery[i])
+      (items || []).map((item: any) => ({
+        ...item,
+        type: modelsToQuery[i],
+        subcategory: item.subcategory || null,
+        image: item.image || null,
+        content: item.content || item.description || null,
+        description: modelsToQuery[i] === 'image' ? item.description : undefined,
+        price: item.price || undefined,
+        currency: item.currency || undefined,
+        inStock: item.inStock !== undefined ? item.inStock : undefined,
+        sizes: item.sizes || undefined,
+        colors: item.colors || undefined,
+      }))
     );
-
-    console.log('Total items before sorting:', allContent.length);
-    console.log('Items by type:', allContent.reduce((acc, item) => {
-      acc[item.type] = (acc[item.type] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>));
-
-    // Sort all content by timestamp
+    
     const sortedContent = allContent.sort((a, b) => 
       new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
     );
-
-    // Apply pagination after sorting
-    const paginatedContent = sortedContent.slice(offset, offset + limit);
+    
     const totalItems = sortedContent.length;
-    const hasMore = offset + limit < totalItems;
-
-    console.log('Pagination Debug:', {
-      totalItems,
-      requestedOffset: offset,
-      requestedLimit: limit,
-      returnedItems: paginatedContent.length,
-      hasMore,
-      nextOffset: offset + limit
-    });
-
-    // Return data in the format expected by frontend
+    const paginatedContent = sortedContent.slice(offset, offset + limit);
+    
+    const reactionsData = await fetchReactions(paginatedContent);
+    
+    const contentWithReactions = paginatedContent.map(item => ({
+      ...item,
+      reactions: reactionsData.get(`${item.type}-${item.id}`) || []
+    }));
+    
     return NextResponse.json({
       success: true,
-      data: paginatedContent,
-      meta: {
-        total: totalItems,
-        limit: limit,
-        offset: offset,
-        hasMore: hasMore,
-        type: type,
-      },
+      data: contentWithReactions,
+      meta: { total: totalItems, limit, offset, hasMore: offset + limit < totalItems, type },
       error: null,
     });
   } catch (error) {
-    console.error('Error fetching latest content:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        data: [],
-        meta: {
-          total: 0,
-          limit: 0,
-          offset: 0,
-          hasMore: false,
-          type: 'all',
-        },
-        error: 'Failed to fetch latest content',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    console.error('Error fetching content:', error);
+    return NextResponse.json({
+      success: false, data: [], meta: { total: 0, limit: 0, offset: 0, hasMore: false, type: 'all' },
+      error: 'Failed to fetch content', message: error instanceof Error ? error.message : 'Unknown error',
+    }, { status: 500 });
   } finally {
-    // Ensure proper cleanup
-    try {
-      await prisma.$disconnect();
-    } catch (disconnectError) {
-      console.error('Error disconnecting Prisma:', disconnectError);
-    }
+    try { await prisma.$disconnect(); } catch (e) { console.error('Disconnect error:', e); }
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Ensure Prisma connection is established
-    await ensurePrismaConnection();
+    await prisma.$connect();
     
     const body = await request.json();
     const { type, authorId, ...contentData } = body;
-
-    if (!type || !authorId) {
-      return NextResponse.json(
-        { success: false, error: 'Type and authorId are required' },
-        { status: 400 }
-      );
-    }
-
-    const includeConfig = {
-      author: {
-        select: {
-          id: true,
-          firstName: true,
-          lastName: true,
-          avatar: true,
-        },
-      },
-      likes: {
-        select: {
-          id: true,
-          emoji: true,
-          userId: true,
-          user: {
-            select: {
-              firstName: true,
-              lastName: true,
-            },
-          },
-        },
-      },
-      _count: {
-        select: {
-          likes: true,
-          comments: true,
-          shares: true,
-        },
-      },
-    };
-
-    const validTypes = ['post', 'book', 'idea', 'image', 'video', 'truth', 'question', 'ad', 'product'];
     
+    if (!type || !authorId) {
+      return NextResponse.json({ success: false, error: 'Type and authorId are required' }, { status: 400 });
+    }
+    
+    const validTypes = ['post', 'book', 'idea', 'image', 'video', 'truth', 'question', 'ad', 'product'];
     if (!validTypes.includes(type)) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid content type' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Invalid content type' }, { status: 400 });
     }
-
-    const modelClient = prisma[type as keyof typeof prisma] as any;
+    
+    const modelClient = (prisma as any)[type];
     if (!modelClient) {
-      return NextResponse.json(
-        { success: false, error: `Model ${type} not found` },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: `Model ${type} not found` }, { status: 400 });
     }
-
+    
     const newContent = await modelClient.create({
       data: { ...contentData, authorId },
-      include: includeConfig,
+      include: {
+        author: { select: { id: true, firstName: true, lastName: true, avatar: true } },
+        likes: { select: { id: true, emoji: true, userId: true, user: { select: { firstName: true, lastName: true } } } },
+        _count: { select: { likes: true, comments: true, shares: true } },
+      },
     });
-
+    
+    const contentWithReactions = [{ ...newContent, type }];
+    const reactionsData = await fetchReactions(contentWithReactions);
+    const reactions = reactionsData.get(`${type}-${newContent.id}`) || [];
+    
     return NextResponse.json({
       success: true,
-      data: { ...newContent, type },
+      data: { ...newContent, type, reactions },
     });
   } catch (error) {
     console.error('Error creating content:', error);
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to create content',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    return NextResponse.json({
+      success: false, error: 'Failed to create content',
+      message: error instanceof Error ? error.message : 'Unknown error',
+    }, { status: 500 });
   } finally {
-    // Ensure proper cleanup
-    try {
-      await prisma.$disconnect();
-    } catch (disconnectError) {
-      console.error('Error disconnecting Prisma:', disconnectError);
-    }
+    try { await prisma.$disconnect(); } catch (e) { console.error('Disconnect error:', e); }
   }
 }

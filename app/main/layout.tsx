@@ -25,7 +25,7 @@ export default function MainLayout({
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 h-full ml-4 mr-6 overflow-x-hidden overflow-y-auto p-4">
+          <div className="flex-1 h-full md:ml-4 md:mr-6 overflow-x-hidden overflow-y-auto p-4">
             {children}
           </div>
 

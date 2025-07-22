@@ -2,6 +2,13 @@
 import { Button } from "@/components/ui/button"
 import { useState, useRef, useEffect } from "react"
 import { reactions } from "@/components/LatestSactionCards/types"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { library, IconPrefix, IconName, IconProp } from "@fortawesome/fontawesome-svg-core"
+import { fas } from "@fortawesome/free-solid-svg-icons"
+import { far } from "@fortawesome/free-regular-svg-icons"
+
+// Add all icons to library
+library.add(fas, far);
 
 interface InteractionsBarProps {
   postId: string
@@ -55,6 +62,29 @@ export default function InteractionsBar({
   const [isReactionsLoading, setIsReactionsLoading] = useState(false)
   
   const reactionsRef = useRef<HTMLDivElement>(null)
+
+  // Helper to get Font Awesome icon for a reaction
+  const getReactionIcon = (emoji: string, className: string = "") => {
+    const reaction = reactions.find(r => r.emoji === emoji);
+    if (reaction && reaction.iconClass) {
+      // Force type assertion to IconProp
+      const iconProp = reaction.iconClass as IconProp;
+      
+      return (
+        <FontAwesomeIcon 
+          icon={iconProp} 
+          className={`${reaction.colorClass} ${className}`}
+        />
+      );
+    }
+    // Fallback to emoji if no reaction found
+    return <span className={className}>{emoji}</span>;
+  };
+
+  // Get reaction by emoji helper
+  const getReactionByEmoji = (emoji: string) => {
+    return reactions.find(r => r.emoji === emoji);
+  };
 
   // Close reactions dropdown when clicking outside
   useEffect(() => {
@@ -219,7 +249,7 @@ export default function InteractionsBar({
                   className="w-6 h-6 bg-white rounded-full border-2 border-white flex items-center justify-center text-sm shadow-sm"
                   style={{ zIndex: topReactions.length - index }}
                 >
-                  {reaction.emoji}
+                  {getReactionIcon(reaction.emoji)}
                 </div>
               ))}
             </div>
@@ -241,7 +271,7 @@ export default function InteractionsBar({
       {/* Actions Bar */}
       <div className="flex items-center justify-between pt-3 border-t border-gray-100">
         <div className="flex items-center gap-4">
-          {/* Like Button - FIXED */}
+          {/* Like Button */}
           <Button 
             variant="ghost" 
             size="sm" 
@@ -256,31 +286,12 @@ export default function InteractionsBar({
             }}
             disabled={isLoading}
           >
-            {/* SOLUTION 1: Use different FontAwesome classes */}
-            <i className={`text-sm mr-1 transition-all ${
-              userHasLiked || userReaction 
-                ? 'fas fa-heart' 
-                : 'far fa-heart'
-            }`}></i>
-            
-            {/* SOLUTION 2: Alternative - use solid heart with opacity */}
-            {/* <i className={`fas fa-heart text-sm mr-1 transition-all ${
-              userHasLiked || userReaction 
-                ? 'opacity-100' 
-                : 'opacity-30'
-            }`}></i> */}
-            
-            {/* SOLUTION 3: SVG fallback (uncomment if FontAwesome issues persist) */}
-            {/* {userHasLiked || userReaction ? (
-              <svg className="w-4 h-4 mr-1 fill-current" viewBox="0 0 24 24">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
-            ) : (
-              <svg className="w-4 h-4 mr-1 stroke-current fill-none" viewBox="0 0 24 24" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-              </svg>
-            )} */}
-            
+            <FontAwesomeIcon 
+              icon={userHasLiked || userReaction ? fas.faHeart : far.faHeart}
+              className={`text-sm mr-1 ${
+                userHasLiked || userReaction ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
+              }`} 
+            />
             <span className="text-sm">إعجاب</span>
           </Button>
 
@@ -295,7 +306,7 @@ export default function InteractionsBar({
             }}
             disabled={isLoading}
           >
-            <i className="far fa-comment text-sm mr-1"></i>
+            <FontAwesomeIcon icon={far.faComment} className="text-sm mr-1" />
             <span className="text-sm">تعليق</span>
           </Button>
 
@@ -310,14 +321,14 @@ export default function InteractionsBar({
             }}
             disabled={isLoading}
           >
-            <i className="fas fa-share text-sm mr-1"></i>
+            <FontAwesomeIcon icon={fas.faShare} className="text-sm mr-1" />
             <span className="text-sm">مشاركة</span>
           </Button>
         </div>
 
         <div className="flex items-center gap-4 text-sm text-gray-500">
           <span className="flex items-center gap-1">
-            <i className="far fa-eye text-sm"></i>
+            <FontAwesomeIcon icon={far.faEye} className="text-sm" />
             {stats.views}
           </span>
           
@@ -334,12 +345,12 @@ export default function InteractionsBar({
             >
               {userReaction ? (
                 <>
-                  <span className="text-sm">{userReaction}</span>
+                  {getReactionIcon(userReaction, "text-sm")}
                   <span>بصمة</span>
                 </>
               ) : (
                 <>
-                  <i className="fas fa-fingerprint text-sm"></i>
+                  <FontAwesomeIcon icon={fas.faFingerprint} className="text-sm" />
                   <span>بصمة</span>
                 </>
               )}
@@ -356,8 +367,12 @@ export default function InteractionsBar({
                       handleReaction(reaction.emoji)
                     }}
                     disabled={isLoading}
+                    title={reaction.label}
                   >
-                    <span className="text-lg">{reaction.emoji}</span>
+                    <FontAwesomeIcon 
+                      icon={reaction.iconClass as IconProp} 
+                      className={`text-lg ${reaction.colorClass}`}
+                    />
                   </button>
                 ))}
               </div>
@@ -388,33 +403,39 @@ export default function InteractionsBar({
                 </div>
               ) : reactionsData.length > 0 ? (
                 <div className="space-y-4">
-                  {reactionsData.map((reactionGroup) => (
-                    <div key={reactionGroup.emoji} className="bg-gray-50 rounded-lg p-3">
-                      <div className="flex items-center gap-2 mb-3">
-                        <span className="text-2xl">{reactionGroup.emoji}</span>
-                        <span className="font-medium text-gray-800">
-                          {reactionGroup.count} {reactionGroup.count === 1 ? 'شخص' : 'أشخاص'}
-                        </span>
+                  {reactionsData.map((reactionGroup) => {
+                    const reactionConfig = getReactionByEmoji(reactionGroup.emoji);
+                    return (
+                      <div key={reactionGroup.emoji} className="bg-gray-50 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-3">
+                          {getReactionIcon(reactionGroup.emoji, "text-2xl")}
+                          <span className="font-medium text-gray-800">
+                            {reactionGroup.count} {reactionGroup.count === 1 ? 'شخص' : 'أشخاص'}
+                          </span>
+                          {reactionConfig && (
+                            <span className="text-sm text-gray-600">({reactionConfig.label})</span>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-1 gap-2">
+                          {reactionGroup.users.slice(0, 5).map((user, index) => (
+                            <div key={user.id} className="flex items-center gap-2">
+                              <div className="w-6 h-6 bg-gray-200 rounded-full flex-shrink-0"></div>
+                              <span className="text-sm text-gray-700">{user.name}</span>
+                            </div>
+                          ))}
+                          {reactionGroup.users.length > 5 && (
+                            <div className="text-xs text-gray-500 mt-1">
+                              و {reactionGroup.users.length - 5} آخرين...
+                            </div>
+                          )}
+                        </div>
                       </div>
-                      <div className="grid grid-cols-1 gap-2">
-                        {reactionGroup.users.slice(0, 5).map((user, index) => (
-                          <div key={user.id} className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-gray-200 rounded-full flex-shrink-0"></div>
-                            <span className="text-sm text-gray-700">{user.name}</span>
-                          </div>
-                        ))}
-                        {reactionGroup.users.length > 5 && (
-                          <div className="text-xs text-gray-500 mt-1">
-                            و {reactionGroup.users.length - 5} آخرين...
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500">
-                  <i className="far fa-heart text-3xl mb-2 block"></i>
+                  <FontAwesomeIcon icon={far.faHeart} className="text-3xl mb-2 block" />
                   <p>لا توجد تفاعلات بعد</p>
                   <p className="text-xs mt-1">كن أول من يتفاعل مع هذا المنشور</p>
                 </div>
