@@ -108,6 +108,7 @@ export default function PostsPageClient({ session }: { session: Session | null }
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const isLoadingRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
+  const isMountedRef = useRef(true)
 
   const formatTimestamp = useCallback((timestamp: string | Date) => {
     if (!timestamp) return 'منذ وقت قصير'
@@ -190,9 +191,14 @@ export default function PostsPageClient({ session }: { session: Session | null }
   }, [formatTimestamp])
 
   const fetchPosts = useCallback(async (type = "all", offset = 0, isLoadMore = false) => {
-    if (isLoadingRef.current) return
+    if (isLoadingRef.current || !isMountedRef.current) return
 
-    abortControllerRef.current?.abort()
+    // Cancel previous request if it exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+    }
+
     const abortController = new AbortController()
     abortControllerRef.current = abortController
     isLoadingRef.current = true
@@ -212,12 +218,22 @@ export default function PostsPageClient({ session }: { session: Session | null }
         signal: abortController.signal
       })
       
+      // Check if component is still mounted before proceeding
+      if (!isMountedRef.current || abortController.signal.aborted) {
+        return
+      }
+      
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
       }
       
       const data: ApiResponse = await response.json()
+      
+      // Check again if component is still mounted
+      if (!isMountedRef.current || abortController.signal.aborted) {
+        return
+      }
       
       if (!data.success || !Array.isArray(data.data)) {
         throw new Error(data.error || 'Invalid response format')
@@ -240,7 +256,13 @@ export default function PostsPageClient({ session }: { session: Session | null }
       setHasMore(data.meta?.hasMore !== false && transformedPosts.length === LIMIT)
       
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return
+      // Only handle errors if component is still mounted and request wasn't intentionally aborted
+      if (!isMountedRef.current) return
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        // Silently ignore abort errors - they're intentional
+        return
+      }
       
       const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في تحميل المنشورات'
       setError(errorMessage)
@@ -248,10 +270,13 @@ export default function PostsPageClient({ session }: { session: Session | null }
       if (!isLoadMore) setPosts([])
       setHasMore(false)
     } finally {
-      setLoading(false)
-      setLoadingMore(false)
+      if (isMountedRef.current) {
+        setLoading(false)
+        setLoadingMore(false)
+      }
       isLoadingRef.current = false
       
+      // Clean up abort controller if it's the current one
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null
       }
@@ -259,12 +284,14 @@ export default function PostsPageClient({ session }: { session: Session | null }
   }, [transformPost])
 
   const loadMore = useCallback(() => {
-    if (!loadingMore && !isLoadingRef.current && hasMore && posts.length > 0) {
+    if (!loadingMore && !isLoadingRef.current && hasMore && posts.length > 0 && isMountedRef.current) {
       fetchPosts(selectedType, currentOffset, true)
     }
   }, [loadingMore, hasMore, posts.length, selectedType, fetchPosts, currentOffset])
 
   const handleTypeChange = useCallback((type: string) => {
+    if (!isMountedRef.current) return
+    
     setSelectedType(type)
     setHasMore(true)
     setCurrentOffset(0)
@@ -273,6 +300,8 @@ export default function PostsPageClient({ session }: { session: Session | null }
   }, [fetchPosts])
 
   const refreshPosts = useCallback(() => {
+    if (!isMountedRef.current) return
+    
     setHasMore(true)
     setCurrentOffset(0)
     setPosts([])
@@ -281,13 +310,15 @@ export default function PostsPageClient({ session }: { session: Session | null }
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
+    if (!isMountedRef.current) return
+    
     observerRef.current?.disconnect()
 
     if (!hasMore || loadingMore || isLoadingRef.current) return
 
     const observer = new IntersectionObserver(
       (entries) => {
-        if (entries[0].isIntersecting && !isLoadingRef.current && hasMore && posts.length > 0) {
+        if (entries[0].isIntersecting && !isLoadingRef.current && hasMore && posts.length > 0 && isMountedRef.current) {
           loadMore()
         }
       },
@@ -302,19 +333,31 @@ export default function PostsPageClient({ session }: { session: Session | null }
 
   // Initial load
   useEffect(() => {
-    fetchPosts()
+    if (isMountedRef.current) {
+      fetchPosts()
+    }
   }, [])
 
-  // Cleanup
-  useEffect(() => () => {
-    abortControllerRef.current?.abort()
-    observerRef.current?.disconnect()
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false
+      abortControllerRef.current?.abort()
+      abortControllerRef.current = null
+      observerRef.current?.disconnect()
+    }
   }, [])
 
   const LoadingSkeleton = () => (
     <div className="space-y-4">
       {[...Array(3)].map((_, i) => (
         <div key={i} className="bg-white rounded-lg p-4 border animate-pulse">
+          <div className="flex-row  justify-start items-center mb-4 flex gap-3">
+            <div className="h-4 py-2 bg-gray-200  rounded-full w-10  "></div>
+            <div className=" bg-gray-200 rounded-full h-2 w-2  "></div>
+            <div className="h-4 py-2 bg-gray-200 rounded-full w-10"></div>
+          </div>
+            
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
             <div className="flex-1">
@@ -324,7 +367,7 @@ export default function PostsPageClient({ session }: { session: Session | null }
           </div>
           <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-1/2 mb-4"></div>
-          <div className="h-32 bg-gray-200 rounded mb-3"></div>
+          <div className="h-60 bg-gray-200 rounded mb-3"></div>
           <div className="flex gap-4">
             {[...Array(3)].map((_, j) => (
               <div key={j} className="h-3 bg-gray-200 rounded w-12"></div>

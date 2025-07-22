@@ -53,11 +53,11 @@ const baseSelect = {
 const selectConfigs: Record<string, any> = {
   post: { ...baseSelect, content: true, subcategory: true, image: true },
   book: { ...baseSelect, content: true, subcategory: true, image: true },
-  idea: { ...baseSelect, content: true },
+  idea: { ...baseSelect, content: true, image: true },
   image: { ...baseSelect, description: true, image: true },
   video: { ...baseSelect, content: true, subcategory: true, image: true },
   truth: { ...baseSelect, content: true, subcategory: true, image: true },
-  question: { ...baseSelect, content: true },
+  question: { ...baseSelect, content: true, image: true },
   ad: { ...baseSelect, content: true, subcategory: true, image: true },
   product: { ...baseSelect, content: true, image: true, subcategory: true, price: true, currency: true, inStock: true, sizes: true, colors: true },
 };

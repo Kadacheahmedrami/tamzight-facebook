@@ -71,8 +71,16 @@ export default function PostsPageClient({ session, searchParams }: PostsPageClie
     <div className="space-y-4">
       {[...Array(3)].map((_, i) => (
         <div key={i} className="bg-white rounded-lg p-4 border animate-pulse">
+
+            <div className="flex-row  justify-start items-center mb-4 flex gap-3">
+              <div className="h-4 py-2 bg-gray-200  rounded-full w-10  "></div>
+              <div className=" bg-gray-200 rounded-full h-2 w-2  "></div>
+              <div className="h-4 py-2 bg-gray-200 rounded-full w-10"></div>
+            </div>
+            
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-gray-200 rounded-full"></div>
+
             <div className="flex-1">
               <div className="h-4 bg-gray-200 rounded w-1/3 mb-1"></div>
               <div className="h-3 bg-gray-200 rounded w-1/4"></div>

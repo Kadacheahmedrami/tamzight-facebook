@@ -359,6 +359,7 @@ export default function PostDetailClient({ session, postId }: PostDetailClientPr
         {!isEditing && (
           <div className="mb-3 flex justify-end">
          <ReactionsDisplay
+            stats={currentStats}
             reactions={currentReactions}
             session={session as any}
           />
