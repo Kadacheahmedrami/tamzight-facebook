@@ -82,16 +82,32 @@ export default function PostCard(props: PostCardProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeletingPost, setIsDeletingPost] = useState(false)
   const [currentStats, setCurrentStats] = useState(stats)
+  const [videoStarted, setVideoStarted] = useState(false) // New state for video play status
 
   const actionsRef = useRef<HTMLDivElement>(null)
+  const videoRef = useRef<HTMLVideoElement>(null) // Ref for video element
   const router = useRouter()
 
   const config = categoryConfig[type as keyof typeof categoryConfig] || categoryConfig.post
   const isAuthor = session?.user?.id === authorId?.toString()
   const isLongContent = content.length > 200
   const displayContent = showFullContent ? content : content.substring(0, 200) + (isLongContent ? '...' : '')
-  const displayMedia = media?.[0] || (image ? { id: 'img', type: 'image' as const, url: image, alt: title } : null) || 
-                     (images?.[0] ? { id: 'imgs', type: 'image' as const, url: images[0], alt: title } : null)
+
+  type MediaItem = { 
+    id: string; 
+    type: 'image' | 'video'; 
+    url: string; 
+    thumbnail?: string; 
+    alt?: string 
+  }
+  
+  const displayMedia: MediaItem = 
+    (media && media.length > 0 && media[0]) || 
+    (image ? { id: 'img', type: 'image', url: image, alt: title } : null) || 
+    (images && images.length > 0 ? { id: 'imgs', type: 'image', url: images[0], alt: title } : null) || 
+    { id: 'placeholder', type: 'image', url: '/default-image.jpg', alt: 'صورة افتراضية' }
+  
+
 
   // Click outside handler for actions menu
   useEffect(() => {
@@ -104,6 +120,11 @@ export default function PostCard(props: PostCardProps) {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [showActions])
+
+  // Reset video state when media changes
+  useEffect(() => {
+    setVideoStarted(false)
+  }, [displayMedia?.url])
 
   const handleUpdate = async () => {
     const trimmedTitle = editTitle.trim()
@@ -162,6 +183,20 @@ export default function PostCard(props: PostCardProps) {
     if (!isEditing) router.push(`${baseRoute}/${id}`)
   }
 
+  // Handle video play/pause
+  const handleVideoPlay = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!videoRef.current) return
+
+    if (videoRef.current.paused) {
+      videoRef.current.play()
+      setVideoStarted(true)
+    } else {
+      videoRef.current.pause()
+      setVideoStarted(false)
+    }
+  }
+
   return (
     <article className="bg-white rounded-lg p-4 border shadow-sm mb-4 hover:shadow-md transition-all duration-200">
       {/* Header */}
@@ -177,12 +212,7 @@ export default function PostCard(props: PostCardProps) {
               <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full w-fit">{category}</span>
             </>
           )}
-          {subcategory && (
-            <>
-              <span className="text-gray-400 text-xs">•</span>
-              <span className="bg-gray-50 text-gray-600 text-xs px-2 py-1 rounded-full w-fit">{subcategory}</span>
-            </>
-          )}
+        
         </div>
         
         {isAuthor && (
@@ -298,27 +328,56 @@ export default function PostCard(props: PostCardProps) {
               {title}
             </h2>
 
-            {displayMedia && (
-              <figure className="mb-3 rounded-lg overflow-hidden">
-                {displayMedia.type === 'image' ? (
-                  <img 
-                    src={displayMedia.url} 
-                    alt={displayMedia.alt || title || 'صورة المنشور'} 
-                    className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
-                    loading="lazy"
-                  />
-                ) : (
-                  <video 
-                    src={displayMedia.url}
-                    poster={displayMedia.thumbnail}
-                    controls
-                    className="w-full h-64 object-cover"
-                  >
-                    متصفحك لا يدعم تشغيل الفيديو
-                  </video>
-                )}
-              </figure>
-            )}
+   
+            
+            <figure className="mb-3 rounded-lg overflow-hidden relative">
+  {displayMedia.type === 'video' ? (
+    <div className="relative w-full h-64">
+      <video
+        ref={videoRef}
+        src={displayMedia.url}
+        poster={displayMedia.thumbnail}
+        className="w-full h-full object-cover"
+        onClick={handleVideoPlay}
+      >
+        متصفحك لا يدعم تشغيل الفيديو
+      </video>
+
+      {!videoStarted && (
+        <div 
+          className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 cursor-pointer"
+          onClick={handleVideoPlay}
+        >
+          <div className="bg-white bg-opacity-80 rounded-full w-14 h-14 flex items-center justify-center hover:bg-opacity-100 transition-all">
+            <i className="fa fa-play text-2xl text-gray-800"></i>
+          </div>
+        </div>
+      )}
+
+      {videoStarted && (
+        <div 
+          className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white rounded-full p-1 cursor-pointer"
+          onClick={handleVideoPlay}
+        >
+          {videoRef.current?.paused ? (
+            <i className="fa fa-play w-4 h-4"></i>
+          ) : (
+            <i className="fa fa-pause w-4 h-4"></i>
+          )}
+        </div>
+      )}
+    </div>
+  ) : (
+    <img 
+      src={displayMedia.url} 
+      alt={displayMedia.alt || title || 'صورة المنشور'} 
+      className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
+      loading="lazy"
+    />
+  )}
+</figure>
+
+    
 
             <p className="text-gray-700 mb-4 leading-relaxed text-sm sm:text-base whitespace-pre-wrap">
               {displayContent}
