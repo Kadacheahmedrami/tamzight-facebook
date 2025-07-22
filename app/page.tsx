@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 
 const features = [
   // quick‑action buttons (no change)
@@ -226,9 +227,9 @@ export default function HomePage() {
           <h2 className="text-lg md:text-xl">
             سجل دخولك للتجمع مجاناً، وأستفيد من محتوياته الامازيغية المتنوعة، وادعو اهلك واصدقائك الامازيغ للانضمام لهذا التجمع للتواصل الاجتماعي الامازيغي
           </h2>
-          <button className="bg-white my-auto text-blue-600 px-2 mx-3 rounded-[5px] hover:bg-gray-50 transition-colors text-sm md:text-base">
+          <Link href="/main" className="bg-white my-auto text-blue-600 px-2 mx-3 rounded-[5px] hover:bg-gray-50 transition-colors text-sm md:text-base">
             انضم إلينا
-          </button>
+          </Link>
         </section>
       </main>
 
@@ -259,7 +260,7 @@ export default function HomePage() {
       {/* Bottom Bar */}
       <div className="bg-yellow-400  text-gray-800 py-4">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row justify-between items-center text-sm">
-          <span className="bg-[#008000] text-white px-3 py-1 rounded text-xs flex items-center gap-1">
+          <span className="  px-3 py-1 rounded text-xs flex items-center gap-1">
             <i className="fas fa-copyright"></i>
             حقوق الطبع والنشر محفوظة © تجمع الأمازيغ للتصميم والبرمجة 2025 - 2026
           </span>
