@@ -6,33 +6,11 @@ import InteractionsBar from "@/components/Cards/InteractionsBar"
 import CommentsModal from "@/components/Cards/CommentsModal"
 import ReactionsDisplay from "@/components/Cards/ReactionsDisplay"
 
-interface MediaItem {
-  id: string
-  type: 'image' | 'video'
-  url: string
-  thumbnail?: string
-  alt?: string
-}
-
 interface User {
   id: number
   firstName: string
   lastName: string
   avatar?: string | null
-}
-
-interface Reaction {
-  id: number
-  emoji: string
-  userId: number
-  user: User
-  createdAt: Date
-}
-
-interface ReactionDetails {
-  total: number
-  summary: Array<{ emoji: string; count: number; users: any[] }>
-  details: Record<string, any[]>
 }
 
 interface PostCardProps {
@@ -46,19 +24,12 @@ interface PostCardProps {
   type: string
   category: string
   subcategory?: string | null
-  media?: MediaItem[]
+  media?: Array<{ id: string; type: 'image' | 'video'; url: string; thumbnail?: string; alt?: string }>
   image?: string | null
   images?: string[]
-  reactions: Reaction[]
-  stats: {
-    views: number
-    likes: number
-    comments: number
-    shares: number
-  }
+  stats: { views: number; likes: number; comments: number; shares: number }
   session?: { user?: { id?: string } } | null
   baseRoute: string
-  apiEndpoint: string
   // Product fields
   price?: number
   currency?: string
@@ -67,7 +38,7 @@ interface PostCardProps {
   // User interaction fields
   userHasLiked?: boolean
   userReaction?: string | null
-  reactionDetails?: ReactionDetails
+  reactionDetails?: { total: number; summary: Array<{ emoji: string; count: number; users: any[] }>; details: Record<string, any[]> }
   onDelete?: (postId: string) => void
   onUpdate?: (postId: string, updatedData: any) => void
 }
@@ -84,30 +55,20 @@ const categoryConfig = {
   truth: { displayName: 'حقيقة', color: 'bg-teal-100 text-teal-800', emoji: '✨' }
 } as const
 
-// Map post types to their corresponding API endpoints
 const typeToApiEndpoint = {
-  post: 'posts',
-  book: 'books',
-  idea: 'ideas',
-  image: 'images',
-  video: 'videos',
-  truth: 'truths', // adjust this to your actual endpoint
-  question: 'questions',
-  ad: 'ads',
-  product: 'products'
+  post: 'posts', book: 'books', idea: 'ideas', image: 'images', video: 'videos',
+  truth: 'truths', question: 'questions', ad: 'ads', product: 'products'
 } as const
 
 export default function PostCard(props: PostCardProps) {
   const {
     id, title, content, author, authorId, authorData, timestamp, type, category, subcategory,
-    media, image, images, stats, reactions = [], session, onDelete, onUpdate, baseRoute, apiEndpoint,
-    price, currency, inStock, sizes,
-    userHasLiked = false, userReaction = null, reactionDetails
+    media, image, images, stats, session, onDelete, onUpdate, baseRoute,
+    price, currency, inStock, sizes, userHasLiked = false, userReaction = null, reactionDetails
   } = props
 
-  // Get the correct API endpoint based on the type
-  const actualApiEndpoint = typeToApiEndpoint[type as keyof typeof typeToApiEndpoint] || apiEndpoint || 'posts'
-
+  const apiEndpoint = typeToApiEndpoint[type as keyof typeof typeToApiEndpoint] || 'posts'
+  
   // States
   const [userLiked, setUserLiked] = useState(userHasLiked)
   const [userReact, setUserReact] = useState(userReaction)
@@ -129,8 +90,6 @@ export default function PostCard(props: PostCardProps) {
   const isAuthor = session?.user?.id === authorId?.toString()
   const isLongContent = content.length > 200
   const displayContent = showFullContent ? content : content.substring(0, 200) + (isLongContent ? '...' : '')
-
-  // Get first media item
   const displayMedia = media?.[0] || (image ? { id: 'img', type: 'image' as const, url: image, alt: title } : null) || 
                      (images?.[0] ? { id: 'imgs', type: 'image' as const, url: images[0], alt: title } : null)
 
@@ -153,7 +112,7 @@ export default function PostCard(props: PostCardProps) {
 
     try {
       setIsUpdating(true)
-      const response = await fetch(`/api/main/${actualApiEndpoint}/${id}`, {
+      const response = await fetch(`/api/main/${apiEndpoint}/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: trimmedTitle, content: trimmedContent })
@@ -179,7 +138,7 @@ export default function PostCard(props: PostCardProps) {
     
     try {
       setIsDeletingPost(true)
-      const response = await fetch(`/api/main/${actualApiEndpoint}/${id}`, { method: 'DELETE' })
+      const response = await fetch(`/api/main/${apiEndpoint}/${id}`, { method: 'DELETE' })
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -203,22 +162,6 @@ export default function PostCard(props: PostCardProps) {
     if (!isEditing) router.push(`${baseRoute}/${id}`)
   }
 
-  // Handle reaction updates from InteractionsBar
-  const handleReactionUpdate = (reaction: string | null, hasLiked: boolean) => {
-    setUserReact(reaction)
-    setUserLiked(hasLiked)
-  }
-
-  // Handle stats updates from InteractionsBar
-  const handleStatsUpdate = (newStats: any) => {
-    setCurrentStats(newStats)
-  }
-
-  // Handle comments modal open
-  const handleCommentsClick = () => {
-    setShowCommentsModal(true)
-  }
-
   return (
     <article className="bg-white rounded-lg p-4 border shadow-sm mb-4 hover:shadow-md transition-all duration-200">
       {/* Header */}
@@ -231,68 +174,53 @@ export default function PostCard(props: PostCardProps) {
           {category && (
             <>
               <span className="text-gray-400 text-xs">•</span>
-              <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full w-fit">
-                {category}
-              </span>
+              <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full w-fit">{category}</span>
             </>
           )}
           {subcategory && (
             <>
               <span className="text-gray-400 text-xs">•</span>
-              <span className="bg-gray-50 text-gray-600 text-xs px-2 py-1 rounded-full w-fit">
-                {subcategory}
-              </span>
+              <span className="bg-gray-50 text-gray-600 text-xs px-2 py-1 rounded-full w-fit">{subcategory}</span>
             </>
           )}
         </div>
         
-        <div className="flex items-center gap-2">
-          <span className="text-gray-500 text-xs sm:text-sm">{timestamp}</span>
-          
-          {isAuthor && (
-            <div className="relative" ref={actionsRef}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation()
-                  setShowActions(!showActions)
-                }}
-                className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                disabled={isDeletingPost}
-              >
-                <i className="fa fa-ellipsis-h"></i>
-              </button>
-              
-              {showActions && (
-                <div className="absolute left-0 top-8 bg-white border rounded-lg shadow-lg z-20 min-w-32">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setIsEditing(true)
-                      setEditTitle(title)
-                      setEditContent(content)
-                      setShowActions(false)
-                    }}
-                    className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors"
-                  >
-                    <i className="fa fa-edit text-blue-500"></i>تعديل
-                  </button>
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      handleDelete()
-                      setShowActions(false)
-                    }}
-                    className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600 transition-colors"
-                    disabled={isDeletingPost}
-                  >
-                    <i className="fa fa-trash text-red-500"></i>
-                    {isDeletingPost ? 'جاري الحذف...' : 'حذف'}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        {isAuthor && (
+          <div className="relative" ref={actionsRef}>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowActions(!showActions) }}
+              className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
+              disabled={isDeletingPost}
+            >
+              <i className="fa fa-ellipsis-h"></i>
+            </button>
+            
+            {showActions && (
+              <div className="absolute left-0 top-8 bg-white border rounded-lg shadow-lg z-20 min-w-32">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsEditing(true)
+                    setEditTitle(title)
+                    setEditContent(content)
+                    setShowActions(false)
+                  }}
+                  className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                >
+                  <i className="fa fa-edit text-blue-500"></i>تعديل
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleDelete(); setShowActions(false) }}
+                  className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600 transition-colors"
+                  disabled={isDeletingPost}
+                >
+                  <i className="fa fa-trash text-red-500"></i>
+                  {isDeletingPost ? 'جاري الحذف...' : 'حذف'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </header>
 
       {/* Author */}
@@ -307,12 +235,15 @@ export default function PostCard(props: PostCardProps) {
             <i className="fa fa-user text-gray-500 text-xs"></i>
           )}
         </button>
-        <button 
-          className="font-semibold text-gray-900 text-sm sm:text-base cursor-pointer hover:text-blue-600 transition-colors text-right"
-          onClick={navigateToProfile}
-        >
-          {author}
-        </button>
+        <div className="flex flex-col">
+          <button 
+            className="font-semibold text-gray-900 text-sm sm:text-base cursor-pointer hover:text-blue-600 transition-colors text-right"
+            onClick={navigateToProfile}
+          >
+            {author}
+          </button>
+          <span className="text-gray-500 text-xs sm:text-sm">{timestamp}</span>
+        </div>
       </div>
 
       {/* Content */}
@@ -393,10 +324,7 @@ export default function PostCard(props: PostCardProps) {
               {displayContent}
               {isLongContent && (
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowFullContent(!showFullContent)
-                  }}
+                  onClick={(e) => { e.stopPropagation(); setShowFullContent(!showFullContent) }}
                   className="text-blue-600 hover:text-blue-800 font-medium ml-2 hover:underline"
                 >
                   {showFullContent ? 'عرض أقل' : 'اقرأ المزيد'}
@@ -444,32 +372,22 @@ export default function PostCard(props: PostCardProps) {
       {/* Interactions */}
       {!isEditing && (
         <footer>
-          {/* ReactionsDisplay Component (if you still want to use it) */}
           {reactionData.total > 0 && (
             <div className="mb-3 flex justify-end">
-              <ReactionsDisplay 
-                reactions={reactionData} 
-                session={session}
-                postId={id}
-                apiEndpoint={actualApiEndpoint}
-                userReaction={userReact}
-                onReactionUpdate={setUserReact}
-              />
+              <ReactionsDisplay reactions={reactionData} session={session} />
             </div>
           )}
 
-          {/* Main Interactions Bar */}
           <InteractionsBar
             postId={id}
-            apiEndpoint={actualApiEndpoint}
+            apiEndpoint={apiEndpoint}
             stats={currentStats}
             userHasLiked={userLiked}
             userReaction={userReact}
             session={session}
-            onStatsUpdate={handleStatsUpdate}
-            onReactionUpdate={handleReactionUpdate}
-            onLikeUpdate={setUserLiked}
-            onCommentsClick={handleCommentsClick}
+            onStatsUpdate={setCurrentStats}
+            onReactionUpdate={(reaction, hasLiked) => { setUserReact(reaction); setUserLiked(hasLiked) }}
+            onCommentsClick={() => setShowCommentsModal(true)}
           />
         </footer>
       )}
@@ -478,11 +396,11 @@ export default function PostCard(props: PostCardProps) {
       {showCommentsModal && (
         <CommentsModal
           postId={id}
-          apiEndpoint={actualApiEndpoint}
+          apiEndpoint={apiEndpoint}
           session={session}
           stats={currentStats}
           onClose={() => setShowCommentsModal(false)}
-          onStatsUpdate={handleStatsUpdate}
+          onStatsUpdate={setCurrentStats}
         />
       )}
     </article>

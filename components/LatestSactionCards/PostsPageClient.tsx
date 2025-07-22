@@ -17,61 +17,19 @@ interface MediaItem {
   resolution?: string
 }
 
-interface ReactionUser {
-  userId: number
-  userName: string
-  userAvatar: string | null
-  createdAt: Date
-}
-
-interface ReactionSummary {
-  emoji: string
-  count: number
-  users: ReactionUser[]
-}
-
-interface ReactionDetails {
-  total: number
-  summary: ReactionSummary[]
-  details: Record<string, ReactionUser[]>
+interface User {
+  id: number
+  firstName: string
+  lastName: string
+  avatar?: string | null
 }
 
 interface Reaction {
   id: number
   emoji: string
   userId: number
-  user: { 
-    id: number
-    firstName: string
-    lastName: string
-    avatar?: string | null
-  }
+  user: User
   createdAt: Date
-}
-
-interface Like {
-  id: number
-  emoji: string
-  userId: number
-  user: { firstName: string; lastName: string }
-}
-
-interface Comment {
-  id: number
-  content: string
-  userId: number
-}
-
-interface Share {
-  id: number
-  userId: number
-}
-
-interface Author {
-  id: number
-  firstName: string
-  lastName: string
-  avatar?: string | null
 }
 
 interface Post {
@@ -81,7 +39,7 @@ interface Post {
   description?: string | null
   author: string
   authorId: number
-  authorData: Author
+  authorData: User
   timestamp: string
   type: string
   category: string
@@ -89,11 +47,7 @@ interface Post {
   media?: MediaItem[]
   image?: string | null
   images?: string[]
-  views: number
   reactions: Reaction[]
-  likes: Like[]
-  comments: Comment[]
-  shares: Share[]
   _count: {
     likes: number
     comments: number
@@ -105,16 +59,14 @@ interface Post {
     comments: number
     shares: number
   }
-  // Product specific fields
   price?: number
   currency?: string
   inStock?: boolean
   sizes?: string[]
   colors?: string[]
-  // User interaction fields
   userHasLiked?: boolean
   userReaction?: string | null
-  reactionDetails?: ReactionDetails
+  reactionDetails?: any
 }
 
 interface ApiResponse {
@@ -122,17 +74,10 @@ interface ApiResponse {
   data: any[]
   meta: {
     total: number
-    limit: number
-    offset: number
     hasMore: boolean
-    type: string
     currentUserId?: string | null
   }
   error: string | null
-}
-
-interface PostsPageClientProps {
-  session: Session | null
 }
 
 const CONTENT_TYPES = [
@@ -150,7 +95,7 @@ const CONTENT_TYPES = [
 
 const LIMIT = 20
 
-export default function PostsPageClient({ session }: PostsPageClientProps) {
+export default function PostsPageClient({ session }: { session: Session | null }) {
   const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -158,9 +103,7 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [currentOffset, setCurrentOffset] = useState(0)
-  const [totalItems, setTotalItems] = useState(0)
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
- 
+
   const observerRef = useRef<IntersectionObserver | null>(null)
   const loadMoreRef = useRef<HTMLDivElement | null>(null)
   const isLoadingRef = useRef(false)
@@ -169,28 +112,21 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
   const formatTimestamp = useCallback((timestamp: string | Date) => {
     if (!timestamp) return 'منذ وقت قصير'
     
-    const date = new Date(timestamp)
-    const now = new Date()
-    const diffInMs = now.getTime() - date.getTime()
-    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60))
+    const diffInHours = Math.floor((Date.now() - new Date(timestamp).getTime()) / (1000 * 60 * 60))
     const diffInDays = Math.floor(diffInHours / 24)
     
     if (diffInHours < 1) return 'منذ وقت قصير'
     if (diffInHours < 24) return `منذ ${diffInHours} ساعة`
     if (diffInDays < 7) return `منذ ${diffInDays} يوم`
     
-    return date.toLocaleDateString('ar-SA', { 
-      year: 'numeric', 
-      month: 'short', 
-      day: 'numeric' 
+    return new Date(timestamp).toLocaleDateString('ar-SA', { 
+      year: 'numeric', month: 'short', day: 'numeric' 
     })
   }, [])
 
   const transformPost = useCallback((item: any): Post => {
-    // Create media array from images if they exist
     const media: MediaItem[] = []
     
-    // Handle single image
     if (item.image) {
       media.push({
         id: `img-${item.id}`,
@@ -200,19 +136,17 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
       })
     }
     
-    // Handle multiple images
-    if (item.images && Array.isArray(item.images)) {
-      item.images.forEach((imageUrl: string, index: number) => {
+    if (item.images?.length) {
+      item.images.forEach((url: string, i: number) => {
         media.push({
-          id: `img-${item.id}-${index}`,
+          id: `img-${item.id}-${i}`,
           type: 'image',
-          url: imageUrl,
+          url,
           alt: item.title || 'صورة'
         })
       })
     }
 
-    // Transform the data to match the expected Post interface
     return {
       id: item.id?.toString() || Math.random().toString(36).substr(2, 9),
       title: item.title || 'بدون عنوان',
@@ -223,21 +157,16 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
       authorData: item.author || { 
         id: parseInt(item.authorId) || 0, 
         firstName: 'مجهول', 
-        lastName: '', 
-        avatar: null 
+        lastName: '' 
       },
       timestamp: formatTimestamp(item.timestamp),
       type: item.type || 'post',
       category: item.category || 'عام',
-      subcategory: item.subcategory || null,
-      media: media,
-      image: item.image || null,
-      images: item.images || [],
-      views: item.views || 0,
-      reactions: item.reactions || [], // New reactions array with full user data
-      likes: item.likes || [], // Original likes array
-      comments: item.comments || [],
-      shares: item.shares || [],
+      subcategory: item.subcategory,
+      media,
+      image: item.image,
+      images: item.images,
+      reactions: item.reactions || [],
       _count: item._count || {
         likes: item.likes?.length || 0,
         comments: item.comments?.length || 0,
@@ -249,31 +178,21 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
         comments: item._count?.comments || item.comments?.length || 0,
         shares: item._count?.shares || item.shares?.length || 0
       },
-      // Product specific fields
       price: item.price,
       currency: item.currency,
       inStock: item.inStock,
       sizes: item.sizes,
       colors: item.colors,
-      // User interaction fields from API
       userHasLiked: item.userHasLiked || false,
-      userReaction: item.userReaction || null,
-      reactionDetails: item.reactionDetails || {
-        total: 0,
-        summary: [],
-        details: {}
-      }
+      userReaction: item.userReaction,
+      reactionDetails: item.reactionDetails
     }
   }, [formatTimestamp])
 
   const fetchPosts = useCallback(async (type = "all", offset = 0, isLoadMore = false) => {
     if (isLoadingRef.current) return
 
-    // Cancel previous request
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort()
-    }
-
+    abortControllerRef.current?.abort()
     const abortController = new AbortController()
     abortControllerRef.current = abortController
     isLoadingRef.current = true
@@ -287,15 +206,9 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
         offset: offset.toString()
       })
       
-      if (type !== "all") {
-        params.append('type', type)
-      }
+      if (type !== "all") params.append('type', type)
 
-      const response = await fetch(`/api/main/latest?${params.toString()}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await fetch(`/api/main/latest?${params}`, {
         signal: abortController.signal
       })
       
@@ -306,17 +219,8 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
       
       const data: ApiResponse = await response.json()
       
-      if (!data.success) {
-        throw new Error(data.error || 'Failed to fetch posts')
-      }
-      
-      if (!Array.isArray(data.data)) {
-        throw new Error('Invalid data format received from API')
-      }
-
-      // Set current user ID from API response
-      if (data.meta?.currentUserId !== undefined) {
-        setCurrentUserId(data.meta.currentUserId)
+      if (!data.success || !Array.isArray(data.data)) {
+        throw new Error(data.error || 'Invalid response format')
       }
 
       const transformedPosts = data.data.map(transformPost)
@@ -333,28 +237,21 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
         setCurrentOffset(transformedPosts.length)
       }
       
-      setTotalItems(data.meta?.total || transformedPosts.length)
       setHasMore(data.meta?.hasMore !== false && transformedPosts.length === LIMIT)
       
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') {
-        return // Request was cancelled, don't update state
-      }
+      if (error instanceof Error && error.name === 'AbortError') return
       
-      console.error("Error fetching posts:", error)
       const errorMessage = error instanceof Error ? error.message : 'حدث خطأ في تحميل المنشورات'
       setError(errorMessage)
       
-      if (!isLoadMore) {
-        setPosts([])
-      }
+      if (!isLoadMore) setPosts([])
       setHasMore(false)
     } finally {
       setLoading(false)
       setLoadingMore(false)
       isLoadingRef.current = false
       
-      // Only clear abort controller if it's the current one
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null
       }
@@ -371,24 +268,20 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
     setSelectedType(type)
     setHasMore(true)
     setCurrentOffset(0)
-    setTotalItems(0)
-    setPosts([]) // Clear existing posts immediately
+    setPosts([])
     fetchPosts(type, 0, false)
   }, [fetchPosts])
 
   const refreshPosts = useCallback(() => {
     setHasMore(true)
     setCurrentOffset(0)
-    setTotalItems(0)
-    setPosts([]) // Clear existing posts immediately
+    setPosts([])
     fetchPosts(selectedType, 0, false)
   }, [selectedType, fetchPosts])
 
   // Intersection Observer for infinite scroll
   useEffect(() => {
-    if (observerRef.current) {
-      observerRef.current.disconnect()
-    }
+    observerRef.current?.disconnect()
 
     if (!hasMore || loadingMore || isLoadingRef.current) return
 
@@ -401,17 +294,10 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
       { root: null, rootMargin: '200px', threshold: 0.1 }
     )
 
-    if (loadMoreRef.current) {
-      observer.observe(loadMoreRef.current)
-    }
-
+    if (loadMoreRef.current) observer.observe(loadMoreRef.current)
     observerRef.current = observer
 
-    return () => {
-      if (observerRef.current) {
-        observerRef.current.disconnect()
-      }
-    }
+    return () => observer.disconnect()
   }, [hasMore, loadingMore, loadMore, posts.length])
 
   // Initial load
@@ -419,16 +305,10 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
     fetchPosts()
   }, [])
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort()
-      }
-      if (observerRef.current) {
-        observerRef.current.disconnect()
-      }
-    }
+  // Cleanup
+  useEffect(() => () => {
+    abortControllerRef.current?.abort()
+    observerRef.current?.disconnect()
   }, [])
 
   const LoadingSkeleton = () => (
@@ -455,35 +335,22 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
     </div>
   )
 
-  const ErrorDisplay = () => (
+  const StatusMessage = ({ type, title, message }: { type: string, title: string, message: string }) => (
     <div className="text-center py-8">
-      <div className="bg-red-50 rounded-lg p-8">
-        <div className="text-red-400 text-6xl mb-4">⚠️</div>
-        <p className="text-red-600 text-lg mb-2">حدث خطأ في تحميل المنشورات</p>
-        <p className="text-red-500 text-sm mb-4">{error}</p>
-        <Button onClick={refreshPosts} variant="outline" className="border-red-300 text-red-600 hover:bg-red-50">
-          إعادة المحاولة
-        </Button>
-      </div>
-    </div>
-  )
-
-  const EmptyState = () => (
-    <div className="text-center py-8">
-      <div className="bg-gray-50 rounded-lg p-8">
-        <div className="text-gray-400 text-6xl mb-4">📝</div>
-        <p className="text-gray-600 text-lg mb-2">لا توجد منشورات في هذا القسم</p>
-        <p className="text-gray-500 text-sm">جرب تغيير الفئة أو أضف منشوراً جديداً</p>
-      </div>
-    </div>
-  )
-
-  const EndOfPosts = () => (
-    <div className="text-center py-8">
-      <div className="bg-gray-50 rounded-lg p-6">
-        <div className="text-gray-400 text-4xl mb-2">🎉</div>
-        <p className="text-gray-600 text-sm">تم عرض جميع المنشورات</p>
-        <p className="text-gray-500 text-xs mt-1">المجموع: {posts.length} من {totalItems} منشور</p>
+      <div className={`${type === 'error' ? 'bg-red-50' : 'bg-gray-50'} rounded-lg p-8`}>
+        <div className={`${type === 'error' ? 'text-red-400' : 'text-gray-400'} text-6xl mb-4`}>
+          {type === 'error' ? '⚠️' : type === 'empty' ? '📝' : '🎉'}
+        </div>
+        <p className={`${type === 'error' ? 'text-red-600' : 'text-gray-600'} text-lg mb-2`}>{title}</p>
+        <p className={`${type === 'error' ? 'text-red-500' : 'text-gray-500'} text-sm`}>{message}</p>
+        {type === 'error' && (
+          <Button onClick={refreshPosts} variant="outline" className="border-red-300 text-red-600 hover:bg-red-50 mt-4">
+            إعادة المحاولة
+          </Button>
+        )}
+        {type === 'end' && (
+          <p className="text-gray-500 text-xs mt-1">المجموع: {posts.length} منشور</p>
+        )}
       </div>
     </div>
   )
@@ -524,7 +391,7 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
         </div>
       </div>
 
-      {/* Create Post - Only show if user is authenticated */}
+      {/* Create Post */}
       {session && <CreatePostModal />}
 
       {/* Posts Feed */}
@@ -532,51 +399,18 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
         {loading && posts.length === 0 ? (
           <LoadingSkeleton />
         ) : error && posts.length === 0 ? (
-          <ErrorDisplay />
+          <StatusMessage type="error" title="حدث خطأ في تحميل المنشورات" message={error} />
         ) : posts.length > 0 ? (
           <>
             {posts.map((post, index) => (
               <PostCard 
                 key={`${post.id}-${index}`}
-                id={post.id}
-                title={post.title}
-                content={post.content}
-                description={post.description}
-                author={post.author}
-                authorId={post.authorId}
-                authorData={post.authorData}
-                timestamp={post.timestamp}
-                type={post.type}
-                category={post.category}
-                subcategory={post.subcategory}
-                media={post.media}
-                image={post.image}
-                images={post.images}
-                views={post.views}
-                apiEndpoint={post.type}
-                reactions={post.reactions}
-                likes={post.likes}
-                comments={post.comments}
-                shares={post.shares}
-                _count={post._count}
+                {...post}
                 baseRoute={`/main/${post.type}s`}
-                stats={post.stats}
                 session={session}
-                // Product specific props
-                price={post.price}
-                currency={post.currency}
-                inStock={post.inStock}
-                sizes={post.sizes}
-                colors={post.colors}
-                // User interaction props
-                userHasLiked={post.userHasLiked}
-                userReaction={post.userReaction}
-                reactionDetails={post.reactionDetails}
-                currentUserId={currentUserId}
               />
             ))}
             
-            {/* Infinite scroll trigger */}
             {hasMore && (
               <div ref={loadMoreRef} className="h-20 flex items-center justify-center">
                 {loadingMore && (
@@ -588,11 +422,9 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
               </div>
             )}
             
-            {/* End of posts indicator */}
-            {!hasMore && posts.length > 0 && <EndOfPosts />}
+            {!hasMore && <StatusMessage type="end" title="تم عرض جميع المنشورات" message="" />}
             
-            {/* Load more error */}
-            {error && posts.length > 0 && (
+            {error && (
               <div className="text-center py-4">
                 <p className="text-red-500 mb-2">حدث خطأ أثناء تحميل المزيد من المنشورات</p>
                 <Button onClick={loadMore} variant="outline">إعادة المحاولة</Button>
@@ -600,7 +432,7 @@ export default function PostsPageClient({ session }: PostsPageClientProps) {
             )}
           </>
         ) : (
-          <EmptyState />
+          <StatusMessage type="empty" title="لا توجد منشورات في هذا القسم" message="جرب تغيير الفئة أو أضف منشوراً جديداً" />
         )}
       </div>
     </div>

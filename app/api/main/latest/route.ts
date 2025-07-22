@@ -38,6 +38,8 @@ interface ReactionUser {
   createdAt: Date;
 }
 
+
+
 const baseSelect = {
   id: true, title: true, authorId: true,
   author: { select: { id: true, firstName: true, lastName: true, avatar: true } },
@@ -176,9 +178,11 @@ const processReactionDetails = (reactions: any[]) => {
     return acc;
   }, {} as Record<string, ReactionUser[]>);
 
-  const summary = Object.entries(groupedReactions).map(([emoji, users]) => ({
-    emoji, count: users.length, users
-  }));
+  const summary = Object.entries(groupedReactions).map(([emoji, users]) => {
+    const typedUsers = users as ReactionUser[];
+    return { emoji, count: typedUsers.length, users: typedUsers };
+  });
+  
 
   return {
     total: summary.reduce((sum, reaction) => sum + reaction.count, 0),
