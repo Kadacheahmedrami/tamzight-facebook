@@ -315,6 +315,7 @@ export default function PostCard({
           <ReactionsDisplay
             reactions={currentReactions}
             session={session}
+            stats={currentStats}
           />
         </div>
       )}

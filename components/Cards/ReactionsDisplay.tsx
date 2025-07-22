@@ -27,8 +27,16 @@ export interface ReactionsData {
   details: Record<string, ReactionUser[]>
 }
 
+export interface StatsData {
+  views: number
+  likes: number
+  comments: number
+  shares: number
+}
+
 interface ReactionsDisplayProps {
   reactions: ReactionsData
+  stats: StatsData
   session?: {
     user?: { id?: string; email?: string; name?: string }
   } | null
@@ -203,8 +211,20 @@ function ReactionsPopup({ reactions: reactionsData, onClose, session }: Reaction
   )
 }
 
+// Helper function to format numbers (e.g., 1000 -> 1k)
+const formatNumber = (num: number): string => {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'm'
+  }
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k'
+  }
+  return num.toString()
+}
+
 export default function ReactionsDisplay({ 
   reactions: reactionsData, 
+  stats,
   session, 
   className = "",
   showTotal = true,
@@ -274,26 +294,50 @@ export default function ReactionsDisplay({
   }
 
   const reactionsPreview = getReactionsPreview()
-  if (!reactionsPreview) return null
 
   return (
     <>
-      <div className={`flex items-center ${className}`}>
-        <button
-          onClick={(e) => {
-            e.stopPropagation()
-            setShowReactionsPopup(true)
-          }}
-          className="text-sm text-gray-600 hover:text-blue-600 transition-colors flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-md"
-        >
-          {reactionsPreview}
-          {showTotal && (
-            <>
-              <span className="text-gray-400">•</span>
-              <span>{reactionsData.total} تفاعل</span>
-            </>
+      <div className={`flex items-center justify-between w-full ${className}`}>
+   
+
+        {/* Stats on the right */}
+        <div className="flex items-center gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-1">
+            <FontAwesomeIcon icon={['fas', 'heart']} className="text-red-500" />
+            <span>{formatNumber(stats.likes)}</span>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            <FontAwesomeIcon icon={['fas', 'comment-dots']} className="text-gray-500" />
+            <span>{formatNumber(stats.comments)}</span>
+          </div>
+          
+          <div className="flex items-center gap-1">
+            <FontAwesomeIcon icon={['fas', 'share-alt']} className="text-green-500" />
+            <span>{formatNumber(stats.shares)}</span>
+          </div>
+        </div>
+
+             {/* Reactions on the left */}
+             <div className="flex items-center">
+          {reactionsPreview && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowReactionsPopup(true)
+              }}
+              className="text-sm text-gray-600 hover:text-blue-600 transition-colors flex items-center gap-1 hover:bg-gray-50 px-2 py-1 rounded-md"
+            >
+              {reactionsPreview}
+              {showTotal && (
+                <>
+                  <span className="text-gray-400">•</span>
+                  <span>{reactionsData.total} تفاعل</span>
+                </>
+              )}
+            </button>
           )}
-        </button>
+        </div>
       </div>
 
       {showReactionsPopup && (

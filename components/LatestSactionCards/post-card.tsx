@@ -68,12 +68,11 @@ export default function PostCard(props: PostCardProps) {
   } = props
 
   const apiEndpoint = typeToApiEndpoint[type as keyof typeof typeToApiEndpoint] || 'posts'
-  
-  // States
+  console.log(stats)
+  // States 
   const [userLiked, setUserLiked] = useState(userHasLiked)
   const [userReact, setUserReact] = useState(userReaction)
   const [reactionData, setReactionData] = useState(reactionDetails || { total: 0, summary: [], details: {} })
-  const [showFullContent, setShowFullContent] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editTitle, setEditTitle] = useState(title)
   const [editContent, setEditContent] = useState(content)
@@ -91,7 +90,7 @@ export default function PostCard(props: PostCardProps) {
   const config = categoryConfig[type as keyof typeof categoryConfig] || categoryConfig.post
   const isAuthor = session?.user?.id === authorId?.toString()
   const isLongContent = content.length > 200
-  const displayContent = showFullContent ? content : content.substring(0, 200) + (isLongContent ? '...' : '')
+  const displayContent = isLongContent ? content.substring(0, 200) + '...' : content
 
   type MediaItem = { 
     id: string; 
@@ -107,7 +106,6 @@ export default function PostCard(props: PostCardProps) {
     (images && images.length > 0 ? { id: 'imgs', type: 'image', url: images[0], alt: title } : null) || 
     { id: 'placeholder', type: 'image', url: '/default-image.jpg', alt: 'صورة افتراضية' }
   
-
 
   // Click outside handler for actions menu
   useEffect(() => {
@@ -181,6 +179,11 @@ export default function PostCard(props: PostCardProps) {
 
   const navigateToPost = () => {
     if (!isEditing) router.push(`${baseRoute}/${id}`)
+  }
+
+  const handleReadMore = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    router.push(`${baseRoute}/${id}`)
   }
 
   // Handle video play/pause
@@ -328,65 +331,61 @@ export default function PostCard(props: PostCardProps) {
               {title}
             </h2>
 
-   
-            
             <figure className="mb-3 rounded-lg overflow-hidden relative">
-  {displayMedia.type === 'video' ? (
-    <div className="relative w-full h-64">
-      <video
-        ref={videoRef}
-        src={displayMedia.url}
-        poster={displayMedia.thumbnail}
-        className="w-full h-full object-cover"
-        onClick={handleVideoPlay}
-      >
-        متصفحك لا يدعم تشغيل الفيديو
-      </video>
+              {displayMedia.type === 'video' ? (
+                <div className="relative w-full h-64">
+                  <video
+                    ref={videoRef}
+                    src={displayMedia.url}
+                    poster={displayMedia.thumbnail}
+                    className="w-full h-full object-cover"
+                    onClick={handleVideoPlay}
+                  >
+                    متصفحك لا يدعم تشغيل الفيديو
+                  </video>
 
-      {!videoStarted && (
-        <div 
-          className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 cursor-pointer"
-          onClick={handleVideoPlay}
-        >
-          <div className="bg-white bg-opacity-80 rounded-full w-14 h-14 flex items-center justify-center hover:bg-opacity-100 transition-all">
-            <i className="fa fa-play text-2xl text-gray-800"></i>
-          </div>
-        </div>
-      )}
+                  {!videoStarted && (
+                    <div 
+                      className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 cursor-pointer"
+                      onClick={handleVideoPlay}
+                    >
+                      <div className="bg-white bg-opacity-80 rounded-full w-14 h-14 flex items-center justify-center hover:bg-opacity-100 transition-all">
+                        <i className="fa fa-play text-2xl text-gray-800"></i>
+                      </div>
+                    </div>
+                  )}
 
-      {videoStarted && (
-        <div 
-          className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white rounded-full p-1 cursor-pointer"
-          onClick={handleVideoPlay}
-        >
-          {videoRef.current?.paused ? (
-            <i className="fa fa-play w-4 h-4"></i>
-          ) : (
-            <i className="fa fa-pause w-4 h-4"></i>
-          )}
-        </div>
-      )}
-    </div>
-  ) : (
-    <img 
-      src={displayMedia.url} 
-      alt={displayMedia.alt || title || 'صورة المنشور'} 
-      className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
-      loading="lazy"
-    />
-  )}
-</figure>
-
-    
+                  {videoStarted && (
+                    <div 
+                      className="absolute bottom-2 left-2 bg-black bg-opacity-50 text-white rounded-full p-1 cursor-pointer"
+                      onClick={handleVideoPlay}
+                    >
+                      {videoRef.current?.paused ? (
+                        <i className="fa fa-play w-4 h-4"></i>
+                      ) : (
+                        <i className="fa fa-pause w-4 h-4"></i>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <img 
+                  src={displayMedia.url} 
+                  alt={displayMedia.alt || title || 'صورة المنشور'} 
+                  className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
+                  loading="lazy"
+                />
+              )}
+            </figure>
 
             <p className="text-gray-700 mb-4 leading-relaxed text-sm sm:text-base whitespace-pre-wrap">
               {displayContent}
               {isLongContent && (
                 <button
-                  onClick={(e) => { e.stopPropagation(); setShowFullContent(!showFullContent) }}
+                  onClick={handleReadMore}
                   className="text-blue-600 hover:text-blue-800 font-medium ml-2 hover:underline"
                 >
-                  {showFullContent ? 'عرض أقل' : 'اقرأ المزيد'}
+                  اقرأ المزيد
                 </button>
               )}
             </p>
@@ -433,7 +432,7 @@ export default function PostCard(props: PostCardProps) {
         <footer>
           {reactionData.total > 0 && (
             <div className="mb-3 flex justify-end">
-              <ReactionsDisplay reactions={reactionData} session={session} />
+              <ReactionsDisplay reactions={reactionData} stats={currentStats} session={session} />
             </div>
           )}
 
