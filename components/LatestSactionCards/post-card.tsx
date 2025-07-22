@@ -1,29 +1,75 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { useState, useRef, useEffect, useCallback, useMemo } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { PostCardProps } from "@/components/LatestSactionCards/types"
 import InteractionsBar from "@/components/Cards/InteractionsBar"
 import CommentsModal from "@/components/Cards/CommentsModal"
-import ReactionsDisplay, { ReactionsData } from "@/components/Cards/ReactionsDisplay"
+import ReactionsDisplay from "@/components/Cards/ReactionsDisplay"
 
-interface PostReaction {
-  id: string | number
-  emoji: string
-  userId: string | number
-  user: { firstName: string; lastName: string }
+interface MediaItem {
+  id: string
+  type: 'image' | 'video'
+  url: string
+  thumbnail?: string
+  alt?: string
 }
 
-interface SimplePostCardProps extends PostCardProps {
+interface User {
+  id: number
+  firstName: string
+  lastName: string
+  avatar?: string | null
+}
+
+interface Reaction {
+  id: number
+  emoji: string
+  userId: number
+  user: User
+  createdAt: Date
+}
+
+interface ReactionDetails {
+  total: number
+  summary: Array<{ emoji: string; count: number; users: any[] }>
+  details: Record<string, any[]>
+}
+
+interface PostCardProps {
+  id: string
+  title: string
+  content: string
+  author: string
+  authorId: number
+  authorData: User
+  timestamp: string
+  type: string
+  category: string
+  subcategory?: string | null
+  media?: MediaItem[]
+  image?: string | null
+  images?: string[]
+  reactions: Reaction[]
+  stats: {
+    views: number
+    likes: number
+    comments: number
+    shares: number
+  }
+  session?: { user?: { id?: string } } | null
+  baseRoute: string
+  apiEndpoint: string
+  // Product fields
+  price?: number
+  currency?: string
+  inStock?: boolean
+  sizes?: string[]
+  // User interaction fields
   userHasLiked?: boolean
   userReaction?: string | null
-  reactions?: ReactionsData
-  postReactions?: PostReaction[]
-  session?: { user?: { id?: string; email?: string; name?: string } } | null
+  reactionDetails?: ReactionDetails
   onDelete?: (postId: string) => void
   onUpdate?: (postId: string, updatedData: any) => void
-  apiEndpoint: string
-  detailsRoute: string
 }
 
 const categoryConfig = {
@@ -38,104 +84,76 @@ const categoryConfig = {
   truth: { displayName: 'حقيقة', color: 'bg-teal-100 text-teal-800', emoji: '✨' }
 } as const
 
-export default function PostCard(props: SimplePostCardProps) {
+// Map post types to their corresponding API endpoints
+const typeToApiEndpoint = {
+  post: 'posts',
+  book: 'books',
+  idea: 'ideas',
+  image: 'images',
+  video: 'videos',
+  truth: 'truths', // adjust this to your actual endpoint
+  question: 'questions',
+  ad: 'ads',
+  product: 'products'
+} as const
+
+export default function PostCard(props: PostCardProps) {
   const {
-    id, title, content, author, authorId, timestamp, type, category, subCategory,
-    image, images, stats, userHasLiked = false, userReaction = null,
-    reactions, postReactions = [], session, onDelete, onUpdate,
-    apiEndpoint, detailsRoute
+    id, title, content, author, authorId, authorData, timestamp, type, category, subcategory,
+    media, image, images, stats, reactions = [], session, onDelete, onUpdate, baseRoute, apiEndpoint,
+    price, currency, inStock, sizes,
+    userHasLiked = false, userReaction = null, reactionDetails
   } = props
 
-  const [state, setState] = useState({
-    showFullContent: false,
-    isEditing: false,
-    editTitle: title,
-    editContent: content,
-    showActions: false,
-    showCommentsModal: false,
-    showReactionsList: false,
-    isUpdating: false,
-    isDeletingPost: false,
-    stats,
-    userReaction,
-    userHasLiked,
-    reactions: reactions || { total: 0, summary: [], details: {} }
-  })
+  // Get the correct API endpoint based on the type
+  const actualApiEndpoint = typeToApiEndpoint[type as keyof typeof typeToApiEndpoint] || apiEndpoint || 'posts'
+
+  // States
+  const [userLiked, setUserLiked] = useState(userHasLiked)
+  const [userReact, setUserReact] = useState(userReaction)
+  const [reactionData, setReactionData] = useState(reactionDetails || { total: 0, summary: [], details: {} })
+  const [showFullContent, setShowFullContent] = useState(false)
+  const [isEditing, setIsEditing] = useState(false)
+  const [editTitle, setEditTitle] = useState(title)
+  const [editContent, setEditContent] = useState(content)
+  const [showActions, setShowActions] = useState(false)
+  const [showCommentsModal, setShowCommentsModal] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+  const [isDeletingPost, setIsDeletingPost] = useState(false)
+  const [currentStats, setCurrentStats] = useState(stats)
 
   const actionsRef = useRef<HTMLDivElement>(null)
   const router = useRouter()
 
-  // Memoized values
-  const config = useMemo(() => {
-    const key = (type || category || 'post') as keyof typeof categoryConfig
-    return categoryConfig[key] || categoryConfig.post
-  }, [type, category])
+  const config = categoryConfig[type as keyof typeof categoryConfig] || categoryConfig.post
+  const isAuthor = session?.user?.id === authorId?.toString()
+  const isLongContent = content.length > 200
+  const displayContent = showFullContent ? content : content.substring(0, 200) + (isLongContent ? '...' : '')
 
-  const isAuthor = useMemo(() => 
-    session?.user?.id === authorId?.toString(), [session?.user?.id, authorId])
-  
-  const isLongContent = useMemo(() => content.length > 200, [content.length])
-  
-  const displayContent = useMemo(() => 
-    state.showFullContent ? content : content.substring(0, 200) + (isLongContent ? '...' : ''),
-    [content, state.showFullContent, isLongContent])
+  // Get first media item
+  const displayMedia = media?.[0] || (image ? { id: 'img', type: 'image' as const, url: image, alt: title } : null) || 
+                     (images?.[0] ? { id: 'imgs', type: 'image' as const, url: images[0], alt: title } : null)
 
-  const displayImage = useMemo(() => 
-    image || (images && images.length > 0 ? images[0] : null), [image, images])
-
-  const groupedReactions = useMemo(() => {
-    if (!postReactions?.length) return {}
-    return postReactions.reduce((acc, r) => {
-      if (!r?.emoji) return acc
-      const key = r.emoji
-      if (!acc[key]) acc[key] = { emoji: r.emoji, count: 0, users: [] }
-      acc[key].count++
-      if (r.user?.firstName && r.user?.lastName) {
-        acc[key].users.push({ firstName: r.user.firstName, lastName: r.user.lastName })
-      }
-      return acc
-    }, {} as Record<string, { emoji: string; count: number; users: Array<{ firstName: string; lastName: string }> }>)
-  }, [postReactions])
-
-  const { topReactions, totalReactionsCount } = useMemo(() => ({
-    topReactions: Object.values(groupedReactions).sort((a, b) => b.count - a.count).slice(0, 3),
-    totalReactionsCount: postReactions?.length || 0
-  }), [groupedReactions, postReactions])
-
-  // Optimized state updater
-  const updateState = useCallback((updates: Partial<typeof state>) => {
-    setState(prev => ({ ...prev, ...updates }))
-  }, [])
-
-  // Sync props with state
+  // Click outside handler for actions menu
   useEffect(() => {
-    updateState({
-      userReaction, userHasLiked, stats,
-      reactions: reactions || { total: 0, summary: [], details: {} }
-    })
-  }, [userReaction, userHasLiked, stats, reactions, updateState])
-
-  // Handle clicks outside actions menu
-  useEffect(() => {
-    if (!state.showActions) return
+    if (!showActions) return
     const handleClickOutside = (e: MouseEvent) => {
       if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) {
-        updateState({ showActions: false })
+        setShowActions(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [state.showActions, updateState])
+  }, [showActions])
 
-  // API handlers
-  const handleUpdate = useCallback(async () => {
-    const trimmedTitle = state.editTitle.trim()
-    const trimmedContent = state.editContent.trim()
-    if (!trimmedTitle || !trimmedContent || state.isUpdating) return
+  const handleUpdate = async () => {
+    const trimmedTitle = editTitle.trim()
+    const trimmedContent = editContent.trim()
+    if (!trimmedTitle || !trimmedContent || isUpdating) return
 
     try {
-      updateState({ isUpdating: true })
-      const response = await fetch(`/api/main/${apiEndpoint}/${id}`, {
+      setIsUpdating(true)
+      const response = await fetch(`/api/main/${actualApiEndpoint}/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title: trimmedTitle, content: trimmedContent })
@@ -146,22 +164,22 @@ export default function PostCard(props: SimplePostCardProps) {
         throw new Error(errorData.message || `خطأ HTTP: ${response.status}`)
       }
 
-      updateState({ isEditing: false })
+      setIsEditing(false)
       onUpdate?.(id, { title: trimmedTitle, content: trimmedContent })
     } catch (error) {
       console.error('Update error:', error)
       alert(error instanceof Error ? error.message : 'حدث خطأ في التحديث')
     } finally {
-      updateState({ isUpdating: false })
+      setIsUpdating(false)
     }
-  }, [state.editTitle, state.editContent, state.isUpdating, updateState, apiEndpoint, id, onUpdate])
+  }
 
-  const handleDelete = useCallback(async () => {
-    if (!confirm('هل أنت متأكد من حذف هذا المنشور؟') || state.isDeletingPost) return
+  const handleDelete = async () => {
+    if (!confirm('هل أنت متأكد من حذف هذا المنشور؟') || isDeletingPost) return
     
     try {
-      updateState({ isDeletingPost: true })
-      const response = await fetch(`/api/main/${apiEndpoint}/${id}`, { method: 'DELETE' })
+      setIsDeletingPost(true)
+      const response = await fetch(`/api/main/${actualApiEndpoint}/${id}`, { method: 'DELETE' })
       
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
@@ -172,38 +190,33 @@ export default function PostCard(props: SimplePostCardProps) {
     } catch (error) {
       console.error('Delete error:', error)
       alert(error instanceof Error ? error.message : 'حدث خطأ في الحذف')
-      updateState({ isDeletingPost: false })
+      setIsDeletingPost(false)
     }
-  }, [state.isDeletingPost, updateState, apiEndpoint, id, onDelete])
+  }
 
-  // Event handlers
-  const handlers = {
-    postClick: () => router.push(`${detailsRoute}/${id}`),
-    profileClick: (e: React.MouseEvent) => {
-      e.stopPropagation()
-      router.push(`/main/member/${authorId}`)
-    },
-    toggleContent: (e: React.MouseEvent) => {
-      e.stopPropagation()
-      updateState({ showFullContent: !state.showFullContent })
-    },
-    toggleActions: (e: React.MouseEvent) => {
-      e.stopPropagation()
-      updateState({ showActions: !state.showActions })
-    },
-    startEditing: (e: React.MouseEvent) => {
-      e.stopPropagation()
-      updateState({ isEditing: true, editTitle: title, editContent: content, showActions: false })
-    },
-    cancelEditing: () => updateState({ isEditing: false, editTitle: title, editContent: content }),
-    deleteClick: (e: React.MouseEvent) => {
-      e.stopPropagation()
-      handleDelete()
-      updateState({ showActions: false })
-    },
-    statsUpdate: (newStats: typeof stats) => updateState({ stats: newStats }),
-    reactionUpdate: (reaction: string | null, hasLiked: boolean) => 
-      updateState({ userReaction: reaction, userHasLiked: hasLiked })
+  const navigateToProfile = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    router.push(`/main/member/${authorId}`)
+  }
+
+  const navigateToPost = () => {
+    if (!isEditing) router.push(`${baseRoute}/${id}`)
+  }
+
+  // Handle reaction updates from InteractionsBar
+  const handleReactionUpdate = (reaction: string | null, hasLiked: boolean) => {
+    setUserReact(reaction)
+    setUserLiked(hasLiked)
+  }
+
+  // Handle stats updates from InteractionsBar
+  const handleStatsUpdate = (newStats: any) => {
+    setCurrentStats(newStats)
+  }
+
+  // Handle comments modal open
+  const handleCommentsClick = () => {
+    setShowCommentsModal(true)
   }
 
   return (
@@ -215,11 +228,19 @@ export default function PostCard(props: SimplePostCardProps) {
             <span>{config.emoji}</span>
             <span>{config.displayName}</span>
           </span>
-          {subCategory && (
+          {category && (
             <>
               <span className="text-gray-400 text-xs">•</span>
               <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full w-fit">
-                {subCategory}
+                {category}
+              </span>
+            </>
+          )}
+          {subcategory && (
+            <>
+              <span className="text-gray-400 text-xs">•</span>
+              <span className="bg-gray-50 text-gray-600 text-xs px-2 py-1 rounded-full w-fit">
+                {subcategory}
               </span>
             </>
           )}
@@ -231,29 +252,41 @@ export default function PostCard(props: SimplePostCardProps) {
           {isAuthor && (
             <div className="relative" ref={actionsRef}>
               <button
-                onClick={handlers.toggleActions}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowActions(!showActions)
+                }}
                 className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                disabled={state.isDeletingPost}
-                aria-label="خيارات المنشور"
+                disabled={isDeletingPost}
               >
                 <i className="fa fa-ellipsis-h"></i>
               </button>
               
-              {state.showActions && (
+              {showActions && (
                 <div className="absolute left-0 top-8 bg-white border rounded-lg shadow-lg z-20 min-w-32">
                   <button
-                    onClick={handlers.startEditing}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsEditing(true)
+                      setEditTitle(title)
+                      setEditContent(content)
+                      setShowActions(false)
+                    }}
                     className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors"
                   >
                     <i className="fa fa-edit text-blue-500"></i>تعديل
                   </button>
                   <button
-                    onClick={handlers.deleteClick}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete()
+                      setShowActions(false)
+                    }}
                     className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600 transition-colors"
-                    disabled={state.isDeletingPost}
+                    disabled={isDeletingPost}
                   >
                     <i className="fa fa-trash text-red-500"></i>
-                    {state.isDeletingPost ? 'جاري الحذف...' : 'حذف'}
+                    {isDeletingPost ? 'جاري الحذف...' : 'حذف'}
                   </button>
                 </div>
               )}
@@ -262,56 +295,69 @@ export default function PostCard(props: SimplePostCardProps) {
         </div>
       </header>
 
-      {/* Author Info */}
+      {/* Author */}
       <div className="flex items-start gap-2 sm:gap-3 mb-3">
         <button 
-          className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full flex-shrink-0 cursor-pointer hover:bg-gray-300 transition-colors flex items-center justify-center"
-          onClick={handlers.profileClick}
-          aria-label={`الملف الشخصي لـ ${author}`}
+          className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full flex-shrink-0 cursor-pointer hover:bg-gray-300 transition-colors flex items-center justify-center overflow-hidden"
+          onClick={navigateToProfile}
         >
-          <i className="fa fa-user text-gray-500 text-xs"></i>
+          {authorData?.avatar ? (
+            <img src={authorData.avatar} alt={author} className="w-full h-full object-cover" />
+          ) : (
+            <i className="fa fa-user text-gray-500 text-xs"></i>
+          )}
         </button>
         <button 
           className="font-semibold text-gray-900 text-sm sm:text-base cursor-pointer hover:text-blue-600 transition-colors text-right"
-          onClick={handlers.profileClick}
+          onClick={navigateToProfile}
         >
           {author}
         </button>
       </div>
 
       {/* Content */}
-      <main className={state.isEditing ? '' : 'cursor-pointer'} 
-            onClick={!state.isEditing ? handlers.postClick : undefined}>
-        {state.isEditing ? (
+      <main className={isEditing ? '' : 'cursor-pointer'} onClick={navigateToPost}>
+        {isEditing ? (
           <form className="space-y-3" onSubmit={(e) => { e.preventDefault(); handleUpdate(); }}>
             <input
               type="text"
-              value={state.editTitle}
-              onChange={(e) => updateState({ editTitle: e.target.value })}
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
               className="w-full text-lg font-semibold p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="عنوان المنشور"
-              disabled={state.isUpdating}
+              disabled={isUpdating}
               required
             />
             <textarea
-              value={state.editContent}
-              onChange={(e) => updateState({ editContent: e.target.value })}
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
               className="w-full p-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-24"
               rows={4}
               placeholder="محتوى المنشور"
-              disabled={state.isUpdating}
+              disabled={isUpdating}
               required
             />
             <div className="flex gap-2 justify-end">
-              <Button type="button" variant="outline" size="sm" onClick={handlers.cancelEditing} disabled={state.isUpdating}>
+              <Button 
+                type="button" 
+                variant="outline" 
+                size="sm" 
+                onClick={() => {
+                  setIsEditing(false)
+                  setEditTitle(title)
+                  setEditContent(content)
+                }} 
+                disabled={isUpdating}
+              >
                 إلغاء
               </Button>
               <Button
-                type="submit" size="sm"
-                disabled={state.isUpdating || !state.editTitle.trim() || !state.editContent.trim()}
+                type="submit" 
+                size="sm"
+                disabled={isUpdating || !editTitle.trim() || !editContent.trim()}
                 className="bg-blue-600 hover:bg-blue-700"
               >
-                {state.isUpdating ? 'جاري الحفظ...' : 'حفظ'}
+                {isUpdating ? 'جاري الحفظ...' : 'حفظ'}
               </Button>
             </div>
           </form>
@@ -321,14 +367,25 @@ export default function PostCard(props: SimplePostCardProps) {
               {title}
             </h2>
 
-            {displayImage && (
+            {displayMedia && (
               <figure className="mb-3 rounded-lg overflow-hidden">
-                <img 
-                  src={displayImage} 
-                  alt={title || 'صورة المنشور'} 
-                  className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
-                  loading="lazy"
-                />
+                {displayMedia.type === 'image' ? (
+                  <img 
+                    src={displayMedia.url} 
+                    alt={displayMedia.alt || title || 'صورة المنشور'} 
+                    className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
+                    loading="lazy"
+                  />
+                ) : (
+                  <video 
+                    src={displayMedia.url}
+                    poster={displayMedia.thumbnail}
+                    controls
+                    className="w-full h-64 object-cover"
+                  >
+                    متصفحك لا يدعم تشغيل الفيديو
+                  </video>
+                )}
               </figure>
             )}
 
@@ -336,130 +393,97 @@ export default function PostCard(props: SimplePostCardProps) {
               {displayContent}
               {isLongContent && (
                 <button
-                  onClick={handlers.toggleContent}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setShowFullContent(!showFullContent)
+                  }}
                   className="text-blue-600 hover:text-blue-800 font-medium ml-2 hover:underline"
                 >
-                  {state.showFullContent ? 'عرض أقل' : 'اقرأ المزيد'}
+                  {showFullContent ? 'عرض أقل' : 'اقرأ المزيد'}
                 </button>
               )}
             </p>
+
+            {/* Product Info */}
+            {type === 'product' && price && (
+              <div className="bg-gray-50 rounded-lg p-3 mb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg font-bold text-green-600">
+                      {price} {currency || 'دج'}
+                    </span>
+                    {inStock !== undefined && (
+                      <span className={`text-xs px-2 py-1 rounded-full ${
+                        inStock ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                      }`}>
+                        {inStock ? 'متوفر' : 'غير متوفر'}
+                      </span>
+                    )}
+                  </div>
+                  
+                  {sizes && sizes.length > 0 && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-gray-500">الأحجام:</span>
+                      <div className="flex gap-1">
+                        {sizes.slice(0, 3).map(size => (
+                          <span key={size} className="text-xs bg-white px-1 py-0.5 rounded border">
+                            {size}
+                          </span>
+                        ))}
+                        {sizes.length > 3 && <span className="text-xs text-gray-500">+{sizes.length - 3}</span>}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </>
         )}
       </main>
 
-      {/* Reactions Display */}
-      {!state.isEditing && totalReactionsCount > 0 && (
-        <div className="flex items-center gap-2 mb-3 pb-3 border-b border-gray-100">
-          <div className="flex items-center gap-1">
-            {topReactions.map((r, i) => (
-              <span 
-                key={`${r.emoji}-${i}`}
-                className="text-sm bg-gray-100 rounded-full w-6 h-6 flex items-center justify-center shadow-sm"
-                style={{ zIndex: 10 - i }}
-                title={`${r.count} ${r.emoji}`}
-              >
-                {r.emoji}
-              </span>
-            ))}
-          </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation()
-              updateState({ showReactionsList: !state.showReactionsList })
-            }}
-            className="text-xs text-gray-500 hover:text-blue-600 transition-colors hover:underline"
-          >
-            {totalReactionsCount} {totalReactionsCount === 1 ? 'تفاعل' : 'تفاعلات'}
-          </button>
-        </div>
-      )}
-
       {/* Interactions */}
-      {!state.isEditing && (
+      {!isEditing && (
         <footer>
-          <div className="mb-3 flex justify-end">
-            <ReactionsDisplay reactions={state.reactions} session={session} />
-          </div>
+          {/* ReactionsDisplay Component (if you still want to use it) */}
+          {reactionData.total > 0 && (
+            <div className="mb-3 flex justify-end">
+              <ReactionsDisplay 
+                reactions={reactionData} 
+                session={session}
+                postId={id}
+                apiEndpoint={actualApiEndpoint}
+                userReaction={userReact}
+                onReactionUpdate={setUserReact}
+              />
+            </div>
+          )}
 
+          {/* Main Interactions Bar */}
           <InteractionsBar
             postId={id}
-            apiEndpoint={apiEndpoint}
-            stats={state.stats}
-            userHasLiked={state.userHasLiked}
-            userReaction={state.userReaction}
+            apiEndpoint={actualApiEndpoint}
+            stats={currentStats}
+            userHasLiked={userLiked}
+            userReaction={userReact}
             session={session}
-            onStatsUpdate={handlers.statsUpdate}
-            onReactionUpdate={handlers.reactionUpdate}
-            onCommentsClick={() => updateState({ showCommentsModal: true })}
+            onStatsUpdate={handleStatsUpdate}
+            onReactionUpdate={handleReactionUpdate}
+            onLikeUpdate={setUserLiked}
+            onCommentsClick={handleCommentsClick}
           />
         </footer>
       )}
 
       {/* Comments Modal */}
-      {state.showCommentsModal && (
+      {showCommentsModal && (
         <CommentsModal
           postId={id}
-          apiEndpoint={apiEndpoint}
+          apiEndpoint={actualApiEndpoint}
           session={session}
-          stats={state.stats}
-          onClose={() => updateState({ showCommentsModal: false })}
-          onStatsUpdate={(newStats) => updateState({ stats: newStats })}
+          stats={currentStats}
+          onClose={() => setShowCommentsModal(false)}
+          onStatsUpdate={handleStatsUpdate}
         />
-      )}
-
-      {/* Reactions List Modal */}
-      {state.showReactionsList && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={() => updateState({ showReactionsList: false })}
-        >
-          <div 
-            className="bg-white rounded-lg w-full max-w-md max-h-[60vh] overflow-hidden"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <header className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="font-semibold text-lg">التفاعلات</h3>
-              <button
-                onClick={() => updateState({ showReactionsList: false })}
-                className="text-gray-500 hover:text-gray-700 text-xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100"
-                aria-label="إغلاق"
-              >
-                ×
-              </button>
-            </header>
-            
-            <div className="p-4 max-h-80 overflow-y-auto">
-              {Object.keys(groupedReactions).length === 0 ? (
-                <p className="text-center text-gray-500 py-4">لا توجد تفاعلات</p>
-              ) : (
-                Object.values(groupedReactions).map((r, i) => (
-                  <div key={`${r.emoji}-${i}`} className="mb-4 last:mb-0">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-lg">{r.emoji}</span>
-                      <span className="text-sm font-medium text-gray-700">
-                        {r.count} {r.count === 1 ? 'شخص' : 'أشخاص'}
-                      </span>
-                    </div>
-                    {r.users.length > 0 && (
-                      <div className="space-y-2 ml-8">
-                        {r.users.map((user, ui) => (
-                          <div key={ui} className="flex items-center gap-2">
-                            <div className="w-6 h-6 bg-gray-200 rounded-full flex-shrink-0 flex items-center justify-center">
-                              <i className="fa fa-user text-gray-400 text-xs"></i>
-                            </div>
-                            <span className="text-sm text-gray-700">
-                              {user.firstName} {user.lastName}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
       )}
     </article>
   )
