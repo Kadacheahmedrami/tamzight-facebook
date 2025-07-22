@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef, useCallback } from "react"
 import PostCard from "@/components/LatestSactionCards/post-card"
-import CreatePostModal from "@/components/CreateModals/create-post-modal"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Session } from "next-auth"
@@ -434,8 +433,7 @@ export default function PostsPageClient({ session }: { session: Session | null }
         </div>
       </div>
 
-      {/* Create Post */}
-      {session && <CreatePostModal />}
+
 
       {/* Posts Feed */}
       <div className="space-y-4">
