@@ -11,19 +11,19 @@ async function getCurrentUser(req: NextRequest) {
   return user;
 }
 
-// GET /api/main/truth/[id] - Get a specific truth with full details
+// GET /api/main/videos/[id] - Get a specific video with full details
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
     const currentUser = await getCurrentUser(req);
 
     // Increment view count
-    await prisma.truth.update({
+    await prisma.video.update({
       where: { id },
       data: { views: { increment: 1 } }
     });
 
-    const truth = await prisma.truth.findUnique({
+    const video = await prisma.video.findUnique({
       where: { id },
       include: {
         author: {
@@ -94,15 +94,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       },
     });
 
-    if (!truth) {
-      return NextResponse.json({ error: 'Truth not found' }, { status: 404 });
+    if (!video) {
+      return NextResponse.json({ error: 'Video not found' }, { status: 404 });
     }
 
-    // Check if current user has liked this truth
-    const userLike = currentUser ? truth.likes.find(like => like.userId === currentUser.id) : null;
+    // Check if current user has liked this video
+    const userLike = currentUser ? video.likes.find(like => like.userId === currentUser.id) : null;
 
     // Group reactions by emoji
-    const reactionSummary = truth.likes.reduce((acc: any, like) => {
+    const reactionSummary = video.likes.reduce((acc: any, like) => {
       if (like.emoji) {
         acc[like.emoji] = (acc[like.emoji] || 0) + 1;
       }
@@ -110,11 +110,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     }, {});
 
     return NextResponse.json({
-      truth: {
-        ...truth,
+      video: {
+        ...video,
         userLike,
         reactionSummary,
-        isOwner: currentUser?.id === truth.authorId
+        isOwner: currentUser?.id === video.authorId
       }
     });
   } catch (error) {
@@ -122,7 +122,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   }
 }
 
-// POST /api/main/truth/[id] - Handle likes, reactions, shares, comments
+// POST /api/main/videos/[id] - Handle likes, reactions, shares, comments
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -135,11 +135,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const { action, emoji, content } = body;
 
     if (action === 'like') {
-      // Check if user already liked this truth
+      // Check if user already liked this video
       const existingLike = await prisma.like.findFirst({
         where: {
           userId: user.id,
-          truthId: id
+          videoId: id
         }
       });
 
@@ -162,7 +162,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           });
           return NextResponse.json({
             success: true,
-            message: 'Truth unliked',
+            message: 'Video unliked',
             action: 'unliked'
           });
         }
@@ -171,25 +171,25 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         await prisma.like.create({
           data: {
             userId: user.id,
-            truthId: id,
+            videoId: id,
             emoji: emoji || null
           }
         });
 
-        // Create notification for truth author (but not for own truths)
-        const truth = await prisma.truth.findUnique({
+        // Create notification for video author (but not for own videos)
+        const video = await prisma.video.findUnique({
           where: { id },
           select: { authorId: true, title: true }
         });
 
-        if (truth && truth.authorId !== user.id) {
+        if (video && video.authorId !== user.id) {
           await prisma.notification.create({
             data: {
-              userId: truth.authorId,
+              userId: video.authorId,
               type: emoji ? 'reaction' : 'like',
               message: emoji
-                ? `${user.firstName} ${user.lastName} reacted ${emoji} to your truth`
-                : `${user.firstName} ${user.lastName} liked your truth`,
+                ? `${user.firstName} ${user.lastName} reacted ${emoji} to your video`
+                : `${user.firstName} ${user.lastName} liked your video`,
               avatar: user.image || user.avatar
             }
           });
@@ -197,7 +197,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
         return NextResponse.json({
           success: true,
-          message: emoji ? 'Reaction added' : 'Truth liked',
+          message: emoji ? 'Reaction added' : 'Video liked',
           action: 'liked'
         });
       }
@@ -208,7 +208,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const existingLike = await prisma.like.findFirst({
         where: {
           userId: user.id,
-          truthId: id
+          videoId: id
         }
       });
 
@@ -218,23 +218,23 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         });
         return NextResponse.json({
           success: true,
-          message: 'Truth unliked',
+          message: 'Video unliked',
           action: 'unliked'
         });
       } else {
         return NextResponse.json({
-          error: 'Truth not liked',
+          error: 'Video not liked',
           action: 'not_liked'
         }, { status: 400 });
       }
     }
 
     if (action === 'share') {
-      // Check if user already shared this truth
+      // Check if user already shared this video
       const existingShare = await prisma.share.findFirst({
         where: {
           userId: user.id,
-          truthId: id
+          videoId: id
         }
       });
 
@@ -254,22 +254,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       await prisma.share.create({
         data: {
           userId: user.id,
-          truthId: id
+          videoId: id
         }
       });
 
-      // Create notification for truth author (but not for own truths)
-      const truth = await prisma.truth.findUnique({
+      // Create notification for video author (but not for own videos)
+      const video = await prisma.video.findUnique({
         where: { id },
         select: { authorId: true, title: true }
       });
 
-      if (truth && truth.authorId !== user.id) {
+      if (video && video.authorId !== user.id) {
         await prisma.notification.create({
           data: {
-            userId: truth.authorId,
+            userId: video.authorId,
             type: 'share',
-            message: `${user.firstName} ${user.lastName} shared your truth`,
+            message: `${user.firstName} ${user.lastName} shared your video`,
             avatar: user.image || user.avatar
           }
         });
@@ -277,7 +277,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
       return NextResponse.json({
         success: true,
-        message: 'Truth shared',
+        message: 'Video shared',
         action: 'shared'
       });
     }
@@ -293,7 +293,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         data: {
           content: content.trim(),
           userId: user.id,
-          truthId: id
+          videoId: id
         },
         include: {
           user: {
@@ -307,17 +307,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           }
         }
       });
-      // Create notification for truth author (but not for own truths)
-      const truth = await prisma.truth.findUnique({
+      // Create notification for video author (but not for own videos)
+      const video = await prisma.video.findUnique({
         where: { id },
         select: { authorId: true, title: true }
       });
-      if (truth && truth.authorId !== user.id) {
+      if (video && video.authorId !== user.id) {
         await prisma.notification.create({
           data: {
-            userId: truth.authorId,
+            userId: video.authorId,
             type: 'comment',
-            message: `${user.firstName} ${user.lastName} commented on your truth`,
+            message: `${user.firstName} ${user.lastName} commented on your video`,
             avatar: user.image || user.avatar
           }
         });
@@ -335,7 +335,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   }
 }
 
-// DELETE /api/main/truth/[id] - Only author can delete
+// DELETE /api/main/videos/[id] - Only author can delete
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -343,21 +343,21 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const truth = await prisma.truth.findUnique({ where: { id } });
-    if (!truth) {
-      return NextResponse.json({ error: 'Truth not found' }, { status: 404 });
+    const video = await prisma.video.findUnique({ where: { id } });
+    if (!video) {
+      return NextResponse.json({ error: 'Video not found' }, { status: 404 });
     }
-    if (truth.authorId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden: Only the author can delete this truth.' }, { status: 403 });
+    if (video.authorId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden: Only the author can delete this video.' }, { status: 403 });
     }
-    await prisma.truth.delete({ where: { id } });
+    await prisma.video.delete({ where: { id } });
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error', details: (error as Error).message }, { status: 500 });
   }
 }
 
-// PATCH /api/main/truth/[id] - Only author can edit
+// PATCH /api/main/videos/[id] - Only author can edit
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
     const { id } = params;
@@ -365,23 +365,24 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    const truth = await prisma.truth.findUnique({ where: { id } });
-    if (!truth) {
-      return NextResponse.json({ error: 'Truth not found' }, { status: 404 });
+    const video = await prisma.video.findUnique({ where: { id } });
+    if (!video) {
+      return NextResponse.json({ error: 'Video not found' }, { status: 404 });
     }
-    if (truth.authorId !== user.id) {
-      return NextResponse.json({ error: 'Forbidden: Only the author can edit this truth.' }, { status: 403 });
+    if (video.authorId !== user.id) {
+      return NextResponse.json({ error: 'Forbidden: Only the author can edit this video.' }, { status: 403 });
     }
     const data = await req.json();
     // Only allow updating certain fields
     const allowedFields = [
-      'title', 'content', 'category', 'subcategory', 'image'
+      'title', 'content', 'category', 'subcategory', 'image',
+      'duration', 'quality', 'language'
     ];
     const updateData: any = {};
     for (const key of allowedFields) {
       if (key in data) updateData[key] = data[key];
     }
-    const updatedTruth = await prisma.truth.update({
+    const updatedVideo = await prisma.video.update({
       where: { id },
       data: updateData,
       include: {
@@ -404,7 +405,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         },
       },
     });
-    return NextResponse.json({ success: true, truth: updatedTruth });
+    return NextResponse.json({ success: true, video: updatedVideo });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error', details: (error as Error).message }, { status: 500 });
   }
