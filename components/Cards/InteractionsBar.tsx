@@ -292,7 +292,7 @@
                   userHasLiked || userReaction ? 'text-red-500' : 'text-gray-500 hover:text-red-500'
                 }`} 
               />
-              <span className="text-sm">إعجاب</span>
+              <span className="md:block hidden text-sm">إعجاب</span>
             </Button>
 
             {/* Comments Button */}
@@ -307,7 +307,7 @@
               disabled={isLoading}
             >
               <FontAwesomeIcon icon={far.faComment} className="text-sm mr-1" />
-              <span className="text-sm">تعليق</span>
+              <span className="md:block hidden text-sm">تعليق</span>
             </Button>
 
             {/* Share Button */}
@@ -322,7 +322,7 @@
               disabled={isLoading}
             >
               <FontAwesomeIcon icon={fas.faShare} className="text-sm mr-1" />
-              <span className="text-sm">مشاركة</span>
+              <span className="md:block hidden text-sm ">مشاركة</span>
             </Button>
           </div>
 
@@ -346,22 +346,22 @@
                 {userReaction ? (
                   <>
                     {getReactionIcon(userReaction, "text-sm")}
-                    <span>بصمة</span>
+                    <span className="md:block hidden">بصمة</span>
                   </>
                 ) : (
                   <>
                     <FontAwesomeIcon icon={fas.faFingerprint} className="text-sm" />
-                    <span>بصمة</span>
+                    <span className="md:block hidden">بصمة</span>
                   </>
                 )}
               </span>
               
               {showReactions && (
-                <div className="absolute bottom-full left-0 mb-2 bg-white rounded-full shadow-xl border px-3 py-2 flex items-center gap-1 z-50 min-w-min">
+                <div className="absolute bottom-full -left-5 mb-2 bg-white rounded-full shadow-xl border px-3 py-2 flex items-center gap-1 z-50 min-w-min">
                   {reactions.map((reaction) => (
                     <button
                       key={reaction.name}
-                      className="w-10 h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all hover:scale-110 disabled:opacity-50"
+                      className="h-6 w-6 md:w-10 md:h-10 rounded-full hover:bg-gray-100 flex items-center justify-center transition-all hover:scale-110 disabled:opacity-50"
                       onClick={(e) => {
                         e.stopPropagation()
                         handleReaction(reaction.emoji)
@@ -371,7 +371,7 @@
                     >
                       <FontAwesomeIcon 
                         icon={reaction.iconClass as IconProp} 
-                        className={`text-xl ${reaction.colorClass}`} // Bigger icon
+                        className={`text-lg md:text-xl ${reaction.colorClass}`} // Bigger icon
                       />
                     </button>
                   ))}
@@ -447,4 +447,4 @@
         )}
       </>
     )
-  }
+  } 

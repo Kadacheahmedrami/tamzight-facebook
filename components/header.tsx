@@ -275,11 +275,11 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
 
       {/* Mobile Search Bar - Below Header - Hide on Landing Page */}
       {!isLandingPage && (
-        <div className="md:hidden bg-white w-full border-b border-gray-200 shadow-sm">
+        <div className="lg:hidden bg-white w-full border-b border-gray-200 shadow-sm">
           <div className="px-4 py-4">
             <div className="relative w-full flex flex-row items-center gap-2" ref={searchRef}>
               {/* Mobile Menu */}
-              <div className="md:hidden">
+              <div className="lg:hidden">
                 <MobileUserMenu user={user} unreadMessages={unreadMessages} />
               </div>
               

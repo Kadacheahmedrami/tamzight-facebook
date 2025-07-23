@@ -66,12 +66,12 @@ export default async function RootLayout({
         />
       </head>
       <body className={`${inter.className} h-screen overflow-hidden`}>
-        <ClientProviders>
+    
           <div className="h-full flex flex-col">
             <Header user={session?.user || null} />
             <main className="flex-1 overflow-hidden">{children}</main>
           </div>
-        </ClientProviders>
+  
       </body>
     </html>
   );
