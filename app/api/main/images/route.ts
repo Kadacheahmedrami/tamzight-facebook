@@ -1,9 +1,25 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from '@/lib/auth';
+
+// Define a custom session type that includes the user ID
+type CustomSession = {
+    user?: {
+        id: string;
+        name?: string | null;
+        email?: string | null;
+        image?: string | null;
+    };
+};
 
 export async function GET(request: NextRequest) {
   try {
+    // Get current session with custom type
+    const session = (await getServerSession(authOptions)) as CustomSession | null;
+    const currentUserId = session?.user?.id || null;
+
     const { searchParams } = new URL(request.url)
     const category = searchParams.get("category")
     const search = searchParams.get("search")
@@ -33,6 +49,17 @@ export async function GET(request: NextRequest) {
         },
         {
           description: {
+            contains: searchTerm,
+            mode: 'insensitive'
+          }
+        },
+        {
+          tags: {
+            has: searchTerm
+          }
+        },
+        {
+          location: {
             contains: searchTerm,
             mode: 'insensitive'
           }
@@ -80,22 +107,6 @@ export async function GET(request: NextRequest) {
             avatar: true
           }
         },
-        likes: {
-          select: {
-            id: true,
-            emoji: true
-          }
-        },
-        comments: {
-          select: {
-            id: true
-          }
-        },
-        shares: {
-          select: {
-            id: true
-          }
-        },
         _count: {
           select: {
             likes: true,
@@ -110,6 +121,100 @@ export async function GET(request: NextRequest) {
       skip: offset,
       take: limit
     })
+
+    // Get current user's likes for these images
+    let userLikesMap = new Map<string, string | null>();
+    if (currentUserId && images.length > 0) {
+      const imageIds = images.map(image => image.id);
+      const userLikes = await prisma.like.findMany({
+        where: {
+          userId: currentUserId,
+          imageId: { in: imageIds }
+        },
+        select: {
+          imageId: true,
+          emoji: true
+        }
+      });
+
+      // Create a map of imageId -> emoji with type safety
+      userLikesMap = new Map(
+        userLikes.map(like => [like.imageId as string, like.emoji])
+      );
+    }
+
+    // Get all reactions for these images with user details
+    let reactionsData = new Map<string, any>();
+    if (images.length > 0) {
+      const imageIds = images.map(image => image.id);
+      const allReactions = await prisma.like.findMany({
+        where: {
+          imageId: { in: imageIds }
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              avatar: true
+            }
+          }
+        },
+        orderBy: {
+          createdAt: 'desc'
+        }
+      });
+
+      // Group reactions by image and emoji
+      const groupedReactions = allReactions.reduce((acc, reaction) => {
+        const imageId = reaction.imageId;
+        const emoji = reaction.emoji;
+        
+        // Skip if imageId or emoji is null
+        if (!imageId || !emoji) {
+          return acc;
+        }
+        
+        if (!acc[imageId]) {
+          acc[imageId] = {};
+        }
+        
+        if (!acc[imageId][emoji]) {
+          acc[imageId][emoji] = [];
+        }
+        
+        acc[imageId][emoji].push({
+          userId: reaction.user.id,
+          userName: `${reaction.user.firstName} ${reaction.user.lastName}`,
+          userAvatar: reaction.user.avatar,
+          createdAt: reaction.createdAt
+        });
+        
+        return acc;
+      }, {} as Record<string, Record<string, any[]>>);
+
+      // Convert to Map and calculate reaction summary
+      reactionsData = new Map(
+        Object.entries(groupedReactions).map(([imageId, reactions]) => {
+          // Calculate total reactions per emoji
+          const reactionSummary = Object.entries(reactions).map(([emoji, users]) => ({
+            emoji,
+            count: users.length,
+            users: users
+          }));
+
+          // Calculate total reactions for this image
+          const totalReactions = reactionSummary.reduce((sum, reaction) => sum + reaction.count, 0);
+
+          return [imageId, {
+            summary: reactionSummary,
+            totalReactions,
+            byEmoji: reactions
+          }];
+        })
+      );
+    }
 
     // Define the type for the image object from database
     type ImageFromDb = {
@@ -129,16 +234,6 @@ export async function GET(request: NextRequest) {
         lastName: string;
         avatar: string | null;
       };
-      likes: Array<{
-        id: string;
-        emoji: string;
-      }>;
-      comments: Array<{
-        id: string;
-      }>;
-      shares: Array<{
-        id: string;
-      }>;
       _count: {
         likes: number;
         comments: number;
@@ -147,24 +242,37 @@ export async function GET(request: NextRequest) {
     };
 
     // Transform the data to match your frontend format
-    const transformedImages = images.map((img: ImageFromDb) => ({
-      id: img.id,
-      title: img.title,
-      description: img.description || "", // Handle null description
-      author: `${img.author.firstName} ${img.author.lastName}`,
-      timestamp: `نشر بتاريخ ${img.timestamp.toLocaleDateString('ar-EG')} الساعة ${img.timestamp.toLocaleTimeString('ar-EG')}`,
-      category: img.category,
-      image: img.image,
-      stats: {
-        views: img.views,
-        likes: img._count.likes,
-        comments: img._count.comments,
-        shares: img._count.shares
-      },
-      location: img.location || "", // Handle null location
-      resolution: img.resolution || "", // Handle null resolution
-      tags: img.tags
-    }))
+    const transformedImages = images.map((img: ImageFromDb) => {
+      const imageReactions = reactionsData.get(img.id);
+      
+      return {
+        id: img.id,
+        title: img.title,
+        description: img.description || "",
+        author: `${img.author.firstName} ${img.author.lastName}`,
+        timestamp: `نشر بتاريخ ${img.timestamp.toLocaleDateString('ar-EG')} الساعة ${img.timestamp.toLocaleTimeString('ar-EG')}`,
+        category: img.category,
+        image: img.image,
+        stats: {
+          views: img.views,
+          likes: img._count.likes,
+          comments: img._count.comments,
+          shares: img._count.shares
+        },
+        location: img.location || "",
+        resolution: img.resolution || "",
+        tags: img.tags,
+        // Add user interaction information
+        userHasLiked: currentUserId ? userLikesMap.has(img.id) : false,
+        userReaction: currentUserId ? userLikesMap.get(img.id) || null : null,
+        // Add detailed reactions data
+        reactions: {
+          total: imageReactions?.totalReactions || 0,
+          summary: imageReactions?.summary || [],
+          details: imageReactions?.byEmoji || {}
+        }
+      }
+    })
 
     // Return paginated response
     return NextResponse.json({
