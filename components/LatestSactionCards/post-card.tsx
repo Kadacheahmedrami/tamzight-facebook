@@ -204,6 +204,7 @@ export default function PostCard(props: PostCardProps) {
     <article className="bg-white rounded-lg p-4 border shadow-sm mb-4 hover:shadow-md transition-all duration-200">
       {/* Header */}
       <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+        <div className="flex w-full flex-row">
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`text-xs px-2 py-1 rounded-full w-fit flex items-center gap-1 ${config.color}`}>
             <span>{config.emoji}</span>
@@ -219,7 +220,7 @@ export default function PostCard(props: PostCardProps) {
         </div>
         
         {isAuthor && (
-          <div className="relative" ref={actionsRef}>
+          <div className="mr-auto relative" ref={actionsRef}>
             <button
               onClick={(e) => { e.stopPropagation(); setShowActions(!showActions) }}
               className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
@@ -254,6 +255,8 @@ export default function PostCard(props: PostCardProps) {
             )}
           </div>
         )}
+        </div>
+      
       </header>
 
       {/* Author */}

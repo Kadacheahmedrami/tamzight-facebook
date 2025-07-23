@@ -2,11 +2,9 @@ import type React from "react";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 
-import Header from "@/components/header";
-import ClientProviders from "@/components/ClientProviders"; // ✅ Import this
+
+
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -52,7 +50,7 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
+
 
   return (
     <html lang="ar" dir="rtl">
@@ -68,7 +66,7 @@ export default async function RootLayout({
       <body className={`${inter.className} h-screen overflow-hidden`}>
     
           <div className="h-full flex flex-col">
-            <Header user={session?.user || null} />
+        
             <main className="flex-1 overflow-hidden">{children}</main>
           </div>
   

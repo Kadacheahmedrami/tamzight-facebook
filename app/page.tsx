@@ -1,5 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
+import Header from "@/components/header";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 const features = [
   // quick‑action buttons (no change)
@@ -141,9 +144,13 @@ const footerLinks = [
   },
 ];
 
-export default function HomePage() {
+export default async function HomePage() {
+    const session = await getServerSession(authOptions);
   return (
-    <div className="h-full overflow-y-auto bg-white" dir="rtl">
+    <>
+        <Header  user={session?.user || null} />
+
+        <div className="h-full overflow-y-auto bg-white" dir="rtl">
       {/* FontAwesome CDN */}
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
       
@@ -290,5 +297,7 @@ export default function HomePage() {
         </div>
       </div>
     </div>
+    </>
+  
   );
 }

@@ -17,6 +17,18 @@ interface SearchResult {
   type: string
   url: string
 }
+interface Stats {
+  posts: number
+  truth: number
+  questions: number
+  books: number
+  images: number
+  videos: number
+  ads: number
+  shop: number
+  ideas: number
+  support: number
+}
 
 interface Message {
   id: number
@@ -36,9 +48,10 @@ interface User {
 
 interface ClientHeaderProps {
   user: User | null
+  stats?: Stats
 }
 
-export default function ClientHeader({ user }: ClientHeaderProps) {
+export default function ClientHeader({ user ,stats }: ClientHeaderProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [showResults, setShowResults] = useState(false)
@@ -280,7 +293,7 @@ export default function ClientHeader({ user }: ClientHeaderProps) {
             <div className="relative w-full flex flex-row items-center gap-2" ref={searchRef}>
               {/* Mobile Menu */}
               <div className="lg:hidden">
-                <MobileUserMenu user={user} unreadMessages={unreadMessages} />
+                <MobileUserMenu user={user} stats={stats} unreadMessages={unreadMessages} />
               </div>
               
               {/* Mobile Search Input */}

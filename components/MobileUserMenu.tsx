@@ -4,20 +4,30 @@ import { useState, useEffect } from "react"
 import { usePathname } from "next/navigation"
 import { signOut } from "next-auth/react"
 import Link from "next/link"
-import { useStats } from "@/lib/StatsContext"  // import shared stats context
+
+interface Stats {
+  posts: number
+  truth: number
+  questions: number
+  books: number
+  images: number
+  videos: number
+  ads: number
+  shop: number
+  ideas: number
+  support: number
+}
 
 interface UnifiedNavigationProps {
   user?: any
   unreadMessages?: number
   onLogout?: () => Promise<void>
+  stats: Stats | undefined
 }
 
-export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }: UnifiedNavigationProps) {
+export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout, stats }: UnifiedNavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
-  const [isLoadingStats, setIsLoadingStats] = useState(true)
-  const [statsError, setStatsError] = useState<string | null>(null)
-  const { stats } = useStats()
   const pathname = usePathname()
 
   // Close mobile menu when pathname changes
@@ -47,7 +57,6 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
   }
 
   const formatStatsBadge = (count: number | undefined): string => {
-    if (isLoadingStats) return "..."
     if (count === undefined || count === null) return "0"
     if (count >= 1_000_000) return `${(count / 1_000_000).toFixed(1)}M`
     if (count >= 1_000) return `${(count / 1_000).toFixed(1)}K`
@@ -56,16 +65,16 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
 
   const sidebarLinks = [
     { href: "/main", icon: "fa-home", label: "أحدث المنشورات", badge: null },
-    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: formatStatsBadge(stats.posts) },
-    { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: formatStatsBadge(stats.truth) },
-    { href: "/main/questions", icon: "fa-question-circle", label: "اسئلة امازيغية", badge: formatStatsBadge(stats.questions) },
-    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: formatStatsBadge(stats.books) },
-    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: formatStatsBadge(stats.images) },
-    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: formatStatsBadge(stats.videos) },
-    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: formatStatsBadge(stats.ads) },
-    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: formatStatsBadge(stats.shop) },
-    { href: "/main/ideas", icon: "fa-lightbulb", label: "اقتراحات لتطوير المنصة", badge: formatStatsBadge(stats.ideas) },
-    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: formatStatsBadge(stats.support) },
+    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: formatStatsBadge(stats!.posts) },
+    { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: formatStatsBadge(stats!.truth) },
+    { href: "/main/questions", icon: "fa-question-circle", label: "اسئلة امازيغية", badge: formatStatsBadge(stats!.questions) },
+    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: formatStatsBadge(stats!.books) },
+    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: formatStatsBadge(stats!.images) },
+    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: formatStatsBadge(stats!.videos) },
+    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: formatStatsBadge(stats!.ads) },
+    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: formatStatsBadge(stats!.shop) },
+    { href: "/main/ideas", icon: "fa-lightbulb", label: "اقتراحات لتطوير المنصة", badge: formatStatsBadge(stats!.ideas) },
+    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: formatStatsBadge(stats!.support) },
   ]
 
   const isActiveLink = (href: string) => {
@@ -255,17 +264,6 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
                 </div>
               )}
 
-              {/* Stats Error Display (Mobile) */}
-              {statsError && (
-                <div className="mx-4 mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2 text-red-700">
-                    <i className="fa fa-exclamation-triangle text-sm"></i>
-                    <span className="text-sm">خطأ في تحميل الإحصائيات</span>
-                  </div>
-                  <p className="text-xs text-red-600 mt-1">{statsError}</p>
-                </div>
-              )}
-
               {/* Main Navigation Links */}
               <div className="flex-1 p-4">
                 <h3 className="text-sm font-medium text-gray-500 mb-3">التصفح</h3>
@@ -318,17 +316,6 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout }
       {/* Desktop Sidebar */}
       <aside className="hidden lg:block w-64 bg-white border-l border-gray-200 h-screen sticky top-16 overflow-y-auto">
         <div className="p-4">
-          {/* Stats Error Display (Desktop) */}
-          {statsError && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <div className="flex items-center gap-2 text-red-700">
-                <i className="fa fa-exclamation-triangle text-sm"></i>
-                <span className="text-sm">خطأ في تحميل الإحصائيات</span>
-              </div>
-              <p className="text-xs text-red-600 mt-1">{statsError}</p>
-            </div>
-          )}
-
           {/* Main Navigation */}
           <nav className="space-y-2">
             <NavigationLinks />

@@ -2,10 +2,25 @@
 
 import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { useStats } from "@/lib/StatsContext"
 
-export default function Sidebar() {
-  const { stats } = useStats()
+interface Stats {
+  posts: number
+  truth: number
+  questions: number
+  books: number
+  images: number
+  videos: number
+  ads: number
+  shop: number
+  ideas: number
+  support: number
+}
+
+interface SidebarProps {
+  stats: Stats
+}
+
+export default function Sidebar({ stats }: SidebarProps) {
   const pathname = usePathname()
 
   const sidebarLinks = [
