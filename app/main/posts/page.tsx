@@ -1,3 +1,4 @@
+// /main/posts
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import PostsPageClient from '@/components/pages/PostsPageClient'
@@ -18,5 +19,5 @@ export default async function PostsPage({ searchParams }: PostsPageProps) {
       session={session}
       searchParams={searchParams}
     />
-  )
+    )
 } 
