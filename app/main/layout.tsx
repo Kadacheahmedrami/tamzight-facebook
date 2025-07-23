@@ -1,27 +1,50 @@
 import { ReactNode } from "react";
-import { Session } from "next-auth";
+import { getStats } from "@/app/action/getStats";
 import Sidebar from "@/components/sidebar";
 import LeftSidebar from "@/components/LeftSidebar";
-import { StatsProvider } from "@/lib/StatsContext"; // <-- import it
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import Header from "@/components/header";
 
 interface LayoutProps {
   children: ReactNode;
   showRightSidebar?: boolean;
-  session?: Session | null;
+ 
 }
 
-export default function MainLayout({
+interface Stats {
+  posts: number;
+  truth: number;
+  questions: number;
+  books: number;
+  images: number;
+  videos: number;
+  ads: number;
+  shop: number;
+  ideas: number;
+  support: number;
+}
+
+
+
+
+
+export default async function MainLayout({
   children,
   showRightSidebar = true,
-  session,
+
 }: LayoutProps) {
+
+   const session = await getServerSession(authOptions);
+   const stats = await getStats(); // server action call
   return (
-    <StatsProvider>
+    <>
+      <Header user={session?.user || null} stats={stats} /> 
       <div className="h-[calc(100vh-7vh)] bg-gray-50">
         <div className="max-w-7xl mx-auto flex h-full">
           {/* Desktop Sidebar */}
           <div className="hidden lg:block h-full">
-            <Sidebar />
+            <Sidebar stats={stats} />
           </div>
 
           {/* Main Content */}
@@ -33,6 +56,6 @@ export default function MainLayout({
           {showRightSidebar && <LeftSidebar session={session} />}
         </div>
       </div>
-    </StatsProvider>
+    </>
   );
 }
