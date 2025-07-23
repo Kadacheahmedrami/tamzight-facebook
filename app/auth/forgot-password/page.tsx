@@ -6,7 +6,6 @@ import Link from "next/link"
 export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <Header />
       <div className="max-w-md mx-auto p-8 bg-white rounded-lg shadow-md mt-8">
         <h1 className="text-2xl font-semibold mb-6 text-center">استعادة كلمة المرور</h1>
         <p className="text-gray-700 mb-6 text-center">أدخل بريدك الإلكتروني وسنرسل لك رابط لإعادة تعيين كلمة المرور.</p>
