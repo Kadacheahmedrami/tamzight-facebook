@@ -12,9 +12,9 @@ async function getCurrentUser(req: NextRequest) {
 }
 
 // GET /api/main/truth/[id] - Get a specific truth with full details
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const currentUser = await getCurrentUser(req);
 
     // Increment view count
@@ -123,9 +123,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // POST /api/main/truth/[id] - Handle likes, reactions, shares, comments
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -336,9 +336,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 }
 
 // DELETE /api/main/truth/[id] - Only author can delete
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -358,9 +358,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 }
 
 // PATCH /api/main/truth/[id] - Only author can edit
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
