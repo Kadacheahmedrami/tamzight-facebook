@@ -2,16 +2,16 @@
 
 import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useRouter } from "next/navigation"
+import VideoCard from "@/components/Cards/VideoCard"
 import type { ExtendedSession, PaginationInfo, Post, PostsPageClientProps } from "./types"
+import { VideoUploadModal } from "@/components/UploadModals/VideoUploadModal"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RefreshCw } from "lucide-react"
-import TruthCard from "@/components/Cards/TruthCard"
-import { TruthUploadModal } from "@/components/UploadModals/TruthUploadModal"
-import { Input } from "@/components/ui/input"
 
-export default function TruthPageClient({ session, searchParams }: PostsPageClientProps) {
+export default function VideosPageClient({ session, searchParams }: PostsPageClientProps) {
   const router = useRouter()
 
   // State management
@@ -33,16 +33,17 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
   const isLoadingRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
 
-  // Categories configuration for truth content
+  // Categories configuration for videos
   const categories = useMemo(
     () => [
       { value: "all", label: "الجميع" },
-      { value: "historical", label: "حقائق تاريخية" },
-      { value: "scientific", label: "حقائق علمية" },
-      { value: "cultural", label: "حقائق ثقافية" },
-      { value: "geographical", label: "حقائق جغرافية" },
-      { value: "social", label: "حقائق اجتماعية" },
-      { value: "religious", label: "حقائق دينية" },
+      { value: "educational", label: "تعليمية" },
+      { value: "entertainment", label: "ترفيهية" },
+      { value: "news", label: "أخبار" },
+      { value: "sports", label: "رياضة" },
+      { value: "technology", label: "تقنية" },
+      { value: "cooking", label: "طبخ" },
+      { value: "travel", label: "سفر" },
     ],
     [],
   )
@@ -111,7 +112,7 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
       const queryString = params.toString()
       const url = queryString ? `?${queryString}` : ""
 
-      router.replace(`/main/truth${url}`, { scroll: false })
+      router.replace(`/main/videos${url}`, { scroll: false })
     },
     [router],
   )
@@ -147,9 +148,9 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
 
         if (category !== "all") params.set("category", category)
 
-        console.log(`Fetching truth: category=${category}, page=${page}, isLoadMore=${isLoadMore}`)
+        console.log(`Fetching videos: category=${category}, page=${page}, isLoadMore=${isLoadMore}`)
 
-        const response = await fetch(`/api/main/truth?${params}`, {
+        const response = await fetch(`/api/main/videos?${params}`, {
           signal: abortController.signal,
         })
 
@@ -161,18 +162,21 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
         console.log("API Response data:", data)
 
         const transformedPosts =
-          data.truth?.map((post: any) => ({
+          data.videos?.map((post: any) => ({
             id: post.id?.toString() || Math.random().toString(36).substr(2, 9),
             title: post.title || "عنوان غير محدد",
-            content: post.content || "محتوى غير متوفر",
+            content: post.content || post.description || "محتوى غير متوفر",
             author: post.author || "مستخدم غير معروف",
             authorId: post.authorId || "unknown",
             timestamp: post.timestamp || "غير محدد",
             category: post.category || "عام",
             subCategory: post.subcategory || undefined,
-            image: post.image || undefined,
+            image: post.image || post.thumbnailUrl || undefined,
+            duration: post.duration || undefined,
+            quality: post.quality || undefined,
+            language: post.language || undefined,
             stats: {
-              views: post.stats?.views || 0,
+              views: post.stats?.views || post.views || 0,
               likes: post.stats?.likes || 0,
               comments: post.stats?.comments || 0,
               shares: post.stats?.shares || 0,
@@ -209,8 +213,8 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
           return
         }
 
-        console.error("Error fetching truth:", error)
-        setError("فشل في تحميل الحقائق. يرجى المحاولة مرة أخرى.")
+        console.error("Error fetching videos:", error)
+        setError("فشل في تحميل الفيديوهات. يرجى المحاولة مرة أخرى.")
 
         if (page === 1 && !isLoadMore) {
           setPosts([])
@@ -233,7 +237,7 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
   const loadMore = useCallback(() => {
     if (!loadingMore && !isLoadingRef.current && pagination?.hasNextPage && posts.length > 0) {
       const nextPage = currentPage + 1
-      console.log(`Loading more truth: page ${nextPage}`)
+      console.log(`Loading more videos: page ${nextPage}`)
       setCurrentPage(nextPage)
       fetchPosts(selectedCategory, nextPage, true)
     }
@@ -315,7 +319,7 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
       const transformedPost = {
         id: newPost.id?.toString() || Math.random().toString(36).substr(2, 9),
         title: newPost.title || "عنوان غير محدد",
-        content: newPost.content || "محتوى غير متوفر",
+        content: newPost.content || newPost.description || "محتوى غير متوفر",
         author: session?.user?.name || session?.user?.email || "مستخدم غير معروف",
         authorId: (session?.user as { id?: string })?.id || "unknown",
         timestamp: new Date().toLocaleDateString("ar-SA", {
@@ -372,7 +376,7 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
 
   // Handle refresh
   const handleRefresh = useCallback(() => {
-    console.log("Refreshing truth")
+    console.log("Refreshing videos")
     setCurrentPage(1)
     setPosts([])
     setPagination(null)
@@ -414,14 +418,14 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
       {/* Breadcrumb */}
       <nav className="mb-4">
         <div className="flex items-center gap-2 text-xl md:text-2xl text-gray-600">
-          <span>حقائق مثيرة ومفيدة</span>
+          <span>مكتبة الفيديوهات</span>
         </div>
       </nav>
 
       {/* Filter */}
       <div className="bg-white rounded-lg p-4 mb-4 border">
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <label className="text-sm font-medium whitespace-nowrap">اعرض اخر حقائق حول:</label>
+          <label className="text-sm font-medium whitespace-nowrap">اعرض اخر فيديوهات:</label>
           <Select value={selectedCategory} onValueChange={handleCategoryChange}>
             <SelectTrigger className="w-full sm:w-48">
               <SelectValue placeholder="اختار قسم لعرضه" />
@@ -450,7 +454,7 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
       {pagination && (
         <div className="mb-4 text-sm text-gray-600">
           <span>
-            عرض {posts.length} من أصل {pagination.totalPosts || pagination.totalTruth || 0} حقيقة
+            عرض {posts.length} من أصل {pagination.totalPosts || pagination.totalVideos || 0} فيديو
             {selectedCategory !== "all" && <span className="mr-2">• القسم: {getCurrentCategoryLabel()}</span>}
           </span>
         </div>
@@ -464,7 +468,7 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
               <div className="flex items-center gap-2 sm:gap-3">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full"></div>
                 <Input
-                  placeholder="شارك حقيقة مثيرة ومفيدة"
+                  placeholder="شارك فيديو مميز مع المجتمع"
                   className="flex-1 cursor-pointer text-sm sm:text-base"
                   readOnly
                 />
@@ -472,7 +476,7 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
             </div>
           </DialogTrigger>
 
-          <TruthUploadModal
+          <VideoUploadModal
             isOpen={isPostModalOpen}
             onClose={() => setIsPostModalOpen(false)}
             onSuccess={handlePostUploadSuccess}
@@ -480,54 +484,102 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
         </Dialog>
       )}
 
-      {/* Posts Feed */}
-      {loading ? (
-        <LoadingSkeleton />
-      ) : error ? (
-        <div className="text-red-500">{error}</div>
-      ) : posts.length > 0 ? (
-        <>
-          {posts.map((post, index) => (
-            <TruthCard
-              key={`${post.id}-${index}`}
-              id={post.id}
-              title={post.title}
-              content={post.content}
-              author={post.author}
-              authorId={post.authorId}
-              timestamp={post.timestamp}
-              category={post.category}
-              subCategory={post.subCategory}
-              image={post.image}
-              stats={post.stats}
-              session={extendedSession}
-              onDelete={handlePostDelete}
-              onUpdate={handlePostUpdate}
-              userHasLiked={post.userHasLiked}
-              userReaction={post.userReaction}
-              reactions={post.reactions}
-              apiEndpoint={"truth"}
-              detailsRoute={"/main/truth"}
-            />
-          ))}
-
-          {/* Load More Indicator */}
-          {pagination?.hasNextPage && (
-            <div ref={loadMoreRef} className="py-8 flex justify-center">
-              {loadingMore ? (
-                <span className="loading loading-dots loading-md"></span>
-              ) : (
-                <div className="text-gray-400 text-4xl mb-2">⚡</div>
-              )}
-            </div>
-          )}
-        </>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-10">
-          <div className="text-gray-400 text-6xl mb-4">💡</div>
-          <p className="text-gray-500 text-lg">لا توجد حقائق في هذا القسم حتى الآن.</p>
+      {/* Error Message */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div className="flex items-center gap-2">
+            <div className="text-red-500">⚠️</div>
+            <p className="text-red-700">{error}</p>
+          </div>
+          <Button size="sm" onClick={handleRefresh} className="mt-2 bg-transparent" variant="outline">
+            إعادة المحاولة
+          </Button>
         </div>
       )}
+
+      {/* Loading State */}
+      {loading && posts.length === 0 && <LoadingSkeleton />}
+
+      {/* Posts Feed */}
+      <div className="space-y-4">
+        {posts.length > 0 ? (
+          <>
+            {posts.map((post, index) => (
+              <VideoCard
+                key={`${post.id}-${index}`}
+                id={post.id}
+                title={post.title}
+                content={post.content}
+                author={post.author}
+                authorId={post.authorId}
+                timestamp={post.timestamp}
+                category={post.category}
+                subCategory={post.subCategory}
+                image={post.image}
+                duration={post.duration}
+                quality={post.quality}
+                language={post.language}
+                stats={post.stats}
+                session={extendedSession}
+                onDelete={handlePostDelete}
+                onUpdate={handlePostUpdate}
+                userHasLiked={post.userHasLiked}
+                userReaction={post.userReaction}
+                reactions={post.reactions}
+                apiEndpoint={"videos"}
+                detailsRoute={"/main/videos"}
+              />
+            ))}
+
+            {/* Infinite scroll trigger */}
+            {pagination?.hasNextPage && (
+              <div ref={loadMoreRef} className="h-20 flex items-center justify-center">
+                {loadingMore && (
+                  <div className="flex items-center gap-2 text-gray-500">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                    <span className="text-sm">جاري تحميل المزيد...</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* End of Posts Indicator */}
+            {pagination && !pagination.hasNextPage && posts.length > 0 && (
+              <div className="text-center py-8">
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="text-gray-400 text-4xl mb-2">🎬</div>
+                  <p className="text-gray-600 text-sm">تم عرض جميع الفيديوهات</p>
+                  {(pagination.totalPosts || pagination.totalVideos) && (
+                    <p className="text-gray-500 text-xs mt-1">
+                      إجمالي {pagination.totalPosts || pagination.totalVideos} فيديو
+                    </p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Load more error */}
+            {error && posts.length > 0 && (
+              <div className="text-center py-4">
+                <p className="text-red-500 mb-2">حدث خطأ أثناء تحميل المزيد من الفيديوهات</p>
+                <Button onClick={loadMore} variant="outline">
+                  إعادة المحاولة
+                </Button>
+              </div>
+            )}
+          </>
+        ) : (
+          !loading && (
+            <div className="text-center py-8">
+              <div className="bg-gray-50 rounded-lg p-8">
+                <div className="text-gray-400 text-6xl mb-4">📹</div>
+                <p className="text-gray-600 text-lg mb-2">لا توجد فيديوهات في هذا القسم</p>
+                <p className="text-gray-500 text-sm mb-4">جرب تغيير الفئة لعرض محتوى آخر</p>
+              </div>
+            </div>
+          )
+        )}
+      </div>
     </div>
   )
 }
