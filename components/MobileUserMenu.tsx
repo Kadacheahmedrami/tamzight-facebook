@@ -72,7 +72,7 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout, 
     { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: formatStatsBadge(stats!.images) },
     { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: formatStatsBadge(stats!.videos) },
     { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: formatStatsBadge(stats!.ads) },
-    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: formatStatsBadge(stats!.shop) },
+    { href: "/main/products", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: formatStatsBadge(stats!.shop) },
     { href: "/main/ideas", icon: "fa-lightbulb", label: "اقتراحات لتطوير المنصة", badge: formatStatsBadge(stats!.ideas) },
     { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: formatStatsBadge(stats!.support) },
   ]

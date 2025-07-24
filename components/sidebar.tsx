@@ -32,7 +32,7 @@ export default function Sidebar({ stats }: SidebarProps) {
     { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: stats.images.toString() },
     { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: stats.videos.toString() },
     { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: stats.ads.toString() },
-    { href: "/main/shop", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: stats.shop.toString() },
+    { href: "/main/products", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: stats.shop.toString() },
     { href: "/main/ideas", icon: "fa-lightbulb", label: "اقتراحات لتطوير المنصة", badge: stats.ideas.toString() },
     { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: stats.support.toString() },
   ]

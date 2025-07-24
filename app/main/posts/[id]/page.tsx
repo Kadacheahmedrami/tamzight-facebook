@@ -1,6 +1,6 @@
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import PostDetailClient from '@/components/pages/id/PostDetailClient'
+import PostDetailClient from '@/components/pages/id/posts/PostDetailClient'
 import { redirect } from "next/navigation"
 
 interface PostDetailPageProps {

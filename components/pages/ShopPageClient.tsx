@@ -111,7 +111,7 @@ export default function ShopPageClient({ session, searchParams }: PostsPageClien
       const queryString = params.toString()
       const url = queryString ? `?${queryString}` : ""
 
-      router.replace(`/main/shop${url}`, { scroll: false })
+      router.replace(`/main/products${url}`, { scroll: false })
     },
     [router],
   )
@@ -149,7 +149,7 @@ export default function ShopPageClient({ session, searchParams }: PostsPageClien
 
         console.log(`Fetching products: category=${category}, page=${page}, isLoadMore=${isLoadMore}`)
 
-        const response = await fetch(`/api/main/shop?${params}`, {
+        const response = await fetch(`/api/main/products?${params}`, {
           signal: abortController.signal,
         })
 
@@ -529,7 +529,7 @@ export default function ShopPageClient({ session, searchParams }: PostsPageClien
                 userReaction={post.userReaction}
                 reactions={post.reactions}
                 apiEndpoint={"shop"}
-                detailsRoute={"/main/shop"}
+                detailsRoute={"/main/products"}
               />
             ))}
 
