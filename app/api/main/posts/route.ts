@@ -237,6 +237,7 @@ export async function GET(request: NextRequest) {
         title: post.title,
         content: post.content || "",
         author: `${post.author.firstName} ${post.author.lastName}`,
+        authorId: post.author.id , 
         timestamp: `نشر بتاريخ ${post.createdAt.toLocaleDateString('ar-EG')} الساعة ${post.createdAt.toLocaleTimeString('ar-EG')}`,
         category: post.category,
         subcategory: post.subcategory || "",

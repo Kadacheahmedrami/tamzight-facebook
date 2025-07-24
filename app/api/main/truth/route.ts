@@ -237,6 +237,7 @@ export async function GET(request: NextRequest) {
         title: truth.title,
         content: truth.content || "",
         author: `${truth.author.firstName} ${truth.author.lastName}`,
+        authorId: truth.author.id , 
         timestamp: `نشر بتاريخ ${truth.createdAt.toLocaleDateString('ar-EG')} الساعة ${truth.createdAt.toLocaleTimeString('ar-EG')}`,
         category: truth.category,
         subcategory: truth.subcategory || "",

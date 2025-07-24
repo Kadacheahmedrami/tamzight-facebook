@@ -240,6 +240,7 @@ export async function GET(request: NextRequest) {
         title: video.title,
         content: video.content || "",
         author: `${video.author.firstName} ${video.author.lastName}`,
+        authorId: video.author.id , 
         timestamp: `نشر بتاريخ ${video.createdAt.toLocaleDateString('ar-EG')} الساعة ${video.createdAt.toLocaleTimeString('ar-EG')}`,
         category: video.category,
         subcategory: video.subcategory || "",

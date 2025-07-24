@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
-import { PrismaClient } from "@prisma/client"
 
 import {prisma} from "@/lib/prisma"
 
@@ -53,6 +52,7 @@ export async function GET(req: NextRequest) {
       views: true,
       author: {
         select: {
+          id:true,
           firstName: true,
           lastName: true,
         }
@@ -81,6 +81,7 @@ export async function GET(req: NextRequest) {
     deadline: Date | null;
     views: number;
     author: {
+      id:string,
       firstName: string;
       lastName: string;
     };
@@ -96,6 +97,7 @@ export async function GET(req: NextRequest) {
     title: ad.title,
     content: ad.content,
     author: `${ad.author.firstName} ${ad.author.lastName}`,
+    authorId: ad.author.firstName , 
     timestamp: ad.timestamp.toISOString(),
     category: ad.category,
     subcategory: ad.subcategory ?? '',

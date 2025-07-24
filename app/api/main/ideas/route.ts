@@ -252,6 +252,7 @@ export async function GET(request: NextRequest) {
         title: idea.title,
         content: idea.content || "",
         author: `${idea.author.firstName} ${idea.author.lastName}`,
+        authorId: idea.author.id , 
         timestamp: `نشر بتاريخ ${idea.createdAt.toLocaleDateString('ar-EG')} الساعة ${idea.createdAt.toLocaleTimeString('ar-EG')}`,
         category: idea.category,
         image: idea.image || "/placeholder.svg?height=300&width=600",

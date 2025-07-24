@@ -250,6 +250,7 @@ export async function GET(request: NextRequest) {
         title: img.title,
         description: img.description || "",
         author: `${img.author.firstName} ${img.author.lastName}`,
+        authorId: img.author.id , 
         timestamp: `نشر بتاريخ ${img.timestamp.toLocaleDateString('ar-EG')} الساعة ${img.timestamp.toLocaleTimeString('ar-EG')}`,
         category: img.category,
         image: img.image,

@@ -254,6 +254,7 @@ export async function GET(request: NextRequest) {
         title: question.title,
         content: question.content,
         author: `${question.author.firstName} ${question.author.lastName}`,
+        authorId: question.author.id , 
         timestamp: `طرح سؤال بتاريخ ${question.createdAt.toLocaleDateString('ar-EG')} الساعة ${question.createdAt.toLocaleTimeString('ar-EG')}`,
         category: question.category,
         type: question.type,

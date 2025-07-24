@@ -252,6 +252,7 @@ export async function GET(request: NextRequest) {
         title: book.title,
         content: book.content || "",
         author: `${book.author.firstName} ${book.author.lastName}`,
+        authorId: book.author.id , 
         timestamp: `نشر بتاريخ ${book.createdAt.toLocaleDateString('ar-EG')} الساعة ${book.createdAt.toLocaleTimeString('ar-EG')}`,
         category: book.category,
         subcategory: book.subcategory || "",
