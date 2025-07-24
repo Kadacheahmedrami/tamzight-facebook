@@ -1,14 +1,15 @@
 "use client"
 
 import type React from "react"
-
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import InteractionsBar from "@/components/Cards/InteractionsBar"
 import CommentsModal from "@/components/Cards/CommentsModal"
 import ReactionsDisplay, { type ReactionsData } from "@/components/Cards/ReactionsDisplay"
-import { BookOpen, FileText, Globe, Hash } from "lucide-react"
+import { BookOpen, Globe, Star, Download, Eye, Book } from "lucide-react"
 
 interface BookCardProps {
   id: string
@@ -23,6 +24,11 @@ interface BookCardProps {
   pages?: number
   language?: string
   isbn?: string
+  publishYear?: string
+  fileSize?: string
+  rating?: number
+  downloads?: number
+  downloadUrl?: string
   stats: {
     views: number
     likes: number
@@ -54,6 +60,11 @@ export default function BookCard({
   pages,
   language,
   isbn,
+  publishYear,
+  fileSize,
+  rating = 0,
+  downloads = 0,
+  downloadUrl,
   stats,
   userHasLiked = false,
   userReaction = null,
@@ -192,154 +203,221 @@ export default function BookCard({
   }
 
   return (
-    <div className="bg-white rounded-lg p-4 border shadow-sm mb-4 hover:shadow-md transition-shadow">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2">
-          <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-            <BookOpen className="w-3 h-3" />
-            كتاب
-          </span>
-          {subCategory && (
-            <>
-              <span className="text-gray-400 text-xs">•</span>
-              <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">{subCategory}</span>
-            </>
-          )}
-          {language && (
-            <>
-              <span className="text-gray-400 text-xs">•</span>
-              <span className="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-                <Globe className="w-3 h-3" />
-                {language}
-              </span>
-            </>
-          )}
-        </div>
-
-        {/* Actions Menu */}
-        {isAuthor && (
-          <div className="relative" ref={actionsRef}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowActions(!showActions)
-              }}
-              className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
-              disabled={isDeletingPost}
-            >
-              <i className="fa fa-ellipsis-h"></i>
-            </button>
-
-            {showActions && (
-              <div className="absolute left-0 top-8 bg-white border rounded-lg shadow-lg z-20 min-w-32">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsEditing(true)
-                    setEditTitle(title)
-                    setEditContent(content)
-                    setShowActions(false)
-                  }}
-                  className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors"
-                  disabled={isDeletingPost}
-                >
-                  <i className="fa fa-edit text-blue-500"></i>
-                  تعديل
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDelete()
-                    setShowActions(false)
-                  }}
-                  className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600 transition-colors"
-                  disabled={isDeletingPost}
-                >
-                  <i className="fa fa-trash text-red-500"></i>
-                  {isDeletingPost ? "جاري الحذف..." : "حذف"}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Author Info */}
-      <div className="flex items-start gap-3 mb-3">
-        <div
-          className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0 cursor-pointer hover:bg-gray-300 transition-colors"
-          onClick={handleProfileClick}
-        />
-        <div>
-          <h3
-            className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
-            onClick={handleProfileClick}
-          >
-            {author}
-          </h3>
-          <span className="text-gray-500 text-xs">{timestamp}</span>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className={isEditing ? "" : "cursor-pointer"} onClick={!isEditing ? handlePostClick : undefined}>
-        {isEditing ? (
-          <div className="space-y-3">
-            <input
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full text-lg font-semibold p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="عنوان الكتاب"
-              disabled={isUpdating}
-            />
-            <textarea
-              value={editContent}
-              onChange={(e) => setEditContent(e.target.value)}
-              className="w-full p-2 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-24"
-              rows={4}
-              placeholder="وصف الكتاب"
-              disabled={isUpdating}
-            />
-            <div className="flex gap-2 justify-end">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  setIsEditing(false)
-                  setEditTitle(title)
-                  setEditContent(content)
-                }}
-                disabled={isUpdating}
-              >
-                إلغاء
-              </Button>
-              <Button
-                size="sm"
-                onClick={handleUpdate}
-                disabled={isUpdating || !editTitle.trim() || !editContent.trim()}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                {isUpdating ? "جاري الحفظ..." : "حفظ"}
-              </Button>
+    <Card className="overflow-hidden hover:shadow-xl transition-all duration-300 bg-white border-0 shadow-md hover:shadow-2xl">
+      <CardHeader className="pb-3">
+        {/* Top Row: Image + Metadata */}
+        <div className="flex gap-4">
+          {/* Book Image */}
+          <div className="relative w-32 h-48 flex-shrink-0 group">
+            <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden">
+              <img
+                src={image || "/placeholder.svg?height=128&width=96&query=book cover"}
+                alt={title}
+                className="w-full h-full object-cover cursor-pointer transition-transform duration-300 group-hover:scale-105"
+                onClick={handlePostClick}
+              />
             </div>
-          </div>
-        ) : (
-          <>
-            <h2 className="text-lg font-semibold mb-2 text-gray-900 leading-tight hover:text-blue-600 transition-colors">
-              {title}
-            </h2>
-            {image && (
-              <div className="mb-3 rounded-lg overflow-hidden">
-                <img
-                  src={image || "/placeholder.svg"}
-                  alt={title}
-                  className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
-                />
+            
+            {/* File Size Badge */}
+            {fileSize && (
+              <div className="absolute top-1 left-1 bg-black/80 backdrop-blur-sm text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-lg">
+                {fileSize}
               </div>
             )}
-            <p className="text-gray-700 mb-4 leading-relaxed">
+            
+            {/* Rating Badge */}
+            {rating > 0 && (
+              <div className="absolute top-1 right-1 bg-amber-500/90 backdrop-blur-sm text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-lg flex items-center gap-0.5">
+                <Star className="h-2.5 w-2.5 fill-current" />
+                {rating.toFixed(1)}
+              </div>
+            )}
+            
+            {/* Hover Overlay */}
+            <div className="absolute inset-0 bg-black/20 hover:bg-black/40 transition-all duration-300 cursor-pointer flex items-center justify-center opacity-0 hover:opacity-100 rounded-lg backdrop-blur-[1px]">
+              <div className="bg-white/20 backdrop-blur-sm rounded-full p-2 transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                <Book className="h-4 w-4 text-white drop-shadow-lg" />
+              </div>
+            </div>
+            
+            {/* Downloads indicator */}
+            {downloads > 0 && (
+              <div className="absolute bottom-1 left-1 bg-green-500/90 backdrop-blur-sm text-white text-xs px-1.5 py-0.5 rounded-full font-medium shadow-lg flex items-center gap-0.5">
+                <Download className="h-2.5 w-2.5" />
+                {downloads > 1000 ? `${(downloads / 1000).toFixed(1)}k` : downloads}
+              </div>
+            )}
+          </div>
+
+          {/* Book Metadata */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between mb-3">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge className="bg-emerald-100 text-emerald-800 text-xs font-medium px-3 py-1 flex items-center gap-1.5 shadow-sm">
+                  <BookOpen className="w-3.5 h-3.5" />
+                  كتاب
+                </Badge>
+                {subCategory && (
+                  <Badge variant="outline" className="text-xs font-medium px-3 py-1 border-gray-300 text-gray-700 shadow-sm">
+                    {subCategory}
+                  </Badge>
+                )}
+                {language && (
+                  <Badge className="bg-blue-100 text-blue-800 text-xs font-medium px-3 py-1 flex items-center gap-1.5 shadow-sm">
+                    <Globe className="w-3.5 h-3.5" />
+                    {language}
+                  </Badge>
+                )}
+              </div>
+
+              {/* Actions Menu */}
+              {isAuthor && (
+                <div className="relative" ref={actionsRef}>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowActions(!showActions)
+                    }}
+                    className="text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-gray-100/80 transition-all duration-200 backdrop-blur-sm"
+                    disabled={isDeletingPost}
+                  >
+                    <i className="fa fa-ellipsis-h text-sm"></i>
+                  </button>
+
+                  {showActions && (
+                    <div className="absolute left-0 top-10 bg-white/95 backdrop-blur-md border border-gray-200/60 rounded-xl shadow-xl z-20 min-w-36 overflow-hidden">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setIsEditing(true)
+                          setEditTitle(title)
+                          setEditContent(content)
+                          setShowActions(false)
+                        }}
+                        className="w-full text-right px-4 py-3 text-sm hover:bg-blue-50/80 flex items-center gap-3 transition-all duration-200"
+                        disabled={isDeletingPost}
+                      >
+                        <i className="fa fa-edit text-blue-500 text-sm"></i>
+                        <span className="font-medium">تعديل</span>
+                      </button>
+                      <div className="border-t border-gray-100"></div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDelete()
+                          setShowActions(false)
+                        }}
+                        className="w-full text-right px-4 py-3 text-sm hover:bg-red-50/80 flex items-center gap-3 text-red-600 transition-all duration-200"
+                        disabled={isDeletingPost}
+                      >
+                        <i className="fa fa-trash text-red-500 text-sm"></i>
+                        <span className="font-medium">{isDeletingPost ? "جاري الحذف..." : "حذف"}</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {isEditing ? (
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  value={editTitle}
+                  onChange={(e) => setEditTitle(e.target.value)}
+                  className="w-full text-lg font-bold p-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
+                  placeholder="عنوان الكتاب"
+                  disabled={isUpdating}
+                />
+                <div className="flex gap-3 justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsEditing(false)
+                      setEditTitle(title)
+                      setEditContent(content)
+                    }}
+                    disabled={isUpdating}
+                    className="px-4 py-2 border-2 hover:bg-gray-50"
+                  >
+                    إلغاء
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handleUpdate}
+                    disabled={isUpdating || !editTitle.trim() || !editContent.trim()}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 shadow-md hover:shadow-lg transition-all duration-200"
+                  >
+                    {isUpdating ? "جاري الحفظ..." : "حفظ"}
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <CardTitle
+                  className="text-lg font-bold leading-tight line-clamp-2 cursor-pointer hover:text-blue-600 transition-colors duration-200 mb-2"
+                  onClick={handlePostClick}
+                >
+                  {title}
+                </CardTitle>
+                <CardDescription className="text-sm flex items-center gap-2 text-gray-600 mb-3">
+                  <span className="cursor-pointer hover:text-blue-600 transition-colors duration-200 font-medium" onClick={handleProfileClick}>
+                    بقلم: {author}
+                  </span>
+                  <span className="text-gray-300">•</span>
+                  <span className="text-xs text-gray-500">{timestamp}</span>
+                </CardDescription>
+
+                {/* Book Details in Row Layout */}
+                <div className="bg-gray-50/80 backdrop-blur-sm rounded-xl p-3">
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {language && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">اللغة:</span>
+                        <span className="font-semibold text-gray-800">{language}</span>
+                      </div>
+                    )}
+                    {pages && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">الصفحات:</span>
+                        <span className="font-semibold text-gray-800">{pages}</span>
+                      </div>
+                    )}
+                    {publishYear && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">السنة:</span>
+                        <span className="font-semibold text-gray-800">{publishYear}</span>
+                      </div>
+                    )}
+                    {isbn && (
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 font-medium">ISBN:</span>
+                        <span className="font-mono text-xs font-semibold text-gray-800">{isbn}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+
+      <CardContent className="pt-0 space-y-4">
+        {/* Full Width Content/Description */}
+        {isEditing ? (
+          <textarea
+            value={editContent}
+            onChange={(e) => setEditContent(e.target.value)}
+            className="w-full p-3 border-2 border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white/80 backdrop-blur-sm"
+            rows={4}
+            placeholder="وصف الكتاب"
+            disabled={isUpdating}
+          />
+        ) : (
+          <div>
+            <p className="text-sm text-gray-700 leading-relaxed cursor-pointer" onClick={handlePostClick}>
               {displayContent}
               {isLongContent && (
                 <button
@@ -347,55 +425,60 @@ export default function BookCard({
                     e.stopPropagation()
                     setShowFullContent(!showFullContent)
                   }}
-                  className="text-blue-600 hover:text-blue-800 font-medium ml-2 transition-colors"
+                  className="text-blue-600 hover:text-blue-800 font-medium mr-2 transition-colors duration-200 underline decoration-dotted underline-offset-2"
                 >
                   {showFullContent ? "عرض أقل" : "اقرأ المزيد"}
                 </button>
               )}
             </p>
+          </div>
+        )}
+
+        {!isEditing && (
+          <>
+            {/* Action Buttons */}
+            <div className="flex gap-3">
+              <Button
+                size="sm"
+                variant="outline"
+                className="flex-1 h-10 border-2 hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium"
+                onClick={handlePostClick}
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                معاينة
+              </Button>
+              <Button
+                size="sm"
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 flex-1 h-10 shadow-md hover:shadow-lg transition-all duration-200 font-medium"
+                onClick={() => downloadUrl && window.open(downloadUrl, "_blank")}
+              >
+                <Download className="h-4 w-4 mr-2" />
+                تحميل
+              </Button>
+            </div>
+
+            {/* Reactions Display */}
+            <div className="flex justify-end">
+              <ReactionsDisplay reactions={currentReactions} session={session} stats={currentStats} />
+            </div>
+
+            {/* Interactions Bar */}
+            <div className="">
+              <InteractionsBar
+                postId={id}
+                apiEndpoint={apiEndpoint}
+                stats={currentStats}
+                userHasLiked={currentUserHasLiked}
+                userReaction={currentUserReaction}
+                session={session}
+                onStatsUpdate={handleStatsUpdate}
+                onReactionUpdate={handleReactionUpdate}
+                onCommentsClick={() => setShowCommentsModal(true)}
+              />
+            </div>
           </>
         )}
-      </div>
-
-      {/* Book Details */}
-      {!isEditing && (
-        <div className="flex items-center gap-4 mb-3 text-sm text-gray-500">
-          {pages && (
-            <div className="flex items-center gap-1">
-              <FileText className="w-4 h-4" />
-              <span>{pages} صفحة</span>
-            </div>
-          )}
-          {isbn && (
-            <div className="flex items-center gap-1">
-              <Hash className="w-4 h-4" />
-              <span>ISBN: {isbn}</span>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Reactions Preview */}
-      {!isEditing && (
-        <div className="mb-3 flex justify-end">
-          <ReactionsDisplay reactions={currentReactions} session={session} stats={currentStats} />
-        </div>
-      )}
-
-      {/* Interactions Bar */}
-      {!isEditing && (
-        <InteractionsBar
-          postId={id}
-          apiEndpoint={apiEndpoint}
-          stats={currentStats}
-          userHasLiked={currentUserHasLiked}
-          userReaction={currentUserReaction}
-          session={session}
-          onStatsUpdate={handleStatsUpdate}
-          onReactionUpdate={handleReactionUpdate}
-          onCommentsClick={() => setShowCommentsModal(true)}
-        />
-      )}
+      </CardContent>
 
       {/* Comments Modal */}
       {showCommentsModal && (
@@ -408,6 +491,6 @@ export default function BookCard({
           onStatsUpdate={handleStatsUpdate}
         />
       )}
-    </div>
+    </Card>
   )
 }

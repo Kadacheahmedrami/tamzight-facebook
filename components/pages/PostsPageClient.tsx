@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useRouter } from 'next/navigation'
 import PostCard from "@/components/Cards/Posts"
-import {ExtendedSession,PaginationInfo,Post,PostsPageClientProps,ReactionSummary,ReactionUser,ReactionsData} from "./types"
+import {ExtendedSession,PaginationInfo,Post,PostsPageClientProps} from "./types"
 import {PostUploadModal} from "@/components/UploadModals/PostUploadModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"

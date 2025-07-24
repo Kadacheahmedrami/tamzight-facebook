@@ -1,32 +1,38 @@
-import { Session } from "next-auth"
-
-declare module "next-auth" {
-  interface Session {
-    user?: {
-      id?: string;
-      email?: string | null;
-      name?: string | null;
-      image?: string | null;
-    };
+export interface ExtendedSession {
+  user?: {
+    id?: string
+    email?: string
+    name?: string
   }
 }
-// Define the reaction types based on your API response
+
+export interface PaginationInfo {
+  currentPage: number
+  totalPages: number
+  totalPosts: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+  // Additional properties for different content types
+  totalIdeas?: number
+  totalVideos?: number
+  totalBooks?: number
+  totalImages?: number
+  totalQuestions?: number
+  totalProducts?: number
+  totalAds?: number
+  totalTruth?: number
+}
+
 export interface ReactionUser {
   userId: string
   userName: string
-  userAvatar?: string
-  createdAt: Date
-}
-
-export interface ReactionSummary {
-  emoji: string
-  count: number
-  users: ReactionUser[]
+  avatar?: string
+  createdAt: Date 
 }
 
 export interface ReactionsData {
   total: number
-  summary: ReactionSummary[]
+  summary: Array<{ emoji: string; count: number; users: ReactionUser[]  }>
   details: Record<string, ReactionUser[]>
 }
 
@@ -34,9 +40,11 @@ export interface Post {
   id: string
   title: string
   content: string
+  description?: string // For images
   author: string
   authorId: string
   timestamp: string
+  
   category: string
   subCategory?: string
   image?: string
@@ -46,35 +54,50 @@ export interface Post {
     comments: number
     shares: number
   }
-  // User interaction fields
-  userHasLiked: boolean
-  userReaction: string | null
-  // Updated reactions field to match API response
-  reactions: ReactionsData
-}
-
-export interface PaginationInfo {
-  currentPage: number
-  totalPages: number
-  totalPosts: number
-  hasNextPage: boolean
-  hasPreviousPage: boolean
-  limit: number
+  userHasLiked?: boolean
+  userReaction?: string | null
+  reactions?: ReactionsData
+  
+  // Video-specific properties
+  duration?: string
+  quality?: string
+  language?: string
+  
+  // Book-specific properties
+  pages?: number
+  isbn?: string
+  
+  // Idea-specific properties
+  status?: string
+  priority?: string
+  votes?: number
+  
+  // Image-specific properties
+  location?: string
+  resolution?: string
+  tags?: string[]
+  
+  // Question-specific properties
+  type?: string
+  answered?: boolean
+  
+  // Product-specific properties
+  price?: string
+  currency?: string
+  inStock?: boolean
+  sizes?: string[]
+  colors?: string[]
+  
+  // Ad-specific properties
+  targetAmount?: string
+  currentAmount?: string
+  deadline?: string
 }
 
 export interface PostsPageClientProps {
-  session: Session | null
-  searchParams: { 
+  session: any
+  searchParams: {
     category?: string
     page?: string
-  }
-}
-
-// Extended session type for PostCard compatibility
-export interface ExtendedSession {
-  user?: {
-    id?: string
-    email?: string
-    name?: string
   }
 }

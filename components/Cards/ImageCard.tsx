@@ -19,7 +19,7 @@ interface ImageCardProps {
   timestamp: string
   category: string
   subCategory?: string
-  image: string
+  image?: string
   location?: string
   resolution?: string
   tags?: string[]

@@ -20,8 +20,8 @@ interface ProductCardProps {
   category: string
   subCategory?: string
   image?: string
-  price: string
-  currency: string
+  price?: string
+  currency?: string
   inStock?: boolean
   sizes?: string[]
   colors?: string[]

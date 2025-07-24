@@ -24,7 +24,8 @@ const initialFormData: QuestionFormData = {
   type: ''
 }
 
-const questionTypes = ["سؤال عام", "سؤال تقني", "سؤال تاريخي", "سؤال ثقافي", "استفسار", "طلب مساعدة"]
+// Updated question types to match backend validation
+const questionTypes = ["يحتاج إجابة", "استطلاع رأي", "نقاش"]
 
 export const QuestionUploadModal: React.FC<QuestionUploadModalProps> = ({
   isOpen,

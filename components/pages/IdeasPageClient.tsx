@@ -4,12 +4,12 @@ import { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import { useRouter } from "next/navigation"
 import IdeaCard from "@/components/Cards/IdeaCard"
 import type { ExtendedSession, PaginationInfo, Post, PostsPageClientProps } from "./types"
-import { IdeaUploadModal } from "@/components/UploadModals/IdeaUploadModal"
+import { PostUploadModal } from "@/components/UploadModals/PostUploadModal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogTrigger } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { RefreshCw } from "lucide-react"
+import { RefreshCw } from 'lucide-react'
 
 export default function IdeasPageClient({ session, searchParams }: PostsPageClientProps) {
   const router = useRouter()
@@ -475,7 +475,7 @@ export default function IdeasPageClient({ session, searchParams }: PostsPageClie
             </div>
           </DialogTrigger>
 
-          <IdeaUploadModal
+          <PostUploadModal
             isOpen={isPostModalOpen}
             onClose={() => setIsPostModalOpen(false)}
             onSuccess={handlePostUploadSuccess}

@@ -1,14 +1,16 @@
 "use client"
 
 import type React from "react"
-
 import { Button } from "@/components/ui/button"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import InteractionsBar from "@/components/Cards/InteractionsBar"
 import CommentsModal from "@/components/Cards/CommentsModal"
 import ReactionsDisplay, { type ReactionsData } from "@/components/Cards/ReactionsDisplay"
-import { Megaphone, Target, Calendar, DollarSign } from "lucide-react"
+import { Megaphone, Target, Calendar, DollarSign, MapPin } from "lucide-react"
+import Image from "next/image"
 
 interface AdCardProps {
   id: string
@@ -20,9 +22,14 @@ interface AdCardProps {
   category: string
   subCategory?: string
   image?: string
-  targetAmount?: string
-  currentAmount?: string
+  targetAmount?: string | number
+  currentAmount?: string | number
   deadline?: string
+  position?: string
+  location?: string
+  salary?: string
+  eventDate?: string
+  ticketPrice?: string
   stats: {
     views: number
     likes: number
@@ -54,6 +61,11 @@ export default function AdCard({
   targetAmount,
   currentAmount,
   deadline,
+  position,
+  location,
+  salary,
+  eventDate,
+  ticketPrice,
   stats,
   userHasLiked = false,
   userReaction = null,
@@ -181,9 +193,49 @@ export default function AdCard({
   // Calculate progress percentage
   const getProgressPercentage = () => {
     if (!targetAmount || !currentAmount) return 0
-    const target = Number.parseFloat(targetAmount.replace(/[^\d.]/g, ""))
-    const current = Number.parseFloat(currentAmount.replace(/[^\d.]/g, ""))
+
+    // Handle both string and number types
+    const target =
+      typeof targetAmount === "string"
+        ? Number.parseFloat(targetAmount.replace(/[^\d.]/g, ""))
+        : Number.parseFloat(targetAmount.toString())
+
+    const current =
+      typeof currentAmount === "string"
+        ? Number.parseFloat(currentAmount.replace(/[^\d.]/g, ""))
+        : Number.parseFloat(currentAmount.toString())
+
+    if (isNaN(target) || isNaN(current) || target === 0) return 0
+
     return Math.min((current / target) * 100, 100)
+  }
+
+  // Get category display info
+  const getCategoryInfo = () => {
+    switch (category) {
+      case "charity":
+        return { label: "خيرية", color: "bg-green-100 text-green-800" }
+      case "business":
+        return { label: "تجارية", color: "bg-blue-100 text-blue-800" }
+      case "services":
+        return { label: "خدمات", color: "bg-purple-100 text-purple-800" }
+      case "events":
+        return { label: "فعاليات", color: "bg-orange-100 text-orange-800" }
+      case "jobs":
+        return { label: "وظائف", color: "bg-indigo-100 text-indigo-800" }
+      case "real-estate":
+        return { label: "عقارات", color: "bg-red-100 text-red-800" }
+      default:
+        return { label: "عام", color: "bg-gray-100 text-gray-800" }
+    }
+  }
+
+  // Get action button text and style
+  const getActionButton = () => {
+    if (targetAmount) return { text: "تبرع الآن", variant: "default" as const }
+    if (position) return { text: "تقدم للوظيفة", variant: "default" as const }
+    if (eventDate) return { text: "احجز مكانك", variant: "default" as const }
+    return { text: "تفاصيل أكثر", variant: "outline" as const }
   }
 
   // Callback functions for child components
@@ -199,104 +251,113 @@ export default function AdCard({
     }
   }
 
+  const categoryInfo = getCategoryInfo()
+  const actionButton = getActionButton()
+
   return (
-    <div className="bg-white rounded-lg p-4 border shadow-sm mb-4 hover:shadow-md transition-shadow">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-        <div className="flex items-center gap-2">
-          <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full flex items-center gap-1">
-            <Megaphone className="w-3 h-3" />
-            إعلان
-          </span>
-          {subCategory && (
-            <>
-              <span className="text-gray-400 text-xs">•</span>
-              <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full">{subCategory}</span>
-            </>
-          )}
-          {category === "charity" && (
-            <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full">خيري</span>
-          )}
-        </div>
-
-        {/* Actions Menu */}
-        {isAuthor && (
-          <div className="relative" ref={actionsRef}>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                setShowActions(!showActions)
-              }}
-              className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
-              disabled={isDeletingPost}
-            >
-              <i className="fa fa-ellipsis-h"></i>
-            </button>
-
-            {showActions && (
-              <div className="absolute left-0 top-8 bg-white border rounded-lg shadow-lg z-20 min-w-32">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsEditing(true)
-                    setEditTitle(title)
-                    setEditContent(content)
-                    setShowActions(false)
-                  }}
-                  className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors"
-                  disabled={isDeletingPost}
-                >
-                  <i className="fa fa-edit text-blue-500"></i>
-                  تعديل
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handleDelete()
-                    setShowActions(false)
-                  }}
-                  className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600 transition-colors"
-                  disabled={isDeletingPost}
-                >
-                  <i className="fa fa-trash text-red-500"></i>
-                  {isDeletingPost ? "جاري الحذف..." : "حذف"}
-                </button>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Author Info */}
-      <div className="flex items-start gap-3 mb-3">
-        <div
-          className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0 cursor-pointer hover:bg-gray-300 transition-colors"
-          onClick={handleProfileClick}
-        />
-        <div>
-          <h3
-            className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
-            onClick={handleProfileClick}
-          >
-            {author}
-          </h3>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <span>{timestamp}</span>
-            {deadline && (
+    <Card className="overflow-hidden border shadow-sm hover:shadow-md transition-all duration-300 bg-white">
+      {/* Header with badges and actions */}
+      <div className="p-4 pb-0">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Badge className={`${categoryInfo.color} text-xs flex items-center gap-1`}>
+              <Megaphone className="w-3 h-3" />
+              {categoryInfo.label}
+            </Badge>
+            {subCategory && (
               <>
-                <span>•</span>
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3" />
-                  <span>ينتهي: {new Date(deadline).toLocaleDateString("ar-SA")}</span>
-                </div>
+                <span className="text-gray-400 text-xs">•</span>
+                <Badge variant="outline" className="text-xs">
+                  {subCategory}
+                </Badge>
               </>
             )}
           </div>
+
+          {/* Actions Menu */}
+          {isAuthor && (
+            <div className="relative" ref={actionsRef}>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setShowActions(!showActions)
+                }}
+                className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                disabled={isDeletingPost}
+              >
+                <i className="fa fa-ellipsis-h"></i>
+              </button>
+
+              {showActions && (
+                <div className="absolute left-0 top-8 bg-white border rounded-lg shadow-lg z-20 min-w-32">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsEditing(true)
+                      setEditTitle(title)
+                      setEditContent(content)
+                      setShowActions(false)
+                    }}
+                    className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                    disabled={isDeletingPost}
+                  >
+                    <i className="fa fa-edit text-blue-500"></i>
+                    تعديل
+                  </button>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleDelete()
+                      setShowActions(false)
+                    }}
+                    className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600 transition-colors"
+                    disabled={isDeletingPost}
+                  >
+                    <i className="fa fa-trash text-red-500"></i>
+                    {isDeletingPost ? "جاري الحذف..." : "حذف"}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Author Info */}
+        <div className="flex items-center gap-3 mb-3">
+          <div
+            className="w-10 h-10 bg-gray-200 rounded-full flex-shrink-0 cursor-pointer hover:bg-gray-300 transition-colors"
+            onClick={handleProfileClick}
+          />
+          <div className="flex-1">
+            <h3
+              className="font-semibold text-gray-900 cursor-pointer hover:text-blue-600 transition-colors"
+              onClick={handleProfileClick}
+            >
+              {author}
+            </h3>
+            <div className="flex items-center gap-2 text-xs text-gray-500">
+              <span>{timestamp}</span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Content */}
-      <div className={isEditing ? "" : "cursor-pointer"} onClick={!isEditing ? handlePostClick : undefined}>
+      {/* Image Section - Top */}
+      {image && (
+        <div className="relative">
+          <Image
+            src={image || "/placeholder.svg?height=300&width=600&query=advertisement"}
+            alt={title}
+            width={600}
+            height={300}
+            className="w-full h-64 object-cover cursor-pointer"
+            onClick={handlePostClick}
+          />
+        </div>
+      )}
+
+      {/* Content Section */}
+      <CardContent className="p-4">
         {isEditing ? (
           <div className="space-y-3">
             <input
@@ -340,83 +401,147 @@ export default function AdCard({
           </div>
         ) : (
           <>
-            <h2 className="text-lg font-semibold mb-2 text-gray-900 leading-tight hover:text-blue-600 transition-colors">
-              {title}
-            </h2>
-            {image && (
-              <div className="mb-3 rounded-lg overflow-hidden">
-                <img
-                  src={image || "/placeholder.svg"}
-                  alt={title}
-                  className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
-                />
+            {/* Title and Content */}
+            <div className="mb-4">
+              <h2
+                className="text-xl font-bold mb-2 text-gray-900 cursor-pointer hover:text-blue-600 transition-colors line-clamp-2"
+                onClick={handlePostClick}
+              >
+                {title}
+              </h2>
+              <p className="text-gray-700 leading-relaxed cursor-pointer" onClick={handlePostClick}>
+                {displayContent}
+                {isLongContent && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setShowFullContent(!showFullContent)
+                    }}
+                    className="text-blue-600 hover:text-blue-800 font-medium ml-2 transition-colors"
+                  >
+                    {showFullContent ? "عرض أقل" : "اقرأ المزيد"}
+                  </button>
+                )}
+              </p>
+            </div>
+
+            {/* Charity/Fundraising Details */}
+            {targetAmount && (
+              <div className="bg-green-50 border border-green-200 p-4 rounded-lg mb-4">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium text-green-800 flex items-center gap-2">
+                    <Target className="h-4 w-4" />
+                    الهدف المالي
+                  </span>
+                  <span className="text-green-600 font-bold text-lg">{targetAmount} درهم</span>
+                </div>
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-sm font-medium text-green-800 flex items-center gap-2">
+                    <DollarSign className="h-4 w-4" />
+                    المبلغ المجمع
+                  </span>
+                  <span className="text-blue-600 font-bold text-lg">{currentAmount} درهم</span>
+                </div>
+                {deadline && (
+                  <div className="flex items-center gap-2 text-sm text-gray-600 mb-3">
+                    <Calendar className="h-4 w-4" />
+                    <span>آخر موعد: {new Date(deadline).toLocaleDateString("ar-SA")}</span>
+                  </div>
+                )}
+                {/* Progress Bar */}
+                <div className="space-y-2">
+                  <div className="w-full bg-green-200 rounded-full h-3">
+                    <div
+                      className="bg-green-600 h-3 rounded-full transition-all duration-500"
+                      style={{ width: `${getProgressPercentage()}%` }}
+                    ></div>
+                  </div>
+                  <div className="text-sm text-green-700 text-center font-medium">
+                    {Math.round(getProgressPercentage())}% مكتمل
+                  </div>
+                </div>
               </div>
             )}
-            <p className="text-gray-700 mb-4 leading-relaxed">
-              {displayContent}
-              {isLongContent && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setShowFullContent(!showFullContent)
-                  }}
-                  className="text-blue-600 hover:text-blue-800 font-medium ml-2 transition-colors"
-                >
-                  {showFullContent ? "عرض أقل" : "اقرأ المزيد"}
-                </button>
-              )}
-            </p>
+
+            {/* Job Details */}
+            {position && (
+              <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg mb-4">
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-blue-800">المنصب:</span>
+                    <span className="font-bold text-blue-900">{position}</span>
+                  </div>
+                  {location && (
+                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <MapPin className="h-4 w-4" />
+                      <span>{location}</span>
+                    </div>
+                  )}
+                  {salary && (
+                    <div className="flex items-center gap-2 text-sm text-blue-700">
+                      <DollarSign className="h-4 w-4" />
+                      <span>{salary}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Event Details */}
+            {eventDate && (
+              <div className="bg-purple-50 border border-purple-200 p-4 rounded-lg mb-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-purple-700">
+                    <Calendar className="h-4 w-4" />
+                    <span>تاريخ الفعالية: {new Date(eventDate).toLocaleDateString("ar-SA")}</span>
+                  </div>
+                  {location && (
+                    <div className="flex items-center gap-2 text-sm text-purple-700">
+                      <MapPin className="h-4 w-4" />
+                      <span>{location}</span>
+                    </div>
+                  )}
+                  {ticketPrice && (
+                    <div className="flex items-center gap-2 text-sm text-purple-700">
+                      <DollarSign className="h-4 w-4" />
+                      <span>سعر التذكرة: {ticketPrice}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Reactions Display and Action Buttons - Same Row */}
+            <div className="flex items-center justify-between py-3 border-t border-gray-100">
+              <ReactionsDisplay reactions={currentReactions} session={session} stats={currentStats} />
+              
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" onClick={handlePostClick}>
+                  تفاصيل أكثر
+                </Button>
+                <Button size="sm" className="bg-[#4531fc] hover:bg-blue-800" onClick={handlePostClick}>
+                  {actionButton.text}
+                </Button>
+              </div>
+            </div>
+
+            {/* Interactions Bar */}
+            <div className="  ">
+              <InteractionsBar
+                postId={id}
+                apiEndpoint={apiEndpoint}
+                stats={currentStats}
+                userHasLiked={currentUserHasLiked}
+                userReaction={currentUserReaction}
+                session={session}
+                onStatsUpdate={handleStatsUpdate}
+                onReactionUpdate={handleReactionUpdate}
+                onCommentsClick={() => setShowCommentsModal(true)}
+              />
+            </div>
           </>
         )}
-      </div>
-
-      {/* Funding Progress */}
-      {!isEditing && targetAmount && currentAmount && (
-        <div className="mb-4 p-3 bg-gray-50 rounded-lg">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-1 text-sm text-gray-600">
-              <Target className="w-4 h-4" />
-              <span>الهدف المالي</span>
-            </div>
-            <span className="text-sm font-medium">{Math.round(getProgressPercentage())}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2 mb-2">
-            <div
-              className="bg-green-500 h-2 rounded-full transition-all duration-300"
-              style={{ width: `${getProgressPercentage()}%` }}
-            ></div>
-          </div>
-          <div className="flex items-center justify-between text-sm">
-            <div className="flex items-center gap-1 text-gray-600">
-              <DollarSign className="w-4 h-4" />
-              <span>تم جمع: {currentAmount}</span>
-            </div>
-            <span className="text-gray-600">من أصل: {targetAmount}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Reactions Preview */}
-      {!isEditing && (
-        <div className="mb-3 flex justify-end">
-          <ReactionsDisplay reactions={currentReactions} session={session} stats={currentStats} />
-        </div>
-      )}
-
-      {/* Interactions Bar */}
-      {!isEditing && (
-        <InteractionsBar
-          postId={id}
-          apiEndpoint={apiEndpoint}
-          stats={currentStats}
-          userHasLiked={currentUserHasLiked}
-          userReaction={currentUserReaction}
-          session={session}
-          onStatsUpdate={handleStatsUpdate}
-          onReactionUpdate={handleReactionUpdate}
-          onCommentsClick={() => setShowCommentsModal(true)}
-        />
-      )}
+      </CardContent>
 
       {/* Comments Modal */}
       {showCommentsModal && (
@@ -429,6 +554,6 @@ export default function AdCard({
           onStatsUpdate={handleStatsUpdate}
         />
       )}
-    </div>
+    </Card>
   )
 }
