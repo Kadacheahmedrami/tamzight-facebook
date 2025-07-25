@@ -44,7 +44,7 @@ export default function MessagesListPage() {
       setLoading(true)
       setError(null)
       
-      const response = await fetch('/api/main/messages')
+      const response = await fetch('/api/main/chats')
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('غير مصرح لك بالوصول')
@@ -205,7 +205,7 @@ export default function MessagesListPage() {
         {filteredConversations.length > 0 ? (
           filteredConversations.map(conversation => (
             <div key={conversation.id}>
-              <Link href={`/main/messages/${conversation.id}`}>
+              <Link href={`/main/chats/${conversation.id}`}>
                 <div className={`flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors ${
                   conversation.unreadCount && conversation.unreadCount > 0 ? 'bg-blue-50/50' : ''
                 }`}>

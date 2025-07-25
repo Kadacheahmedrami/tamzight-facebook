@@ -9,21 +9,34 @@ import { Loader2, Send, ArrowLeft, MoreVertical, Users, Phone, Video } from "luc
 
 interface Message {
   id: string
-  fromMe: boolean
-  text: string
+  content: string
+  senderId: string
+  senderName: string
+  senderAvatar?: string
   timestamp: string
-  createdAt: Date
-  status?: 'sent' | 'delivered' | 'read'
+  isOwn: boolean
+  messageType?: string
+  attachment?: any
+  read?: boolean
+  createdAt?: Date
 }
 
 interface Conversation {
-  id: string
-  name: string
-  avatarUrl?: string
-  isOnline?: boolean
-  isGroup?: boolean
-  groupMembers?: number
-  lastSeen?: string
+  conversationId: string
+  participant: {
+    id: string
+    name: string
+    avatar?: string
+    isOnline: boolean
+    lastSeen?: string
+  }
+  messages: Message[]
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    hasMore: boolean
+  }
 }
 
 // Skeleton component for loading messages
@@ -58,8 +71,8 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   const messagesContainerRef = useRef<HTMLDivElement>(null)
   const shouldScrollToBottom = useRef(true)
 
-  // Get conversation ID from params
-  const conversationId = params.id
+  // Get user ID from params
+  const userId = params.id
 
   // Generate first letter for avatar fallback
   const getAvatarLetter = (name: string) => {
@@ -67,7 +80,8 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   }
 
   // Format timestamp
-  const formatTimestamp = (date: Date): string => {
+  const formatTimestamp = (dateString: string): string => {
+    const date = new Date(dateString)
     const now = new Date()
     const diffInMinutes = Math.floor((now.getTime() - date.getTime()) / (1000 * 60))
     
@@ -77,73 +91,28 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     return `قبل ${Math.floor(diffInMinutes / 1440)} يوم`
   }
 
-  // Fetch conversation data
-  const fetchConversation = useCallback(async () => {
+  // Load messages from API
+  const loadMessages = useCallback(async (pageNum: number) => {
     try {
-      const response = await fetch(`/api/main/messages/${conversationId}`)
+      const response = await fetch(`/api/main/chats/${userId}?page=${pageNum}&limit=20`)
+      
       if (!response.ok) {
         if (response.status === 404) {
-          throw new Error('المحادثة غير موجودة')
+          throw new Error('المستخدم غير موجود')
         }
         if (response.status === 401) {
           throw new Error('غير مصرح لك بالوصول')
         }
-        throw new Error('فشل في جلب بيانات المحادثة')
-      }
-      
-      const data = await response.json()
-      setConversation(data)
-    } catch (err) {
-      console.error('Error fetching conversation:', err)
-      setError(err instanceof Error ? err.message : 'حدث خطأ في جلب بيانات المحادثة')
-    }
-  }, [conversationId])
-
-  // Generate dummy messages (replace with actual API call)
-  const generateDummyMessages = (pageNum: number): Message[] => {
-    const messagesPerPage = 15
-    const startIndex = (pageNum - 1) * messagesPerPage
-    const dummyMessages = []
-    
-    for (let i = startIndex; i < startIndex + messagesPerPage && i < 50; i++) {
-      const now = new Date()
-      const messageTime = new Date(now.getTime() - (i * 30 * 60 * 1000))
-      
-      dummyMessages.push({
-        id: `m${i + 1}`,
-        fromMe: i % 3 === 0,
-        text: i % 3 === 0 
-          ? `رسالتي رقم ${i + 1}` 
-          : `رسالة من ${conversation?.name || 'المستخدم'} رقم ${i + 1}`,
-        timestamp: formatTimestamp(messageTime),
-        createdAt: messageTime,
-        status: i % 3 === 0 ? (i % 2 === 0 ? 'read' : 'delivered') : undefined
-      })
-    }
-    
-    return dummyMessages.reverse()
-  }
-
-  // Load messages from API
-  const loadMessages = useCallback(async (pageNum: number) => {
-    try {
-      // Replace with actual API call
-      const response = await fetch(`/api/main/messages/${conversationId}/messages?page=${pageNum}`)
-      
-      if (!response.ok) {
         throw new Error('فشل في جلب الرسائل')
       }
       
-      // For now, simulate API response
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      const newMessages = generateDummyMessages(pageNum)
-      return newMessages
+      const data: Conversation = await response.json()
+      return data
     } catch (err) {
       console.error('Error loading messages:', err)
       throw err
     }
-  }, [conversationId, conversation?.name])
+  }, [userId])
 
   // Scroll to bottom function
   const scrollToBottom = useCallback(() => {
@@ -160,8 +129,11 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       setError(null)
       shouldScrollToBottom.current = true
       
-      const initialMessages = await loadMessages(1)
-      setMessages(initialMessages)
+      const chatData = await loadMessages(1)
+      setConversation(chatData)
+      setMessages(chatData.messages)
+      setHasMoreMessages(chatData.pagination.hasMore)
+      setPage(1)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'حدث خطأ في جلب الرسائل')
     } finally {
@@ -181,13 +153,14 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       const previousScrollHeight = container?.scrollHeight || 0
       
       const nextPage = page + 1
-      const newMessages = await loadMessages(nextPage)
+      const chatData = await loadMessages(nextPage)
       
-      if (newMessages.length === 0) {
+      if (chatData.messages.length === 0) {
         setHasMoreMessages(false)
       } else {
-        setMessages(prev => [...newMessages, ...prev])
+        setMessages(prev => [...chatData.messages, ...prev])
         setPage(nextPage)
+        setHasMoreMessages(chatData.pagination.hasMore)
         
         // Maintain scroll position
         if (container) {
@@ -219,60 +192,53 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     if (!text.trim()) return
     
     try {
+      const tempId = Date.now().toString()
       const newMessage: Message = {
-        id: Date.now().toString(),
-        fromMe: true,
-        text: text.trim(),
-        timestamp: 'الآن',
-        createdAt: new Date(),
-        status: 'sent'
+        id: tempId,
+        content: text.trim(),
+        senderId: 'current-user', // This will be set by the API
+        senderName: 'أنت',
+        timestamp: new Date().toISOString(),
+        isOwn: true,
+        messageType: 'TEXT'
       }
       
-      // Add message to UI immediately
+      // Add message to UI immediately (optimistic update)
       setMessages(prev => [...prev, newMessage])
       setText("")
       shouldScrollToBottom.current = true
       
       // Send to API
-      const response = await fetch(`/api/main/messages/${conversationId}/send`, {
+      const response = await fetch(`/api/main/chats/${userId}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text: newMessage.text,
-          tempId: newMessage.id
+          content: newMessage.content,
+          messageType: 'TEXT'
         })
       })
       
       if (response.ok) {
-        const sentMessage = await response.json()
+        const result = await response.json()
         // Update message with server response
         setMessages(prev => prev.map(msg => 
-          msg.id === newMessage.id 
-            ? { ...msg, id: sentMessage.id, status: 'delivered' }
+          msg.id === tempId 
+            ? { ...result.message, createdAt: new Date(result.message.timestamp) }
             : msg
         ))
+      } else {
+        // Remove message if sending failed
+        setMessages(prev => prev.filter(msg => msg.id !== tempId))
+        throw new Error('فشل في إرسال الرسالة')
       }
-      
-      // Simulate reply (remove in production)
-      setTimeout(() => {
-        const replyMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          fromMe: false,
-          text: `رد على: ${newMessage.text}`,
-          timestamp: 'الآن',
-          createdAt: new Date()
-        }
-        setMessages(prev => [...prev, replyMessage])
-        shouldScrollToBottom.current = true
-      }, 2000)
       
     } catch (err) {
       console.error('Error sending message:', err)
-      // Handle error - maybe show notification
+      // Could show a toast notification here
     }
-  }, [text, conversationId])
+  }, [text, userId])
 
   // Handle key press
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
@@ -282,13 +248,31 @@ export default function ChatPage({ params }: { params: { id: string } }) {
     }
   }, [sendMessage])
 
+  // Mark messages as read
+  const markAsRead = useCallback(async () => {
+    if (!conversation) return
+    
+    try {
+      await fetch(`/api/main/chats/${userId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'markAsRead'
+        })
+      })
+    } catch (err) {
+      console.error('Error marking messages as read:', err)
+    }
+  }, [userId, conversation])
+
   // Initial load effect
   useEffect(() => {
-    if (conversationId) {
-      fetchConversation()
+    if (userId) {
       loadInitialMessages()
     }
-  }, [conversationId, fetchConversation, loadInitialMessages])
+  }, [userId, loadInitialMessages])
 
   // Auto-scroll effect
   useEffect(() => {
@@ -298,6 +282,13 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       setTimeout(scrollToBottom, 100)
     }
   }, [messages, scrollToBottom])
+
+  // Mark as read when component mounts or conversation changes
+  useEffect(() => {
+    if (conversation && !isLoading) {
+      markAsRead()
+    }
+  }, [conversation, isLoading, markAsRead])
 
   // Show error if conversation not found
   if (error && !isLoading) {
@@ -312,7 +303,6 @@ export default function ChatPage({ params }: { params: { id: string } }) {
           <Button 
             onClick={() => {
               setError(null)
-              fetchConversation()
               loadInitialMessages()
             }} 
             className="bg-blue-600 hover:bg-blue-700"
@@ -371,40 +361,27 @@ export default function ChatPage({ params }: { params: { id: string } }) {
           <div className="flex items-center gap-3">
             <div className="relative">
               <Avatar className="h-10 w-10 ring-2 ring-blue-100">
-                {conversation.avatarUrl ? (
-                  <AvatarImage src={conversation.avatarUrl} alt={conversation.name} />
+                {conversation.participant.avatar ? (
+                  <AvatarImage src={conversation.participant.avatar} alt={conversation.participant.name} />
                 ) : (
-                  <AvatarFallback className={`bg-gradient-to-br ${
-                    conversation.isGroup 
-                      ? 'from-purple-500 to-pink-600' 
-                      : 'from-blue-500 to-purple-600'
-                  } text-white font-medium`}>
-                    {conversation.isGroup ? (
-                      <Users className="h-5 w-5" />
-                    ) : (
-                      getAvatarLetter(conversation.name)
-                    )}
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-purple-600 text-white font-medium">
+                    {getAvatarLetter(conversation.participant.name)}
                   </AvatarFallback>
                 )}
               </Avatar>
-              {conversation.isOnline && !conversation.isGroup && (
+              {conversation.participant.isOnline && (
                 <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
               )}
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-gray-900">{conversation.name}</h3>
-                {conversation.isGroup && (
-                  <span className="text-xs text-gray-500">
-                    ({conversation.groupMembers} أعضاء)
-                  </span>
-                )}
+                <h3 className="font-semibold text-gray-900">{conversation.participant.name}</h3>
               </div>
               <p className="text-xs text-gray-500">
-                {conversation.isOnline ? (
+                {conversation.participant.isOnline ? (
                   <span className="text-green-600 font-medium">متصل الآن</span>
                 ) : (
-                  conversation.lastSeen || 'غير متصل'
+                  conversation.participant.lastSeen || 'غير متصل'
                 )}
               </p>
             </div>
@@ -439,10 +416,19 @@ export default function ChatPage({ params }: { params: { id: string } }) {
         )}
         
         {/* End of messages indicator */}
-        {!hasMoreMessages && (
+        {!hasMoreMessages && messages.length > 0 && (
           <div className="text-center py-6">
             <div className="inline-block px-4 py-2 bg-white/60 backdrop-blur-sm rounded-full shadow-sm">
               <span className="text-xs text-gray-500">بداية المحادثة</span>
+            </div>
+          </div>
+        )}
+
+        {/* No messages */}
+        {messages.length === 0 && !isLoading && (
+          <div className="text-center py-12">
+            <div className="inline-block px-6 py-4 bg-white/60 backdrop-blur-sm rounded-xl shadow-sm">
+              <span className="text-sm text-gray-500">لا توجد رسائل بعد</span>
             </div>
           </div>
         )}
@@ -451,29 +437,31 @@ export default function ChatPage({ params }: { params: { id: string } }) {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.fromMe ? 'justify-end' : 'justify-start'}`}
+            className={`flex ${msg.isOwn ? 'justify-end' : 'justify-start'}`}
           >
             <div
               className={`max-w-[75%] sm:max-w-[60%] md:max-w-lg rounded-2xl px-4 py-3 shadow-sm transition-all duration-200 hover:shadow-md ${
-                msg.fromMe 
+                msg.isOwn 
                   ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-br-sm' 
                   : 'bg-white/90 backdrop-blur-sm text-gray-800 rounded-bl-sm border border-gray-100/50'
               }`}
             >
-              <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.text}</p>
+              <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
               <div className="flex items-center justify-end mt-1 gap-2">
                 <span 
                   className={`text-xs ${
-                    msg.fromMe ? 'text-blue-100' : 'text-gray-400'
+                    msg.isOwn ? 'text-blue-100' : 'text-gray-400'
                   }`}
                 >
-                  {msg.timestamp}
+                  {formatTimestamp(msg.timestamp)}
                 </span>
-                {msg.fromMe && msg.status && (
+                {msg.isOwn && (
                   <div className="flex items-center">
-                    {msg.status === 'sent' && <div className="w-2 h-2 border border-blue-200 rounded-full"></div>}
-                    {msg.status === 'delivered' && <div className="w-2 h-2 bg-blue-200 rounded-full"></div>}
-                    {msg.status === 'read' && <div className="w-2 h-2 bg-green-400 rounded-full"></div>}
+                    {msg.read ? (
+                      <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                    ) : (
+                      <div className="w-2 h-2 bg-blue-200 rounded-full"></div>
+                    )}
                   </div>
                 )}
               </div>
