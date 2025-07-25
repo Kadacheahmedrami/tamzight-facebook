@@ -2,15 +2,24 @@
 
 import Link from "next/link"
 import { useEffect, useState, useMemo } from "react"
-import { Card } from "@/components/ui/card"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { 
-  Search, Pin, MessageCircle, Users,
-  Phone, Video, Settings, CheckCheck, Check, Clock, Loader2
+import {
+  Search,
+  Pin,
+  MessageCircle,
+  Users,
+  Phone,
+  Video,
+  Settings,
+  CheckCheck,
+  Check,
+  Clock,
+  Loader2,
 } from "lucide-react"
+import { pusherClient } from "@/lib/pusher"
 
 interface Conversation {
   id: string
@@ -22,19 +31,20 @@ interface Conversation {
   unreadCount?: number
   isPinned?: boolean
   isArchived?: boolean
-  messageStatus?: 'sent' | 'delivered' | 'read'
+  messageStatus?: "sent" | "delivered" | "read"
   isTyping?: boolean
   lastActivity?: Date
   isGroup?: boolean
   groupMembers?: number
+  conversationId?: string
 }
 
-type FilterType = 'all' | 'unread' | 'groups'
+type FilterType = "all" | "unread" | "groups"
 
 export default function MessagesListPage() {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [search, setSearch] = useState("")
-  const [filter, setFilter] = useState<FilterType>('all')
+  const [filter, setFilter] = useState<FilterType>("all")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -43,57 +53,90 @@ export default function MessagesListPage() {
     try {
       setLoading(true)
       setError(null)
-      
-      const response = await fetch('/api/main/chats')
+
+      const response = await fetch("/api/main/chats")
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('غير مصرح لك بالوصول')
+          throw new Error("غير مصرح لك بالوصول")
         }
-        throw new Error('فشل في جلب المحادثات')
+        throw new Error("فشل في جلب المحادثات")
       }
-      
+
       const data = await response.json()
-      
-      // Convert lastActivity string back to Date object for sorting
+      console.log("Fetched conversations:", data) // Debug log
+
+      // Process the data
       const processedData = data.map((conversation: any) => ({
         ...conversation,
-        lastActivity: new Date(conversation.lastActivity)
+        lastActivity: new Date(conversation.lastActivity),
       }))
-      
+
       setConversations(processedData)
     } catch (err) {
-      console.error('Error fetching conversations:', err)
-      setError(err instanceof Error ? err.message : 'حدث خطأ في جلب المحادثات')
+      console.error("Error fetching conversations:", err)
+      setError(err instanceof Error ? err.message : "حدث خطأ في جلب المحادثات")
     } finally {
       setLoading(false)
     }
   }
 
+  // Set up real-time updates
   useEffect(() => {
     fetchConversations()
+
+    // Subscribe to real-time updates for new messages
+    const channel = pusherClient.subscribe("conversations")
+
+    channel.bind("new-message", (data: any) => {
+      setConversations((prev) => {
+        const updated = prev.map((conv) => {
+          if (conv.conversationId === data.conversationId) {
+            return {
+              ...conv,
+              lastMessage: data.message.content,
+              lastActivity: new Date(data.message.timestamp),
+              unreadCount: (conv.unreadCount || 0) + 1,
+            }
+          }
+          return conv
+        })
+
+        // Sort by last activity
+        return updated.sort((a, b) => {
+          if (a.isPinned && !b.isPinned) return -1
+          if (!a.isPinned && b.isPinned) return 1
+          return (b.lastActivity?.getTime() || 0) - (a.lastActivity?.getTime() || 0)
+        })
+      })
+    })
+
+    return () => {
+      pusherClient.unsubscribe("conversations")
+    }
   }, [])
 
   const filteredConversations = useMemo(() => {
-    const filtered = conversations.filter(conversation => {
-      const matchesSearch = conversation.name.toLowerCase().includes(search.toLowerCase()) || 
-                           conversation.lastMessage.toLowerCase().includes(search.toLowerCase())
+    const filtered = conversations.filter((conversation) => {
+      const matchesSearch =
+        conversation.name.toLowerCase().includes(search.toLowerCase()) ||
+        conversation.lastMessage.toLowerCase().includes(search.toLowerCase())
       if (!matchesSearch) return false
-      
+
       switch (filter) {
-        case 'unread':
+        case "unread":
           return conversation.unreadCount && conversation.unreadCount > 0
-        case 'groups':
+        case "groups":
           return conversation.isGroup
         default:
           return true
       }
     })
-    
+
     return filtered.sort((a, b) => {
       // Pinned conversations first
       if (a.isPinned && !b.isPinned) return -1
       if (!a.isPinned && b.isPinned) return 1
-      
+
       // Then sort by last activity
       return (b.lastActivity?.getTime() || 0) - (a.lastActivity?.getTime() || 0)
     })
@@ -101,11 +144,11 @@ export default function MessagesListPage() {
 
   const getStatusIcon = (status?: string) => {
     switch (status) {
-      case 'sent':
+      case "sent":
         return <Check className="w-3 h-3 text-gray-400" />
-      case 'delivered':
+      case "delivered":
         return <CheckCheck className="w-3 h-3 text-gray-400" />
-      case 'read':
+      case "read":
         return <CheckCheck className="w-3 h-3 text-blue-500" />
       default:
         return <Clock className="w-3 h-3 text-gray-400" />
@@ -168,59 +211,66 @@ export default function MessagesListPage() {
             </Button>
           </div>
         </div>
-        
+
         {/* Search */}
         <div className="relative mb-4">
           <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-          <Input 
-            placeholder="ابحث عن صديق أو رسالة..." 
-            value={search} 
-            onChange={e => setSearch(e.target.value)} 
-            className="pr-10 bg-white text-right" 
+          <Input
+            placeholder="ابحث عن صديق أو رسالة..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pr-10 bg-white text-right"
           />
         </div>
-        
+
         {/* Filters */}
         <div className="flex gap-2 overflow-x-auto pb-2">
           {[
-            { key: 'all', label: 'الكل' },
-            { key: 'unread', label: 'غير مقروءة' },
-            { key: 'groups', label: 'مجموعات', icon: <Users className="w-4 h-4 ml-1" /> }
+            { key: "all", label: "الكل" },
+            { key: "unread", label: "غير مقروءة" },
+            { key: "groups", label: "مجموعات", icon: <Users className="w-4 h-4 ml-1" /> },
           ].map(({ key, label, icon }) => (
-            <Button 
-              key={key} 
-              variant={filter === key ? 'default' : 'outline'} 
-              size="sm" 
-              onClick={() => setFilter(key as FilterType)} 
+            <Button
+              key={key}
+              variant={filter === key ? "default" : "outline"}
+              size="sm"
+              onClick={() => setFilter(key as FilterType)}
               className="whitespace-nowrap"
             >
-              {label}{icon}
+              {label}
+              {icon}
             </Button>
           ))}
         </div>
       </div>
-      
+
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto">
         {filteredConversations.length > 0 ? (
-          filteredConversations.map(conversation => (
+          filteredConversations.map((conversation) => (
             <div key={conversation.id}>
-              <Link href={`/main/chats/${conversation.id}`}>
-                <div className={`flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors ${
-                  conversation.unreadCount && conversation.unreadCount > 0 ? 'bg-blue-50/50' : ''
-                }`}>
+              <Link href={`/main/chats/${conversation.id}`} className="block">
+                <div
+                  className={`flex items-center gap-3 p-4 hover:bg-gray-50 cursor-pointer border-b border-gray-100 transition-colors ${
+                    conversation.unreadCount && conversation.unreadCount > 0 ? "bg-blue-50/50" : ""
+                  }`}
+                >
                   {/* Avatar */}
                   <div className="relative">
                     <Avatar className="w-12 h-12">
                       {conversation.avatarUrl ? (
-                        <AvatarImage src={conversation.avatarUrl} alt={conversation.name} />
+                        <AvatarImage src={conversation.avatarUrl || "/placeholder.svg"} alt={conversation.name} />
                       ) : (
-                        <AvatarFallback className={conversation.isGroup ? 'bg-purple-100' : 'bg-blue-100'}>
+                        <AvatarFallback className={conversation.isGroup ? "bg-purple-100" : "bg-blue-100"}>
                           {conversation.isGroup ? (
                             <Users className="w-6 h-6 text-purple-600" />
                           ) : (
                             <span className="text-blue-600 font-medium">
-                              {conversation.name.split(' ').map(n => n.charAt(0)).join('').substring(0, 2)}
+                              {conversation.name
+                                .split(" ")
+                                .map((n) => n.charAt(0))
+                                .join("")
+                                .substring(0, 2)}
                             </span>
                           )}
                         </AvatarFallback>
@@ -230,12 +280,14 @@ export default function MessagesListPage() {
                       <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                     )}
                   </div>
-                  
+
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <h4 className={`font-medium ${conversation.unreadCount && conversation.unreadCount > 0 ? 'text-gray-900' : 'text-gray-700'}`}>
+                        <h4
+                          className={`font-medium ${conversation.unreadCount && conversation.unreadCount > 0 ? "text-gray-900" : "text-gray-700"}`}
+                        >
                           {conversation.name}
                         </h4>
                         {conversation.isPinned && <Pin className="w-3 h-3 text-gray-400" />}
@@ -254,34 +306,36 @@ export default function MessagesListPage() {
                         )}
                       </div>
                     </div>
-                    
+
                     <div className="flex items-center justify-between mt-1">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         {conversation.isTyping ? (
                           <div className="flex items-center gap-1 text-green-600">
                             <div className="flex gap-1">
-                              {[0, 100, 200].map(delay => (
-                                <div 
-                                  key={delay} 
-                                  className="w-1 h-1 bg-green-600 rounded-full animate-bounce" 
-                                  style={{animationDelay: `${delay}ms`}}
+                              {[0, 100, 200].map((delay) => (
+                                <div
+                                  key={delay}
+                                  className="w-1 h-1 bg-green-600 rounded-full animate-bounce"
+                                  style={{ animationDelay: `${delay}ms` }}
                                 ></div>
                               ))}
                             </div>
                             <span className="text-sm">يكتب...</span>
                           </div>
                         ) : (
-                          <p className={`text-sm truncate ${
-                            conversation.unreadCount && conversation.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-600'
-                          }`}>
+                          <p
+                            className={`text-sm truncate ${
+                              conversation.unreadCount && conversation.unreadCount > 0
+                                ? "text-gray-900 font-medium"
+                                : "text-gray-600"
+                            }`}
+                          >
                             {conversation.lastMessage}
                           </p>
                         )}
                       </div>
                       {!conversation.isTyping && (
-                        <div className="flex items-center gap-1 mr-2">
-                          {getStatusIcon(conversation.messageStatus)}
-                        </div>
+                        <div className="flex items-center gap-1 mr-2">{getStatusIcon(conversation.messageStatus)}</div>
                       )}
                     </div>
                   </div>
@@ -297,10 +351,10 @@ export default function MessagesListPage() {
               </div>
               <div>
                 <p className="text-gray-500 text-lg mb-2">
-                  {search || filter !== 'all' ? 'لم يتم العثور على نتائج' : 'لا توجد محادثات'}
+                  {search || filter !== "all" ? "لم يتم العثور على نتائج" : "لا توجد محادثات"}
                 </p>
                 <p className="text-gray-400 text-sm">
-                  {search || filter !== 'all' ? 'جرب البحث بكلمات مختلفة' : 'ابدأ محادثة جديدة مع أصدقائك'}
+                  {search || filter !== "all" ? "جرب البحث بكلمات مختلفة" : "ابدأ محادثة جديدة مع أصدقائك"}
                 </p>
               </div>
             </div>
