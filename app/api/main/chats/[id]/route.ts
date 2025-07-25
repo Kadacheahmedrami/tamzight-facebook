@@ -1,3 +1,23 @@
+// First, create or update your types/next-auth.d.ts file:
+// types/next-auth.d.ts
+import NextAuth from "next-auth"
+
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string
+      name?: string | null
+      email?: string | null
+      image?: string | null
+    }
+  }
+
+  interface User {
+    id: string
+  }
+}
+
+// Then update your route.ts file:
 import { type NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 import { getServerSession } from "next-auth"
@@ -379,11 +399,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           type: "MESSAGE",
           message: `${currentUser.firstName} ${currentUser.lastName} sent you a message`,
           avatar: currentUser.avatar || currentUser.image,
-          data: JSON.stringify({
-            senderId: currentUserId,
-            conversationId,
-            messageId: message.id,
-          }),
+          // Remove the data/metadata field for now - add other fields as needed based on your schema
+          // You can add additional fields here based on your Prisma Notification model
         },
       })
     } catch (notificationError) {

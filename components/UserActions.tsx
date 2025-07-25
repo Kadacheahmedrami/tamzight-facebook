@@ -196,7 +196,7 @@ export default function UserActions({ user }: UserActionsProps) {
 
             {/* Messages Icon */}
             <div className="group" onMouseEnter={fetchMessages}>
-              <Link href={"/main/messages"}>
+              <Link href={"/main/chats"}>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -261,7 +261,7 @@ export default function UserActions({ user }: UserActionsProps) {
                 {/* Footer */}
                 {messages.length > 0 && (
                   <div className="border-t border-gray-200 p-2 shrink-0">
-                    <Link href="/main/messages" className="block w-full p-2 text-sm text-center text-gray-600 hover:bg-gray-50 rounded transition-colors">
+                    <Link href="/main/chats" className="block w-full p-2 text-sm text-center text-gray-600 hover:bg-gray-50 rounded transition-colors">
                       عرض جميع الرسائل
                     </Link>
                   </div>
@@ -397,7 +397,7 @@ export default function UserActions({ user }: UserActionsProps) {
             </Link>
 
             {/* Messages Icon */}
-            <Link href={"/main/messages"}>
+            <Link href={"/main/chats"}>
               <Button 
                 variant="ghost" 
                 size="sm" 
