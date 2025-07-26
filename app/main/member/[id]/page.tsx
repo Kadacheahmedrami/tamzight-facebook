@@ -4,16 +4,17 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import MemberPageClient from "./MemberPageClient"
 
-interface MemberData {
+// Define the server-side member data type that matches Prisma output
+interface ServerMemberData {
   id: string
   firstName: string
   lastName: string
-  avatar?: string
-  coverImage?: string
-  bio?: string
-  location?: string
-  occupation?: string
-  joinDate: string
+  avatar: string | null
+  coverImage: string | null
+  bio: string | null
+  location: string | null
+  occupation: string | null
+  joinDate: Date
   email: string
   _count: {
     posts: number
@@ -29,7 +30,7 @@ interface MemberData {
       id: string
       name: string
       color: string
-      description?: string
+      description: string | null
     }
   }>
   friendshipStatus?: 'none' | 'pending_sent' | 'pending_received' | 'friends'
@@ -84,7 +85,7 @@ async function getFriendshipStatus(currentUserId: string, targetUserId: string) 
   return 'none'
 }
 
-async function fetchMemberData(memberId: string, currentUserId?: string): Promise<MemberData | null> {
+async function fetchMemberData(memberId: string, currentUserId?: string): Promise<ServerMemberData | null> {
   try {
     const member = await prisma.user.findUnique({
       where: { id: memberId },
@@ -137,6 +138,7 @@ async function fetchMemberData(memberId: string, currentUserId?: string): Promis
 
     return {
       ...member,
+      joinDate: member.joinDate, // Keep as Date object
       friendshipStatus,
       isOwnProfile
     }
@@ -177,7 +179,22 @@ export default async function MemberPage({ params }: PageProps) {
   return (
     <MemberPageClient 
       memberId={memberId}
-      initialMemberData={initialMemberData}
+      initialMemberData={{
+        ...initialMemberData,
+        // Convert Date to string and null to undefined to match client interface
+        joinDate: initialMemberData.joinDate.toISOString(),
+        avatar: initialMemberData.avatar ?? undefined,
+        coverImage: initialMemberData.coverImage ?? undefined,
+        bio: initialMemberData.bio ?? undefined,
+        location: initialMemberData.location ?? undefined,
+        occupation: initialMemberData.occupation ?? undefined,
+        badges: initialMemberData.badges.map(userBadge => ({
+          badge: {
+            ...userBadge.badge,
+            description: userBadge.badge.description ?? undefined
+          }
+        }))
+      }}
       currentUserId={(session?.user as any)?.id}
       isAuthenticated={!!session}
     />
