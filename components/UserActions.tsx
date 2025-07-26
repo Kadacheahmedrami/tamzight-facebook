@@ -114,7 +114,7 @@ export default function UserActions({
           <div className="hidden md:flex items-center gap-3">
             {/* Profile Icon */}
             <div className="group">
-              <Link href={"/main/member"}>
+              <Link href={`/main/member/${user.id}`}>
                 <Button 
                   variant="ghost" 
                   size="sm" 
@@ -142,22 +142,22 @@ export default function UserActions({
                 </div>
                   {/* Content */}
                   <div className="flex-1 py-2 overflow-y-auto">
-                          <Link href="/main/member" className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                          <Link href={`/main/member/${user.id}`} className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                             <i className="fas fa-user-edit text-gray-500 ml-3"></i>
                             <span>متابعتك</span>
                           </Link>
-                          <div className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                          <Link href="/main/posts" className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                             <i className="fas fa-bookmark text-gray-500 ml-3"></i>
                             <span>محفوظاتك</span>
-                          </div>
-                          <div className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                          </Link>
+                          <Link href="/main/support" className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                             <i className="fas fa-handshake text-gray-500 ml-3"></i>
                             <span>كُن شريك التجمع</span>
-                          </div>
-                          <div className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 cursor-pointer transition-colors">
+                          </Link>
+                          <Link href="/main/support" className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
                             <i className="fas fa-users text-gray-500 ml-3"></i>
                             <span>انضم لفريق التجمع</span>
-                          </div>
+                          </Link>
                           <div className="border-t border-gray-200 mt-2 pt-2">
                             <div onClick={handleSignOut} className="flex items-center px-4 py-3 text-sm text-red-600 hover:bg-red-50 cursor-pointer transition-colors">
                               <i className="fas fa-sign-out-alt text-red-600 ml-3"></i>
@@ -350,7 +350,7 @@ export default function UserActions({
           {/* Mobile Icons - Simple clickable buttons without dropdowns */}
           <div className="md:hidden flex items-center gap-2">
             {/* Profile Icon */}
-            <Link href={"/main/member"}>
+            <Link href={`/main/member/${user.id}`}>
               <Button 
                 variant="ghost" 
                 size="sm" 

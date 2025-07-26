@@ -312,7 +312,7 @@ export async function POST(
         }
 
         await prisma.$transaction([
-          // Remove friendship
+          // Remove friendship records
           prisma.friendship.deleteMany({
             where: {
               OR: [
@@ -321,14 +321,14 @@ export async function POST(
               ]
             }
           }),
-          // Remove any accepted friend requests
+          // Remove any related friend requests (both pending and accepted)
           prisma.friendRequest.deleteMany({
             where: {
               OR: [
                 { senderId: currentUserId, receiverId: targetUserId },
                 { senderId: targetUserId, receiverId: currentUserId }
-              ],
-              status: 'accepted'
+              ]
+              // Remove the status filter to delete all related requests
             }
           })
         ])
