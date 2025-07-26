@@ -5,11 +5,11 @@ import LeftSidebar from "@/components/LeftSidebar";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Header from "@/components/header";
+import { getUserData } from "@/app/action/UserData";
 
 interface LayoutProps {
   children: ReactNode;
   showRightSidebar?: boolean;
- 
 }
 
 interface Stats {
@@ -25,21 +25,24 @@ interface Stats {
   support: number;
 }
 
-
-
-
-
 export default async function MainLayout({
   children,
   showRightSidebar = true,
-
 }: LayoutProps) {
-
-   const session = await getServerSession(authOptions);
-   const stats = await getStats(); // server action call
+  const session = await getServerSession(authOptions);
+  const stats = await getStats(); // server action call
+  const userData = await getUserData(); // server action call for user data
+  
   return (
     <>
-      <Header user={session?.user || null} stats={stats} /> 
+      <Header 
+        user={session?.user || null} 
+        stats={stats}
+        notifications={userData.notifications}
+        messages={userData.messages}
+        unreadNotifications={userData.unreadNotifications}
+        unreadMessages={userData.unreadMessages} 
+      /> 
       <div className="h-[calc(100vh-7vh)] bg-gray-50">
         <div className="max-w-7xl mx-auto flex h-full">
           {/* Desktop Sidebar */}

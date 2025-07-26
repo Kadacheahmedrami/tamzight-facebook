@@ -9,68 +9,45 @@ import { Input } from "@/components/ui/input"
 import { toast } from "@/components/ui/use-toast"
 
 interface Notification {
-  id: number
+  id: string
   type: string
   message: string
   timestamp: string
   read: boolean
-  avatar: string
+  avatar: string | null
 }
 
 interface Message {
-  id: number
+  id: string
+  senderId: string
   sender: string
   message: string
   timestamp: string
   read: boolean
-  avatar: string
+  avatar: string | null
 }
 
 interface UserActionsProps {
   user: any
+  notifications: Notification[]
+  messages: Message[]
+  unreadNotifications: number
+  unreadMessages: number
 }
 
-export default function UserActions({ user }: UserActionsProps) {
+export default function UserActions({ 
+  user, 
+  notifications, 
+  messages, 
+  unreadNotifications, 
+  unreadMessages 
+}: UserActionsProps) {
   const router = useRouter()
-  const [notifications, setNotifications] = useState<Notification[]>([])
-  const [messages, setMessages] = useState<Message[]>([])
-  const [notificationsLoading, setNotificationsLoading] = useState(false)
-  const [messagesLoading, setMessagesLoading] = useState(false)
   
   // Login form state
   const [loginEmail, setLoginEmail] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
   const [isLoggingIn, setIsLoggingIn] = useState(false)
-
-  // Fetch notifications
-  const fetchNotifications = async () => {
-    if (!user) return
-    setNotificationsLoading(true)
-    try {
-      const response = await fetch("/api/main/notifications")
-      const data = await response.json()
-      setNotifications(data)
-    } catch (error) {
-      console.error("Error fetching notifications:", error)
-    } finally {
-      setNotificationsLoading(false)
-    }
-  }
-
-  // Fetch messages
-  const fetchMessages = async () => {
-    if (!user) return
-    setMessagesLoading(true)
-    try {
-      const response = await fetch("/api/main/mess")
-      const data = await response.json()
-      setMessages(data)
-    } catch (error) {
-      console.error("Error fetching messages:", error)
-    } finally {
-      setMessagesLoading(false)
-    }
-  }
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -128,9 +105,6 @@ export default function UserActions({ user }: UserActionsProps) {
       console.error("Sign out error:", error)
     }
   }
-
-  const unreadNotifications = notifications.filter((n) => !n.read).length
-  const unreadMessages = messages.filter((m) => !m.read).length
 
   return (
     <div className="flex items-center gap-2 relative">
@@ -195,7 +169,7 @@ export default function UserActions({ user }: UserActionsProps) {
             </div>
 
             {/* Messages Icon */}
-            <div className="group" onMouseEnter={fetchMessages}>
+            <div className="group">
               <Link href={"/main/chats"}>
                 <Button 
                   variant="ghost" 
@@ -226,12 +200,7 @@ export default function UserActions({ user }: UserActionsProps) {
                 </div>
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto">
-                  {messagesLoading ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
-                      <span className="ml-2 text-sm text-gray-600">جاري التحميل...</span>
-                    </div>
-                  ) : messages.length > 0 ? (
+                  {messages.length > 0 ? (
                     <div className="py-2">
                       {messages.map((message) => (
                         <div
@@ -270,7 +239,7 @@ export default function UserActions({ user }: UserActionsProps) {
             </div>
 
             {/* Notifications Icon */}
-            <div className="group" onMouseEnter={fetchNotifications}>
+            <div className="group">
               <Link href={"/main/notifications"}>
                 <Button 
                   variant="ghost" 
@@ -301,12 +270,7 @@ export default function UserActions({ user }: UserActionsProps) {
                 </div>
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto">
-                  {notificationsLoading ? (
-                    <div className="flex items-center justify-center h-full">
-                      <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-gray-600"></div>
-                      <span className="ml-2 text-sm text-gray-600">جاري التحميل...</span>
-                    </div>
-                  ) : notifications.length > 0 ? (
+                  {notifications.length > 0 ? (
                     <div className="py-2">
                       {notifications.map((notification) => (
                         <div

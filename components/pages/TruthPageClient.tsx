@@ -149,7 +149,7 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
 
         console.log(`Fetching truth: category=${category}, page=${page}, isLoadMore=${isLoadMore}`)
 
-        const response = await fetch(`/api/main/truth?${params}`, {
+        const response = await fetch(`/api/main/truths?${params}`, {
           signal: abortController.signal,
         })
 

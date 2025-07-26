@@ -17,6 +17,7 @@ interface SearchResult {
   type: string
   url: string
 }
+
 interface Stats {
   posts: number
   truth: number
@@ -30,13 +31,23 @@ interface Stats {
   support: number
 }
 
-interface Message {
-  id: number
-  sender: string
-  message: string 
+interface Notification {
+  id: string
+  type: string
+  message: string
   timestamp: string
   read: boolean
-  avatar: string
+  avatar: string | null
+}
+
+interface Message {
+  id: string
+  senderId: string
+  sender: string
+  message: string
+  timestamp: string
+  read: boolean
+  avatar: string | null
 }
 
 interface User {
@@ -49,16 +60,26 @@ interface User {
 interface ClientHeaderProps {
   user: User | null
   stats?: Stats
+  notifications: Notification[]
+  messages: Message[]
+  unreadNotifications: number
+  unreadMessages: number
 }
 
-export default function ClientHeader({ user ,stats }: ClientHeaderProps) {
+export default function ClientHeader({ 
+  user, 
+  stats, 
+  notifications, 
+  messages, 
+  unreadNotifications, 
+  unreadMessages 
+}: ClientHeaderProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [showResults, setShowResults] = useState(false)
   const [searchLoading, setSearchLoading] = useState(false)
   const [currentLogoIndex, setCurrentLogoIndex] = useState(0)
   const searchRef = useRef<HTMLDivElement>(null)
-  const [messages, setMessages] = useState<Message[]>([])
   const pathname = usePathname()
   
   // Check if user is authenticated
@@ -149,8 +170,6 @@ export default function ClientHeader({ user ,stats }: ClientHeaderProps) {
     setShowResults(false)
   }
 
-  const unreadMessages = messages.filter((m) => !m.read).length
-
   return (
     <>
       <header className="bg-white border-b border-gray-200 sticky top-0 z-50 shadow-sm">
@@ -172,8 +191,14 @@ export default function ClientHeader({ user ,stats }: ClientHeaderProps) {
                   </Link>
                 </div>
               ) : (
-                // All other cases - show UserActions
-                <UserActions user={user} />
+                // All other cases - show UserActions with props
+                <UserActions 
+                  user={user}
+                  notifications={notifications}
+                  messages={messages}
+                  unreadNotifications={unreadNotifications}
+                  unreadMessages={unreadMessages}
+                />
               )}
             </div>
 
