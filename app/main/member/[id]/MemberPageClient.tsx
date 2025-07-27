@@ -1,6 +1,7 @@
 // app/main/member/[id]/MemberPageClient.tsx
 "use client"
 import { useState } from "react"
+import { Session } from "next-auth"
 import MemberProfileHeader from "./MemberProfileHeader"
 import MemberContentTabs from "./MemberContentTabs"
 
@@ -25,13 +26,15 @@ interface MemberPageClientProps {
   initialMemberData: MemberData
   currentUserId?: string
   isAuthenticated: boolean
-}
+  session: Session | null
+} 
 
 export default function MemberPageClient({ 
   memberId, 
   initialMemberData, 
   currentUserId, 
-  isAuthenticated 
+  isAuthenticated,
+  session
 }: MemberPageClientProps) {
   const [memberData, setMemberData] = useState<MemberData>(initialMemberData)
 
@@ -51,6 +54,7 @@ export default function MemberPageClient({
       <MemberContentTabs 
         memberData={memberData}
         memberId={memberId}
+        session={session}
       />
     </div>
   )

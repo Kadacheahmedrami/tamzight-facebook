@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import MemberPageClient from "./MemberPageClient"
+import type { Session } from "next-auth"
 
 // Define the server-side member data type that matches Prisma output
 interface ServerMemberData {
@@ -177,7 +178,9 @@ export default async function MemberPage({ params }: PageProps) {
   }
 
   return (
-    <MemberPageClient 
+    <>
+     <MemberPageClient 
+      session={session}
       memberId={memberId}
       initialMemberData={{
         ...initialMemberData,
@@ -198,5 +201,7 @@ export default async function MemberPage({ params }: PageProps) {
       currentUserId={(session?.user as any)?.id}
       isAuthenticated={!!session}
     />
+    </>
+   
   )
 }

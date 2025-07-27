@@ -196,7 +196,7 @@ body {
   /* Mobile-friendly modals */
   .modal-content {
     margin: 1rem;
-    max-height: calc(100vh - 2rem);
+    max-height: calc(100svh - 2rem);
     overflow-y: auto;
   }
 

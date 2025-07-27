@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import InteractionsBar from "@/components/Cards/InteractionsBar"
 import CommentsModal from "@/components/Cards/CommentsModal"
 import ReactionsDisplay from "@/components/Cards/ReactionsDisplay"
+import { Session } from "inspector/promises"
 
 interface User {
   id: number
@@ -54,6 +55,7 @@ const categoryConfig = {
   product: { displayName: 'منتج', color: 'bg-pink-100 text-pink-800', emoji: '🛍️' },
   truth: { displayName: 'حقيقة', color: 'bg-teal-100 text-teal-800', emoji: '✨' }
 } as const
+
 
 const typeToApiEndpoint = {
   post: 'posts', book: 'books', idea: 'ideas', image: 'images', video: 'videos',

@@ -19,11 +19,11 @@ declare module "next-auth" {
 
 // Then update your route.ts file:
 import { type NextRequest, NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
+import { prisma  } from "@/lib/prisma"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 
-const prisma = new PrismaClient()
+
 
 interface RouteParams {
   params: Promise<{ id: string }>

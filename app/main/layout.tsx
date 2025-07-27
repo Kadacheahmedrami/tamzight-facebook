@@ -43,7 +43,7 @@ export default async function MainLayout({
         unreadNotifications={userData.unreadNotifications}
         unreadMessages={userData.unreadMessages} 
       /> 
-      <div className="h-[calc(100vh-7vh)] bg-gray-50">
+      <div className="h-[calc(100svh-7svh)] bg-gray-50">
         <div className="max-w-7xl mx-auto flex h-full">
           {/* Desktop Sidebar */}
           <div className="hidden lg:block h-full">
@@ -51,7 +51,7 @@ export default async function MainLayout({
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 h-full md:ml-4 md:mr-6 overflow-x-hidden overflow-y-auto p-4">
+          <div className="flex-1 h-full mb-8  md:ml-4  md:mr-6 overflow-x-hidden overflow-y-auto p-4">
             {children}
           </div>
 
