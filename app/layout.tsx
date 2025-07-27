@@ -19,11 +19,11 @@ export const metadata: Metadata = {
     "اللغة الأمازيغية", "تواصل اجتماعي", "الهوية الأمازيغية",
     "الجزائر", "المغرب", "تونس", "شمال إفريقيا", "أمازيغ"
   ],
-  authors: [{ name: "Tamazight Team", url: "https://your-website.com" }],
+  authors: [{ name: "Tamazight Team", url: "https://tamzight.vercel.app" }],
   openGraph: {
     title: "Tamazight - الأمازيغية هويتنا",
     description: "منصة تواصل اجتماعي للثقافة الأمازيغية",
-    url: "https://your-website.com",
+    url: "https://tamzight.vercel.app",
     siteName: "Tamazight",
     images: [
       {
@@ -42,7 +42,6 @@ export const metadata: Metadata = {
     description: "منصة تواصل اجتماعي للثقافة الأمازيغية",
     images: ["/og-image.jpg"],
   },
-  themeColor: "#00796B",
 };
 
 export default async function RootLayout({
