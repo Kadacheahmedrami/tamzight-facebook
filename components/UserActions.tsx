@@ -107,7 +107,7 @@ export default function UserActions({
   }
 
   return (
-    <div className="flex items-center gap-2 relative">
+    <div className="flex items-center md:gap-2 relative">
       {user ? (
         <>
           {/* Desktop Icons */}
@@ -118,7 +118,7 @@ export default function UserActions({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                  className="relative h-10 w-11 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
                 >
                   <i className="fas fa-user-circle text-xl"></i>
                 </Button>
@@ -174,7 +174,7 @@ export default function UserActions({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                  className="relative h-10 w-11 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
                 >
                   <i className="fas fa-comments text-lg"></i>
                   {unreadMessages > 0 && (
@@ -244,7 +244,7 @@ export default function UserActions({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                  className="relative h-10 w-11 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
                 >
                   <i className="fas fa-bell text-lg"></i>
                   {unreadNotifications > 0 && (
@@ -313,7 +313,7 @@ export default function UserActions({
                 <Button 
                   variant="ghost" 
                   size="sm" 
-                  className="relative h-10 w-10 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                  className="relative h-10 w-11 rounded-full mx-2 md:mx-0 bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
                 >
                   <i className="fas fa-user-friends text-lg"></i>
                   <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -348,13 +348,13 @@ export default function UserActions({
           </div>
 
           {/* Mobile Icons - Simple clickable buttons without dropdowns */}
-          <div className="md:hidden flex items-center gap-2">
+          <div className="md:hidden flex items-center gap-1">
             {/* Profile Icon */}
             <Link href={`/main/member/${user.id}`}>
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                className="relative h-10 w-11 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
               >
                 <i className="fas fa-user-circle text-xl"></i>
               </Button>
@@ -365,7 +365,7 @@ export default function UserActions({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                className="relative h-10 w-11 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
               >
                 <i className="fas fa-comments text-lg"></i>
                 {unreadMessages > 0 && (
@@ -381,7 +381,7 @@ export default function UserActions({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                className="relative h-10 w-11 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
               >
                 <i className="fas fa-bell text-lg"></i>
                 {unreadNotifications > 0 && (
@@ -397,7 +397,7 @@ export default function UserActions({
               <Button 
                 variant="ghost" 
                 size="sm" 
-                className="relative h-10 w-10 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
+                className="relative h-10 w-11 rounded-full bg-gray-50 border border-blue-200 text-[#4531fc] hover:bg-blue-50 hover:text-[#4531fc] p-0 transition-colors"
               >
                 <i className="fas fa-user-friends text-lg"></i>
                 <span className="absolute -top-1 -left-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">

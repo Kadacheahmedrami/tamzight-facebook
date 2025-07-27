@@ -130,15 +130,15 @@ export default function ClientHeader({
             </div>
 
             {/* Logo and Site Name - Right */}
-            <div className="flex items-center gap-2">
-              <Link href={isAuthenticated ? "/main" : "/"} className="flex items-center gap-2">
-                <h1 className="text-[#4531fc] text-lg font-medium md:text-3xl md:font-extrabold">
+            <div className="flex items-center md:gap-2">
+              <Link href={isAuthenticated ? "/main" : "/"} className="flex items-center gap-0 md:gap-2">
+                <h1 className="text-[#4531fc] text-sm sm:text-lg font-bold md:text-3xl md:font-bold">
                   TAMAZIGHT
                 </h1>
                 <img 
                   src="/logo/logo3.png"
                   alt="Tamazight Logo" 
-                  className="h-8 sm:h-10 w-auto" 
+                  className="hidden sm:block sm:h-10 w-auto" 
                 />
               </Link>
             </div>
