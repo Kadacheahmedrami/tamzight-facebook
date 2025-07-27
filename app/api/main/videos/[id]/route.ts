@@ -12,9 +12,9 @@ async function getCurrentUser(req: NextRequest) {
 }
 
 // GET /api/main/videos/[id] - Get a specific video with full details
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const currentUser = await getCurrentUser(req);
 
     // Increment view count
@@ -123,9 +123,9 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 // POST /api/main/videos/[id] - Handle likes, reactions, shares, comments
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -336,9 +336,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 }
 
 // DELETE /api/main/videos/[id] - Only author can delete
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -358,9 +358,9 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
 }
 
 // PATCH /api/main/videos/[id] - Only author can edit
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, context: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = params;
+    const { id } = await context.params;
     const user = await getCurrentUser(req);
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -409,4 +409,4 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error', details: (error as Error).message }, { status: 500 });
   }
-} 
+  }

@@ -1,6 +1,4 @@
 "use client"
-
-import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -64,30 +62,12 @@ export default function ClientHeader({
   unreadNotifications, 
   unreadMessages 
 }: ClientHeaderProps) {
-  const [currentLogoIndex, setCurrentLogoIndex] = useState(0)
   const pathname = usePathname()
   
   // Check if user is authenticated
   const isAuthenticated = user && user.id
   // Check if we're on the landing page
   const isLandingPage = pathname === "/"
-
-  // Logo rotation array
-  const logos = [
-    "/logo/logo4.png",
-    "/logo/logo3.png",
-    "/logo/logo2.png",
-    "/logo/logo1.png"
-  ]
-
-  // Logo rotation effect
-  useEffect(() => {
-    const logoInterval = setInterval(() => {
-      setCurrentLogoIndex((prevIndex) => (prevIndex + 1) % logos.length)
-    }, 2000) // Change every 2 seconds
-
-    return () => clearInterval(logoInterval)
-  }, [logos.length])
 
   return (
     <>
@@ -152,13 +132,13 @@ export default function ClientHeader({
             {/* Logo and Site Name - Right */}
             <div className="flex items-center gap-2">
               <Link href={isAuthenticated ? "/main" : "/"} className="flex items-center gap-2">
-                <h1 className="text-[#4531fc] hidden md:block text-xl md:text-3xl font-extrabold">
+                <h1 className="text-[#4531fc] text-lg font-medium md:text-3xl md:font-extrabold">
                   TAMAZIGHT
                 </h1>
                 <img 
-                  src={logos[currentLogoIndex]} 
+                  src="/logo/logo3.png"
                   alt="Tamazight Logo" 
-                  className="h-8 sm:h-10 w-auto transition-opacity duration-300" 
+                  className="h-8 sm:h-10 w-auto" 
                 />
               </Link>
             </div>

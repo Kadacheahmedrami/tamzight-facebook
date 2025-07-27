@@ -111,7 +111,7 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
       const queryString = params.toString()
       const url = queryString ? `?${queryString}` : ""
 
-      router.replace(`/main/truth${url}`, { scroll: false })
+      router.replace(`/main/truths${url}`, { scroll: false })
     },
     [router],
   )
@@ -506,8 +506,8 @@ export default function TruthPageClient({ session, searchParams }: PostsPageClie
               userHasLiked={post.userHasLiked}
               userReaction={post.userReaction}
               reactions={post.reactions}
-              apiEndpoint={"truth"}
-              detailsRoute={"/main/truth"}
+              apiEndpoint={"truths"}
+              detailsRoute={"/main/truths"}
             />
           ))}
 

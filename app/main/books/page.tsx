@@ -8,16 +8,16 @@ interface SearchParams {
 }
 
 interface BooksPageProps {
-  searchParams: SearchParams
+  searchParams: Promise<SearchParams>
 }
 
 export default async function BooksPage({ searchParams }: BooksPageProps) {
   const session = await getServerSession(authOptions)
-
+  const resolvedSearchParams = await searchParams
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-6">
-        <BooksPageClient session={session} searchParams={searchParams} />
+        <BooksPageClient session={session} searchParams={resolvedSearchParams} />
       </div>
     </div>
   )

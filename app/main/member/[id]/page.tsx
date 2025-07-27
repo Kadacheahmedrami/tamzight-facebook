@@ -3,7 +3,6 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import MemberPageClient from "./MemberPageClient"
-import type { Session } from "next-auth"
 
 // Define the server-side member data type that matches Prisma output
 interface ServerMemberData {

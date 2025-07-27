@@ -54,11 +54,11 @@ async function getFriendshipStatus(currentUserId: string, targetUserId: string) 
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
-    const memberId = params.id
+    const { id: memberId } = await params
     const currentUserId = session?.user?.id as string
 
     // Find the member
@@ -153,7 +153,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const session = await getServerSession(authOptions)
@@ -165,7 +165,7 @@ export async function POST(
     }
 
     const currentUserId = session.user.id as string
-    const targetUserId = params.id
+    const { id: targetUserId } = await params
     const { action } = await request.json()
 
     if (currentUserId === targetUserId) {

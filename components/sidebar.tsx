@@ -26,7 +26,7 @@ export default function Sidebar({ stats }: SidebarProps) {
   const sidebarLinks = [
     { href: "/main", icon: "fa-home", label: " أحدث المنشورات", badge: null },
     { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: stats.posts.toString() },
-    { href: "/main/truth", icon: "fa-sun", label: "حقيقة امازيغية", badge: stats.truth.toString() },
+    { href: "/main/truths", icon: "fa-sun", label: "حقيقة امازيغية", badge: stats.truth.toString() },
     { href: "/main/questions", icon: "fa-question-circle", label: "اسئلة امازيغية", badge: stats.questions.toString() },
     { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: stats.books.toString() },
     { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: stats.images.toString() },

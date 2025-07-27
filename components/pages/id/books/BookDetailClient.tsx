@@ -142,6 +142,14 @@ export default function BookDetailClient({ session, bookId }: BookDetailClientPr
     }
   }
 
+  // Handle reaction updates
+  const handleReactionUpdate = (reaction: string | null, hasLiked: boolean) => {
+    setCurrentUserReaction(reaction)
+    setCurrentUserHasLiked(hasLiked)
+    // If you need to update reactions data, you might need to fetch it separately
+    // or modify the InteractionsBar component to provide the new reactions data
+  }
+
   // Loading state
   if (loading) {
     return (
@@ -418,11 +426,7 @@ export default function BookDetailClient({ session, bookId }: BookDetailClientPr
                   userReaction={currentUserReaction}
                   session={session as any}
                   onStatsUpdate={setCurrentStats}
-                  onReactionUpdate={(reaction, hasLiked, newReactions) => {
-                    setCurrentUserReaction(reaction)
-                    setCurrentUserHasLiked(hasLiked)
-                    if (newReactions) setCurrentReactions(newReactions)
-                  }}
+                  onReactionUpdate={handleReactionUpdate}
                   onCommentsClick={() => setShowCommentsModal(true)}
                 />
               </div>
