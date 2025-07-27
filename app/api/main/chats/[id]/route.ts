@@ -22,12 +22,40 @@ import { type NextRequest, NextResponse } from "next/server"
 import { PrismaClient } from "@prisma/client"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { pusherServer } from "@/lib/pusher"
 
 const prisma = new PrismaClient()
 
 interface RouteParams {
   params: Promise<{ id: string }>
+}
+
+// Conditional Pusher import to avoid build-time issues
+let pusherServer: any = null
+
+async function getPusherServer() {
+  if (!pusherServer && process.env.NODE_ENV !== 'production' || (process.env.PUSHER_APP_ID && process.env.PUSHER_KEY && process.env.PUSHER_SECRET && process.env.PUSHER_CLUSTER)) {
+    try {
+      const { pusherServer: server } = await import("@/lib/pusher")
+      pusherServer = server
+    } catch (error) {
+      console.warn("Pusher not available:", error)
+    }
+  }
+  return pusherServer
+}
+
+// Helper function to safely send pusher notifications
+async function safePusherTrigger(channel: string, event: string, data: any) {
+  try {
+    const pusher = await getPusherServer()
+    if (pusher) {
+      await pusher.trigger(channel, event, data)
+    } else {
+      console.warn("Pusher not available, skipping real-time notification")
+    }
+  } catch (error) {
+    console.warn("Failed to send pusher notification:", error)
+  }
 }
 
 // GET: Retrieve chat messages between current user and target user
@@ -371,25 +399,21 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       isDeleted: false,
     }
 
-    // Send real-time notification via Pusher
-    try {
-      await pusherServer.trigger(`chat_${conversationId}`, "new-message", {
-        message: {
-          ...responseMessage,
-          isOwn: false, // For the recipient, this message is not their own
-        },
-        senderId: currentUserId,
-        recipientId: targetUserId,
-      })
+    // Send real-time notification via Pusher (safely)
+    await safePusherTrigger(`chat_${conversationId}`, "new-message", {
+      message: {
+        ...responseMessage,
+        isOwn: false, // For the recipient, this message is not their own
+      },
+      senderId: currentUserId,
+      recipientId: targetUserId,
+    })
 
-      // Also trigger for the sender's other devices
-      await pusherServer.trigger(`user_${currentUserId}`, "message-sent", {
-        message: responseMessage,
-        conversationId,
-      })
-    } catch (pusherError) {
-      console.warn("Failed to send real-time notification:", pusherError)
-    }
+    // Also trigger for the sender's other devices
+    await safePusherTrigger(`user_${currentUserId}`, "message-sent", {
+      message: responseMessage,
+      conversationId,
+    })
 
     // Create notification for recipient
     try {
@@ -471,16 +495,12 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         })
       }
 
-      // Notify sender that messages were read
-      try {
-        await pusherServer.trigger(`user_${targetUserId}`, "messages-read", {
-          readBy: currentUserId,
-          conversationId,
-          messageId: messageId || null,
-        })
-      } catch (pusherError) {
-        console.warn("Failed to send read notification:", pusherError)
-      }
+      // Notify sender that messages were read (safely)
+      await safePusherTrigger(`user_${targetUserId}`, "messages-read", {
+        readBy: currentUserId,
+        conversationId,
+        messageId: messageId || null,
+      })
 
       return NextResponse.json({ success: true })
     }
@@ -532,17 +552,13 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
         },
       })
 
-      // Notify about message edit
-      try {
-        await pusherServer.trigger(`chat_${conversationId}`, "message-edited", {
-          messageId,
-          newContent: content.trim(),
-          editedAt: new Date().toISOString(),
-          senderId: currentUserId,
-        })
-      } catch (pusherError) {
-        console.warn("Failed to send edit notification:", pusherError)
-      }
+      // Notify about message edit (safely)
+      await safePusherTrigger(`chat_${conversationId}`, "message-edited", {
+        messageId,
+        newContent: content.trim(),
+        editedAt: new Date().toISOString(),
+        senderId: currentUserId,
+      })
 
       return NextResponse.json({
         success: true,
@@ -618,17 +634,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       })
     }
 
-    // Notify about message deletion
-    try {
-      await pusherServer.trigger(`chat_${conversationId}`, "message-deleted", {
-        messageId,
-        deleteType,
-        deletedAt: new Date().toISOString(),
-        senderId: currentUserId,
-      })
-    } catch (pusherError) {
-      console.warn("Failed to send delete notification:", pusherError)
-    }
+    // Notify about message deletion (safely)
+    await safePusherTrigger(`chat_${conversationId}`, "message-deleted", {
+      messageId,
+      deleteType,
+      deletedAt: new Date().toISOString(),
+      senderId: currentUserId,
+    })
 
     return NextResponse.json({
       success: true,
