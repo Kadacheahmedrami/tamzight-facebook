@@ -66,6 +66,13 @@ interface Post {
   userHasLiked?: boolean
   userReaction?: string | null
   reactionDetails?: any
+  // Share-specific fields
+  isShared?: boolean
+  sharedBy?: User
+  sharedAt?: string
+  originalType?: string
+  originalAuthor?: string
+  originalAuthorData?: User
 }
 
 interface ApiResponse {
@@ -89,7 +96,8 @@ const CONTENT_TYPES = [
   { value: "truth", label: "الحقائق" },
   { value: "question", label: "الأسئلة" },
   { value: "ad", label: "الإعلانات" },
-  { value: "product", label: "المنتجات" }
+  { value: "product", label: "المنتجات" },
+  { value: "share", label: "المنشورات المشاركة" }
 ]
 
 const LIMIT = 20
@@ -147,20 +155,34 @@ export default function PostsPageClient({ session }: { session: Session | null }
       })
     }
 
+    // Check if this is a shared post
+    const isShared = !!item.sharedBy
+    
+    // For shared posts, we need to handle the original author vs the person who shared
+    const displayAuthor = isShared 
+      ? `${item.author.firstName} ${item.author.lastName}` // Original author
+      : item.author 
+        ? `${item.author.firstName} ${item.author.lastName}` 
+        : 'مجهول'
+
+    const sharedByName = isShared && item.sharedBy 
+      ? `${item.sharedBy.firstName} ${item.sharedBy.lastName}`
+      : undefined
+
     return {
       id: item.id?.toString() || Math.random().toString(36).substr(2, 9),
       title: item.title || 'بدون عنوان',
       content: item.content || item.description || '',
       description: item.description || null,
-      author: item.author ? `${item.author.firstName} ${item.author.lastName}` : 'مجهول',
+      author: displayAuthor,
       authorId: item.authorId || item.author?.id || 0,
       authorData: item.author || { 
         id: parseInt(item.authorId) || 0, 
         firstName: 'مجهول', 
         lastName: '' 
       },
-      timestamp: formatTimestamp(item.timestamp),
-      type: item.type || 'post',
+      timestamp: formatTimestamp(isShared ? item.sharedAt : item.timestamp),
+      type: item.originalType || item.type || 'post',
       category: item.category || 'عام',
       subcategory: item.subcategory,
       media,
@@ -185,7 +207,14 @@ export default function PostsPageClient({ session }: { session: Session | null }
       colors: item.colors,
       userHasLiked: item.userHasLiked || false,
       userReaction: item.userReaction,
-      reactionDetails: item.reactionDetails
+      reactionDetails: item.reactionDetails,
+      // Share-specific fields
+      isShared,
+      sharedBy: item.sharedBy,
+      sharedAt: isShared ? formatTimestamp(item.sharedAt) : undefined,
+      originalType: item.originalType,
+      originalAuthor: isShared ? displayAuthor : undefined,
+      originalAuthorData: isShared ? item.author : undefined
     }
   }, [formatTimestamp])
 
@@ -433,8 +462,6 @@ export default function PostsPageClient({ session }: { session: Session | null }
         </div>
       </div>
 
-
-
       {/* Posts Feed */}
       <div className="space-y-4">
         {loading && posts.length === 0 ? (
@@ -449,6 +476,13 @@ export default function PostsPageClient({ session }: { session: Session | null }
                 {...post}
                 baseRoute={`/main/${post.type}s`}
                 session={session}
+                // Pass share-specific props
+                isShared={post.isShared}
+                sharedBy={post.sharedBy}
+                sharedAt={post.sharedAt}
+                originalType={post.originalType}
+                originalAuthor={post.originalAuthor}
+                originalAuthorData={post.originalAuthorData}
               />
             ))}
             

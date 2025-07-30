@@ -40,6 +40,10 @@ interface PostCardProps {
   userHasLiked?: boolean
   userReaction?: string | null
   reactionDetails?: { total: number; summary: Array<{ emoji: string; count: number; users: any[] }>; details: Record<string, any[]> }
+  // Share/Repost fields
+  sharedBy?: User
+  sharedAt?: string
+  originalType?: string
   onDelete?: (postId: string) => void
   onUpdate?: (postId: string, updatedData: any) => void
 }
@@ -56,7 +60,6 @@ const categoryConfig = {
   truth: { displayName: 'حقيقة', color: 'bg-teal-100 text-teal-800', emoji: '✨' }
 } as const
 
-
 const typeToApiEndpoint = {
   post: 'posts', book: 'books', idea: 'ideas', image: 'images', video: 'videos',
   truth: 'truths', question: 'questions', ad: 'ads', product: 'products'
@@ -66,11 +69,14 @@ export default function PostCard(props: PostCardProps) {
   const {
     id, title, content, author, authorId, authorData, timestamp, type, category, subcategory,
     media, image, images, stats, session, onDelete, onUpdate, baseRoute,
-    price, currency, inStock, sizes, userHasLiked = false, userReaction = null, reactionDetails
+    price, currency, inStock, sizes, userHasLiked = false, userReaction = null, reactionDetails,
+    sharedBy, sharedAt, originalType
   } = props
 
   const apiEndpoint = typeToApiEndpoint[type as keyof typeof typeToApiEndpoint] || 'posts'
-  console.log(stats)
+  const isShared = Boolean(sharedBy)
+  const displayType = originalType || type
+  
   // States 
   const [userLiked, setUserLiked] = useState(userHasLiked)
   const [userReact, setUserReact] = useState(userReaction)
@@ -83,14 +89,15 @@ export default function PostCard(props: PostCardProps) {
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeletingPost, setIsDeletingPost] = useState(false)
   const [currentStats, setCurrentStats] = useState(stats)
-  const [videoStarted, setVideoStarted] = useState(false) // New state for video play status
+  const [videoStarted, setVideoStarted] = useState(false)
 
   const actionsRef = useRef<HTMLDivElement>(null)
-  const videoRef = useRef<HTMLVideoElement>(null) // Ref for video element
+  const videoRef = useRef<HTMLVideoElement>(null)
   const router = useRouter()
 
-  const config = categoryConfig[type as keyof typeof categoryConfig] || categoryConfig.post
+  const config = categoryConfig[displayType as keyof typeof categoryConfig] || categoryConfig.post
   const isAuthor = session?.user?.id === authorId?.toString()
+  const isSharedByCurrentUser = session?.user?.id === sharedBy?.id?.toString()
   const isLongContent = content.length > 200
   const displayContent = isLongContent ? content.substring(0, 200) + '...' : content
 
@@ -107,7 +114,6 @@ export default function PostCard(props: PostCardProps) {
     (image ? { id: 'img', type: 'image', url: image, alt: title } : null) || 
     (images && images.length > 0 ? { id: 'imgs', type: 'image', url: images[0], alt: title } : null) || 
     { id: 'placeholder', type: 'image', url: '/default-image.jpg', alt: 'صورة افتراضية' }
-  
 
   // Click outside handler for actions menu
   useEffect(() => {
@@ -174,9 +180,9 @@ export default function PostCard(props: PostCardProps) {
     }
   }
 
-  const navigateToProfile = (e: React.MouseEvent) => {
+  const navigateToProfile = (e: React.MouseEvent, userId: number) => {
     e.stopPropagation()
-    router.push(`/main/member/${authorId}`)
+    router.push(`/main/member/${userId}`)
   }
 
   const navigateToPost = () => {
@@ -203,69 +209,128 @@ export default function PostCard(props: PostCardProps) {
   }
 
   return (
-    <article className="bg-white rounded-lg p-4 border shadow-sm mb-4 hover:shadow-md transition-all duration-200">
-      {/* Header */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
-        <div className="flex w-full flex-row">
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className={`text-xs px-2 py-1 rounded-full w-fit flex items-center gap-1 ${config.color}`}>
-            <span>{config.emoji}</span>
-            <span>{config.displayName}</span>
-          </span>
-          {category && (
-            <>
-              <span className="text-gray-400 text-xs">•</span>
-              <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full w-fit">{category}</span>
-            </>
-          )}
-        
-        </div>
-        
-        {isAuthor && (
-          <div className="mr-auto relative" ref={actionsRef}>
-            <button
-              onClick={(e) => { e.stopPropagation(); setShowActions(!showActions) }}
-              className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
-              disabled={isDeletingPost}
+    <article className={`bg-white rounded-lg p-4 border shadow-sm mb-4 hover:shadow-md transition-all duration-200 ${
+      isShared ? 'border-l-4 border-l-blue-500' : ''
+    }`}>
+      {/* Share Header - Shows who shared this content */}
+      {isShared && sharedBy && (
+        <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <i className="fa fa-retweet text-blue-500"></i>
+            <button 
+              className="flex items-center gap-2 hover:text-blue-600 transition-colors"
+              onClick={(e) => navigateToProfile(e, sharedBy.id)}
             >
-              <i className="fa fa-ellipsis-h"></i>
-            </button>
-            
-            {showActions && (
-              <div className="absolute left-0 top-8 bg-white border rounded-lg shadow-lg z-20 min-w-32">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setIsEditing(true)
-                    setEditTitle(title)
-                    setEditContent(content)
-                    setShowActions(false)
-                  }}
-                  className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors"
-                >
-                  <i className="fa fa-edit text-blue-500"></i>تعديل
-                </button>
-                <button
-                  onClick={(e) => { e.stopPropagation(); handleDelete(); setShowActions(false) }}
-                  className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600 transition-colors"
-                  disabled={isDeletingPost}
-                >
-                  <i className="fa fa-trash text-red-500"></i>
-                  {isDeletingPost ? 'جاري الحذف...' : 'حذف'}
-                </button>
+              <div className="w-6 h-6 bg-gray-200 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0">
+                {sharedBy.avatar ? (
+                  <img src={sharedBy.avatar} alt={`${sharedBy.firstName} ${sharedBy.lastName}`} className="w-full h-full object-cover" />
+                ) : (
+                  <i className="fa fa-user text-gray-500 text-xs"></i>
+                )}
               </div>
+              <span className="font-medium">
+                {sharedBy.firstName} {sharedBy.lastName}
+              </span>
+              <span className="text-gray-500">شارك هذا</span>
+            </button>
+            {sharedAt && (
+              <>
+                <span className="text-gray-400">•</span>
+                <span className="text-gray-500">{sharedAt}</span>
+              </>
             )}
           </div>
-        )}
+
+          {/* Actions for shared content */}
+          {isSharedByCurrentUser && (
+            <div className="mr-auto relative" ref={actionsRef}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowActions(!showActions) }}
+                className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                disabled={isDeletingPost}
+              >
+                <i className="fa fa-ellipsis-h"></i>
+              </button>
+              
+              {showActions && (
+                <div className="absolute left-0 top-8 bg-white border rounded-lg shadow-lg z-20 min-w-32">
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(); setShowActions(false) }}
+                    className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600 transition-colors"
+                    disabled={isDeletingPost}
+                  >
+                    <i className="fa fa-times text-red-500"></i>
+                    {isDeletingPost ? 'جاري الإلغاء...' : 'إلغاء المشاركة'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
-      
+      )}
+
+      {/* Original Content Header */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+        <div className="flex w-full flex-row">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-xs px-2 py-1 rounded-full w-fit flex items-center gap-1 ${config.color}`}>
+              <span>{config.emoji}</span>
+              <span>{config.displayName}</span>
+              {isShared && <span className="text-xs opacity-75">(مُشارك)</span>}
+            </span>
+            {category && (
+              <>
+                <span className="text-gray-400 text-xs">•</span>
+                <span className="bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full w-fit">{category}</span>
+              </>
+            )}
+          </div>
+          
+          {/* Only show edit/delete actions for original author on non-shared content */}
+          {isAuthor && !isShared && (
+            <div className="mr-auto relative" ref={actionsRef}>
+              <button
+                onClick={(e) => { e.stopPropagation(); setShowActions(!showActions) }}
+                className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
+                disabled={isDeletingPost}
+              >
+                <i className="fa fa-ellipsis-h"></i>
+              </button>
+              
+              {showActions && (
+                <div className="absolute left-0 top-8 bg-white border rounded-lg shadow-lg z-20 min-w-32">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setIsEditing(true)
+                      setEditTitle(title)
+                      setEditContent(content)
+                      setShowActions(false)
+                    }}
+                    className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 transition-colors"
+                  >
+                    <i className="fa fa-edit text-blue-500"></i>تعديل
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDelete(); setShowActions(false) }}
+                    className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600 transition-colors"
+                    disabled={isDeletingPost}
+                  >
+                    <i className="fa fa-trash text-red-500"></i>
+                    {isDeletingPost ? 'جاري الحذف...' : 'حذف'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </header>
 
-      {/* Author */}
+      {/* Original Author */}
       <div className="flex items-start gap-2 sm:gap-3 mb-3">
         <button 
           className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full flex-shrink-0 cursor-pointer hover:bg-gray-300 transition-colors flex items-center justify-center overflow-hidden"
-          onClick={navigateToProfile}
+          onClick={(e) => navigateToProfile(e, authorId)}
         >
           {authorData?.avatar ? (
             <img src={authorData.avatar} alt={author} className="w-full h-full object-cover" />
@@ -276,7 +341,7 @@ export default function PostCard(props: PostCardProps) {
         <div className="flex flex-col">
           <button 
             className="font-semibold text-gray-900 text-sm sm:text-base cursor-pointer hover:text-blue-600 transition-colors text-right"
-            onClick={navigateToProfile}
+            onClick={(e) => navigateToProfile(e, authorId)}
           >
             {author}
           </button>
@@ -396,7 +461,7 @@ export default function PostCard(props: PostCardProps) {
             </p>
 
             {/* Product Info */}
-            {type === 'product' && price && (
+            {displayType === 'product' && price && (
               <div className="bg-gray-50 rounded-lg p-3 mb-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
@@ -435,11 +500,9 @@ export default function PostCard(props: PostCardProps) {
       {/* Interactions */}
       {!isEditing && (
         <footer>
-  
-            <div className="mb-3 flex justify-end">
-              <ReactionsDisplay reactions={reactionData} stats={currentStats} session={session} />
-            </div>
-      
+          <div className="mb-3 flex justify-end">
+            <ReactionsDisplay reactions={reactionData} stats={currentStats} session={session} />
+          </div>
 
           <InteractionsBar
             postId={id}

@@ -29,6 +29,10 @@ interface ContentItem {
   userHasLiked?: boolean;
   userReaction?: string | null;
   reactionDetails?: any;
+  // Share-specific fields
+  sharedBy?: { id: number; firstName: string; lastName: string; avatar?: string | null };
+  sharedAt?: Date;
+  originalType?: string;
 }
 
 interface ReactionUser {
@@ -37,8 +41,6 @@ interface ReactionUser {
   userAvatar: string | null;
   createdAt: Date;
 }
-
-
 
 const baseSelect = {
   id: true, title: true, authorId: true,
@@ -76,13 +78,146 @@ const safeQuery = async <T>(queryFn: () => Promise<T>): Promise<T> => {
   }
 };
 
+const fetchSharedContent = async (authorId?: string): Promise<ContentItem[]> => {
+  try {
+    const whereClause = authorId ? { userId: authorId } : {};
+    
+    const shares = await prisma.share.findMany({
+      where: whereClause,
+      include: {
+        user: { select: { id: true, firstName: true, lastName: true, avatar: true } },
+        post: {
+          select: {
+            ...baseSelect,
+            content: true,
+            subcategory: true,
+            image: true,
+          }
+        },
+        book: {
+          select: {
+            ...baseSelect,
+            content: true,
+            subcategory: true,
+            image: true,
+          }
+        },
+        idea: {
+          select: {
+            ...baseSelect,
+            content: true,
+            image: true,
+          }
+        },
+        image: {
+          select: {
+            ...baseSelect,
+            description: true,
+            image: true,
+          }
+        },
+        video: {
+          select: {
+            ...baseSelect,
+            content: true,
+            subcategory: true,
+            image: true,
+          }
+        },
+        truth: {
+          select: {
+            ...baseSelect,
+            content: true,
+            subcategory: true,
+            image: true,
+          }
+        },
+        question: {
+          select: {
+            ...baseSelect,
+            content: true,
+            image: true,
+          }
+        },
+        ad: {
+          select: {
+            ...baseSelect,
+            content: true,
+            subcategory: true,
+            image: true,
+          }
+        },
+        product: {
+          select: {
+            ...baseSelect,
+            content: true,
+            image: true,
+            subcategory: true,
+            price: true,
+            currency: true,
+            inStock: true,
+            sizes: true,
+            colors: true,
+          }
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const sharedContent: ContentItem[] = shares.map(share => {
+      // Find which content type was shared
+      const contentTypes = ['post', 'book', 'idea', 'image', 'video', 'truth', 'question', 'ad', 'product'];
+      let originalContent = null;
+      let originalType = '';
+
+      for (const type of contentTypes) {
+        if ((share as any)[type]) {
+          originalContent = (share as any)[type];
+          originalType = type;
+          break;
+        }
+      }
+
+      if (!originalContent) return null;
+
+      return {
+        ...originalContent,
+        type: originalType,
+        originalType,
+        subcategory: originalContent.subcategory || null,
+        image: originalContent.image || null,
+        content: originalContent.content || originalContent.description || null,
+        description: originalType === 'image' ? originalContent.description : undefined,
+        price: originalContent.price || undefined,
+        currency: originalContent.currency || undefined,
+        inStock: originalContent.inStock !== undefined ? originalContent.inStock : undefined,
+        sizes: originalContent.sizes || undefined,
+        colors: originalContent.colors || undefined,
+        sharedBy: {
+          id: share.user.id,
+          firstName: share.user.firstName,
+          lastName: share.user.lastName,
+          avatar: share.user.avatar,
+        },
+        sharedAt: share.createdAt,
+      };
+    }).filter(Boolean) as ContentItem[];
+
+    return sharedContent;
+  } catch (error) {
+    console.error('Error fetching shared content:', error);
+    return [];
+  }
+};
+
 const fetchReactions = async (content: ContentItem[]): Promise<Map<string, any[]>> => {
   const reactionsData = new Map();
   if (!content.length) return reactionsData;
   
   const contentByType = content.reduce((acc: Record<string, number[]>, item) => {
-    if (!acc[item.type]) acc[item.type] = [];
-    acc[item.type].push(item.id);
+    const type = item.originalType || item.type;
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(item.id);
     return acc;
   }, {});
   
@@ -129,8 +264,9 @@ const fetchUserReactions = async (userId: string, content: ContentItem[]): Promi
   if (!userId || !content.length) return userReactionsMap;
 
   const contentByType = content.reduce((acc: Record<string, number[]>, item) => {
-    if (!acc[item.type]) acc[item.type] = [];
-    acc[item.type].push(item.id);
+    const type = item.originalType || item.type;
+    if (!acc[type]) acc[type] = [];
+    acc[type].push(item.id);
     return acc;
   }, {});
 
@@ -183,7 +319,6 @@ const processReactionDetails = (reactions: any[]) => {
     return { emoji, count: typedUsers.length, users: typedUsers };
   });
   
-
   return {
     total: summary.reduce((sum, reaction) => sum + reaction.count, 0),
     summary,
@@ -199,11 +334,12 @@ export async function GET(request: NextRequest) {
     const currentUserId = session?.user?.id || null;
     
     const { searchParams } = new URL(request.url);
-    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50); // Cap at 50
+    const limit = Math.min(parseInt(searchParams.get('limit') || '20'), 50);
     const offset = Math.max(parseInt(searchParams.get('offset') || '0'), 0);
     const type = searchParams.get('type') || 'all';
+    const authorId = searchParams.get('authorId'); // For filtering shares by specific user
     
-    const models = ['post', 'book', 'idea', 'image', 'video', 'truth', 'question', 'ad', 'product'] as const;
+    const models = ['post', 'book', 'idea', 'image', 'video', 'truth', 'question', 'ad', 'product', 'share'] as const;
     
     if (type !== 'all' && !models.includes(type as any)) {
       return NextResponse.json({
@@ -213,36 +349,61 @@ export async function GET(request: NextRequest) {
       }, { status: 400 });
     }
     
-    const modelsToQuery = type === 'all' ? models : [type as typeof models[number]];
+    let allContent: ContentItem[] = [];
     
-    const results = await Promise.all(
-      modelsToQuery.map(model => 
-        safeQuery(async () => {
-          const modelClient = (prisma as any)[model];
-          if (!modelClient) return [];
-          return await modelClient.findMany({
-            select: selectConfigs[model],
-            orderBy: { timestamp: 'desc' },
-          });
-        })
-      )
-    );
+    if (type === 'share') {
+      // Handle shares specifically
+      allContent = await fetchSharedContent(authorId || undefined);
+    } else {
+      // Handle regular content types
+      const modelsToQuery = type === 'all' ? models.filter(m => m !== 'share') : [type as typeof models[number]];
+      
+      const results = await Promise.all(
+        modelsToQuery.map(model => 
+          safeQuery(async () => {
+            const modelClient = (prisma as any)[model];
+            if (!modelClient) return [];
+            
+            const whereClause = authorId ? { authorId } : {};
+            
+            return await modelClient.findMany({
+              where: whereClause,
+              select: selectConfigs[model],
+              orderBy: { timestamp: 'desc' },
+            });
+          })
+        )
+      );
+      
+      allContent = results.flatMap((items, i) => 
+        (items || []).map((item: any) => ({
+          ...item,
+          type: modelsToQuery[i],
+          subcategory: item.subcategory || null,
+          image: item.image || null,
+          content: item.content || item.description || null,
+          description: modelsToQuery[i] === 'image' ? item.description : undefined,
+          price: item.price || undefined,
+          currency: item.currency || undefined,
+          inStock: item.inStock !== undefined ? item.inStock : undefined,
+          sizes: item.sizes || undefined,
+          colors: item.colors || undefined,
+        }))
+      );
+
+      // If type is 'all', also include shares
+      if (type === 'all') {
+        const sharedContent = await fetchSharedContent();
+        allContent = [...allContent, ...sharedContent];
+      }
+    }
     
-    const allContent: ContentItem[] = results.flatMap((items, i) => 
-      (items || []).map((item: any) => ({
-        ...item,
-        type: modelsToQuery[i],
-        subcategory: item.subcategory || null,
-        image: item.image || null,
-        content: item.content || item.description || null,
-        description: modelsToQuery[i] === 'image' ? item.description : undefined,
-        price: item.price || undefined,
-        currency: item.currency || undefined,
-        inStock: item.inStock !== undefined ? item.inStock : undefined,
-        sizes: item.sizes || undefined,
-        colors: item.colors || undefined,
-      }))
-    ).sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+    // Sort all content by timestamp
+    allContent.sort((a, b) => {
+      const timeA = a.sharedAt || a.timestamp;
+      const timeB = b.sharedAt || b.timestamp;
+      return new Date(timeB).getTime() - new Date(timeA).getTime();
+    });
     
     const totalItems = allContent.length;
     const paginatedContent = allContent.slice(offset, offset + limit);
@@ -254,7 +415,8 @@ export async function GET(request: NextRequest) {
     ]);
     
     const contentWithReactions = paginatedContent.map(item => {
-      const key = `${item.type}-${item.id}`;
+      const contentType = item.originalType || item.type;
+      const key = `${contentType}-${item.id}`;
       const reactions = reactionsData.get(key) || [];
       const userReaction = userReactionsMap.get(key) || null;
       
@@ -276,7 +438,8 @@ export async function GET(request: NextRequest) {
         offset, 
         hasMore: offset + limit < totalItems, 
         type,
-        currentUserId
+        currentUserId,
+        authorId
       },
       error: null,
     });

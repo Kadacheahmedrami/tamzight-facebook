@@ -4,7 +4,6 @@ import PostCard from "@/components/LatestSactionCards/post-card"
 import { MapPin, Heart, MessageSquare } from "lucide-react"
 import { Session } from "next-auth"
 
-
 interface MemberData {
   id: string
   firstName: string
@@ -13,23 +12,6 @@ interface MemberData {
   _count: { posts: number; friendships: number; friendOf: number; likes: number; books: number; ideas: number }
   friendshipStatus?: 'none' | 'pending_sent' | 'pending_received' | 'friends'
   isOwnProfile: boolean
-}
-
-interface MediaItem {
-  id: string
-  type: 'image' | 'video'
-  url: string
-  thumbnail?: string
-  alt?: string
-  duration?: string
-  resolution?: string
-}
-
-interface User {
-  id: number
-  firstName: string
-  lastName: string
-  avatar?: string | null
 }
 
 interface ContentItem {
@@ -43,21 +25,16 @@ interface ContentItem {
   subcategory?: string | null
   image?: string
   type?: string
+  originalType?: string
   _count: { likes: number; comments: number; shares: number }
   views: number
   shareId?: string
   sharedAt?: string
+  sharedBy?: { id: number; firstName: string; lastName: string; avatar?: string }
   isShared?: boolean
-  author?: { 
-    id?: number
-    firstName: string
-    lastName: string
-    avatar?: string 
-  }
+  author?: { id?: number; firstName: string; lastName: string; avatar?: string }
   authorId?: number
-  authorData?: User
   images?: string[]
-  media?: MediaItem[]
   reactions?: any[]
   price?: number
   currency?: string
@@ -66,11 +43,7 @@ interface ContentItem {
   colors?: string[]
   userHasLiked?: boolean
   userReaction?: string | null
-  reactionDetails?: { 
-    total: number
-    summary: Array<{ emoji: string; count: number; users: any[] }>
-    details: Record<string, any[]> 
-  }
+  reactionDetails?: { total: number; summary: Array<{ emoji: string; count: number; users: any[] }>; details: Record<string, any[]> }
 }
 
 interface InteractionItem {
@@ -91,7 +64,6 @@ interface FriendItem {
   friendsSince: string
 }
 
-
 interface MemberContentTabsProps {
   memberData: MemberData
   memberId: string
@@ -99,41 +71,20 @@ interface MemberContentTabsProps {
 }
 
 const LIMIT = 20
-
-// Helper function to get the proper base route for different content types
-const getBaseRoute = (type: string): string => {
-  const typeRoutes: { [key: string]: string } = {
-    'post': '/main/posts',
-    'book': '/main/books',
-    'idea': '/main/ideas',
-    'image': '/main/images',
-    'video': '/main/videos',
-    'truth': '/main/truths',
-    'question': '/main/questions',
-    'ad': '/main/ads',
-    'product': '/main/products',
-    'share': '/main/shares'
-  }
-  
-  return typeRoutes[type] || '/main/posts'
+const typeRoutes: Record<string, string> = {
+  'post': '/main/posts', 'book': '/main/books', 'idea': '/main/ideas',
+  'image': '/main/images', 'video': '/main/videos', 'truth': '/main/truths',
+  'question': '/main/questions', 'ad': '/main/ads', 'product': '/main/products', 'share': '/main/shares'
 }
 
-// Helper function to get the proper API endpoint
-const getApiEndpoint = (contentType: string, memberId: string): string => {
-  if (contentType === 'interactions' || contentType === 'friends') {
-    return `/api/main/member/${memberId}/content?type=${contentType}`
-  }
-  
-  const params = new URLSearchParams({
-    limit: LIMIT.toString(),
-    authorId: memberId
-  })
-  
-  if (contentType !== 'posts' && contentType !== 'all') {
-    params.append('type', contentType.slice(0, -1)) // Remove 's' from plural
-  }
-  
-  return `/api/main/latest?${params}`
+const contentNames: Record<string, string> = {
+  posts: 'المنشورات', books: 'الكتب', ideas: 'الأفكار', images: 'الصور', videos: 'الفيديوهات',
+  truths: 'الحقائق', questions: 'الأسئلة', ads: 'الإعلانات', products: 'المنتجات', shares: 'المشاركات'
+}
+
+const icons: Record<string, string> = {
+  posts: '📝', books: '📚', ideas: '💡', images: '🖼️', videos: '🎥',
+  truths: '✨', questions: '❓', ads: '📢', products: '🛍️', shares: '📤'
 }
 
 export default function MemberContentTabs({ memberData, memberId, session }: MemberContentTabsProps) {
@@ -152,10 +103,6 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
   const isLoadingRef = useRef(false)
   const abortControllerRef = useRef<AbortController | null>(null)
   const isMountedRef = useRef(true)
-
-  // Check if user is authenticated
-  const isAuthenticated = Boolean(session?.user?.id)
-  const currentUserId = session?.user?.id
 
   const formatTimestamp = useCallback((timestamp?: string, createdAt?: string) => {
     const date = timestamp || createdAt
@@ -178,12 +125,8 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
   }, [])
 
   const transformContentItem = useCallback((item: any): ContentItem => {
-    const media: MediaItem[] = []
-    
-    if (item.image) {
-      media.push({ id: `img-${item.id}`, type: 'image', url: item.image, alt: item.title || 'صورة' })
-    }
-    
+    const media = []
+    if (item.image) media.push({ id: `img-${item.id}`, type: 'image', url: item.image, alt: item.title || 'صورة' })
     if (item.images?.length) {
       item.images.forEach((url: string, i: number) => {
         media.push({ id: `img-${item.id}-${i}`, type: 'image', url, alt: item.title || 'صورة' })
@@ -200,27 +143,18 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
       category: item.category || 'عام',
       subcategory: item.subcategory,
       type: item.type,
+      originalType: item.originalType,
       image: item.image,
       images: item.images,
-      media,
       views: item.views || 0,
       shareId: item.shareId,
       sharedAt: item.sharedAt,
-      isShared: item.isShared,
+      sharedBy: item.sharedBy,
+      isShared: Boolean(item.sharedBy || item.sharedAt),
       author: item.author,
       authorId: item.authorId || item.author?.id,
-      authorData: item.author || { 
-        id: parseInt(item.authorId) || parseInt(memberId, 10), 
-        firstName: memberData.firstName, 
-        lastName: memberData.lastName,
-        avatar: memberData.avatar
-      },
       reactions: item.reactions || [],
-      _count: item._count || {
-        likes: item.likes?.length || 0,
-        comments: item.comments?.length || 0,
-        shares: item.shares?.length || 0
-      },
+      _count: item._count || { likes: item.likes?.length || 0, comments: item.comments?.length || 0, shares: item.shares?.length || 0 },
       price: item.price,
       currency: item.currency,
       inStock: item.inStock,
@@ -230,7 +164,7 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
       userReaction: item.userReaction,
       reactionDetails: item.reactionDetails
     }
-  }, [memberId, memberData])
+  }, [])
 
   const fetchContentData = useCallback(async (contentType: string, offset = 0, isLoadMore = false) => {
     if (isLoadingRef.current || !isMountedRef.current) return
@@ -247,7 +181,16 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
       let url: string
       
       if (contentType === 'interactions' || contentType === 'friends') {
-        url = getApiEndpoint(contentType, memberId)
+        url = `/api/main/member/${memberId}/content?type=${contentType}`
+      } else if (contentType === 'shares') {
+        // Special handling for shares - fetch shares made by this specific member
+        const params = new URLSearchParams({ 
+          type: 'share',
+          authorId: memberId, // This tells the API to get shares made by this member
+          limit: LIMIT.toString(), 
+          offset: offset.toString()
+        })
+        url = `/api/main/latest?${params}`
       } else {
         const params = new URLSearchParams({ 
           limit: LIMIT.toString(), 
@@ -255,33 +198,25 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
           authorId: memberId
         })
         
-        if (contentType !== 'posts' && contentType !== 'all') {
-          params.append('type', contentType.slice(0, -1)) // Remove 's' from plural
+        if (contentType === 'posts') {
+          params.append('type', 'post')
+        } else if (contentType !== 'all') {
+          params.append('type', contentType.slice(0, -1))
         }
         
         url = `/api/main/latest?${params}`
       }
 
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      }
+      const headers: HeadersInit = { 'Content-Type': 'application/json' }
+      if (session?.user?.id) headers['Authorization'] = `Bearer ${session.user.id}`
 
-      // Include authentication headers if session exists
-      if (session?.user?.id) {
-        headers['Authorization'] = `Bearer ${session.user.id}`
-      }
-
-      const response = await fetch(url, { 
-        signal: abortController.signal,
-        headers
-      })
+      const response = await fetch(url, { signal: abortController.signal, headers })
       
       if (!isMountedRef.current || abortController.signal.aborted) return
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
       
       let data: any = await response.json()
       
-      // Handle special endpoints that might return different formats
       if (contentType === 'interactions' || contentType === 'friends') {
         data = {
           success: true,
@@ -303,11 +238,22 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
       } else {
         if (!data.success || !Array.isArray(data.data)) throw new Error(data.error || 'صيغة استجابة غير صالحة')
 
-        const transformedContent = data.data.map(transformContentItem)
+        let memberContent = data.data
+
+        // For shares, the data is already filtered by authorId in the API
+        // For other content types, filter by member ID
+        if (contentType !== 'shares') {
+          memberContent = data.data.filter((item: any) => {
+            const itemAuthorId = item.authorId || item.author?.id
+            return itemAuthorId?.toString() === memberId.toString()
+          })
+        }
+
+        const transformedContent = memberContent.map(transformContentItem)
         
         if (isLoadMore) {
-          setContentData((prev: ContentItem[]) => {
-            const existingIds = new Set(prev.map((p: ContentItem) => p.id))
+          setContentData(prev => {
+            const existingIds = new Set(prev.map(p => p.id))
             const newContent = transformedContent.filter((p: ContentItem) => !existingIds.has(p.id))
             return [...prev, ...newContent]
           })
@@ -316,7 +262,6 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
           setContentData(transformedContent)
           setCurrentOffset(transformedContent.length)
         }
-        
         
         setHasMore(data.meta?.hasMore !== false && transformedContent.length === LIMIT)
       }
@@ -391,23 +336,18 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
   const fullName = `${memberData.firstName} ${memberData.lastName}`
   const totalFriends = memberData._count.friendships + memberData._count.friendOf
   
-  const createAuthorData = (item?: ContentItem) => {
-    if (item?.isShared && item.author) {
-      return {
-        id: item.author.id || parseInt(memberId, 10),
-        firstName: item.author.firstName,
-        lastName: item.author.lastName,
-        avatar: item.author.avatar
-      }
-    }
-    
-    return {
+  const createAuthorData = (item?: ContentItem) => 
+    item?.isShared && item.author ? {
+      id: item.author.id || parseInt(memberId, 10),
+      firstName: item.author.firstName,
+      lastName: item.author.lastName,
+      avatar: item.author.avatar
+    } : {
       id: parseInt(memberData.id, 10),
       firstName: memberData.firstName,
       lastName: memberData.lastName,
       avatar: memberData.avatar
     }
-  }
 
   const handlePostDelete = (postId: string) => setContentData(prev => prev.filter(item => item.id !== postId))
   const handlePostUpdate = (postId: string, updatedData: any) => 
@@ -478,6 +418,69 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
     </div>
   )
 
+  const renderInteractions = () => (
+    <div className="space-y-4">
+      {interactionData.map((interaction) => (
+        <div key={interaction.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex items-start gap-3">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+              interaction.type === 'like' ? 'bg-red-100' : 'bg-blue-100'
+            }`}>
+              {interaction.type === 'like' ? 
+                <Heart className="w-4 h-4 text-red-600" /> : 
+                <MessageSquare className="w-4 h-4 text-blue-600" />
+              }
+            </div>
+            <div className="flex-1">
+              <div className="text-sm text-gray-600 mb-1">
+                {interaction.type === 'like' ? 
+                  `أعجب بـ "${interaction.targetContent?.title}"` : 
+                  `علق على "${interaction.targetContent?.title}"`
+                }
+              </div>
+              {interaction.content && <div className="text-gray-800 mb-2">{interaction.content}</div>}
+              <div className="flex items-center gap-2 text-xs text-gray-500">
+                <span>{formatTimestamp(interaction.timestamp)}</span>
+                {interaction.targetContent?.author && (
+                  <>
+                    <span>•</span>
+                    <span>بواسطة {interaction.targetContent.author.firstName} {interaction.targetContent.author.lastName}</span>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
+  const renderFriends = () => (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {friendsData.map((friend) => (
+        <div key={friend.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center gap-3">
+            <Avatar 
+              src={friend.avatar} 
+              alt={`${friend.firstName} ${friend.lastName}`}
+              fallback={`${friend.firstName[0]}${friend.lastName[0]}`}
+            />
+            <div className="flex-1">
+              <h3 className="font-semibold text-gray-900">{friend.firstName} {friend.lastName}</h3>
+              {friend.occupation && <p className="text-sm text-gray-600">{friend.occupation}</p>}
+              {friend.location && (
+                <p className="text-xs text-gray-500 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />{friend.location}
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mt-1">أصدقاء منذ {formatTimestamp(friend.friendsSince)}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+
   const renderContent = () => {
     if (loading && (contentData.length === 0 && interactionData.length === 0 && friendsData.length === 0)) {
       return <LoadingSkeleton />
@@ -487,80 +490,19 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
       if (error && interactionData.length === 0) {
         return <ErrorState message={error} onRetry={() => fetchContentData(activeTab, 0, false)} />
       }
-      
       return interactionData.length === 0 ? (
         <EmptyState icon="❤️" title="تفاعلات العضو" description="لا توجد تفاعلات حديثة" />
-      ) : (
-        <div className="space-y-4">
-          {interactionData.map((interaction) => (
-            <div key={interaction.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <div className="flex items-start gap-3">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                  interaction.type === 'like' ? 'bg-red-100' : 'bg-blue-100'
-                }`}>
-                  {interaction.type === 'like' ? 
-                    <Heart className="w-4 h-4 text-red-600" /> : 
-                    <MessageSquare className="w-4 h-4 text-blue-600" />
-                  }
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm text-gray-600 mb-1">
-                    {interaction.type === 'like' ? 
-                      `أعجب بـ "${interaction.targetContent?.title}"` : 
-                      `علق على "${interaction.targetContent?.title}"`
-                    }
-                  </div>
-                  {interaction.content && <div className="text-gray-800 mb-2">{interaction.content}</div>}
-                  <div className="flex items-center gap-2 text-xs text-gray-500">
-                    <span>{formatTimestamp(interaction.timestamp)}</span>
-                    {interaction.targetContent?.author && (
-                      <>
-                        <span>•</span>
-                        <span>بواسطة {interaction.targetContent.author.firstName} {interaction.targetContent.author.lastName}</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )
+      ) : renderInteractions()
     }
 
     if (activeTab === 'friends') {
       if (error && friendsData.length === 0) {
         return <ErrorState message={error} onRetry={() => fetchContentData(activeTab, 0, false)} />
       }
-      
       return friendsData.length === 0 ? (
         <EmptyState icon="👥" title="أصدقاء العضو" 
                    description={memberData.isOwnProfile ? "قائمة أصدقائك فارغة" : "قائمة الأصدقاء"} />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {friendsData.map((friend) => (
-            <div key={friend.id} className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-              <div className="flex items-center gap-3">
-                <Avatar 
-                  src={friend.avatar} 
-                  alt={`${friend.firstName} ${friend.lastName}`}
-                  fallback={`${friend.firstName[0]}${friend.lastName[0]}`}
-                />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-gray-900">{friend.firstName} {friend.lastName}</h3>
-                  {friend.occupation && <p className="text-sm text-gray-600">{friend.occupation}</p>}
-                  {friend.location && (
-                    <p className="text-xs text-gray-500 flex items-center gap-1">
-                      <MapPin className="w-3 h-3" />{friend.location}
-                    </p>
-                  )}
-                  <p className="text-xs text-gray-500 mt-1">أصدقاء منذ {formatTimestamp(friend.friendsSince)}</p>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )
+      ) : renderFriends()
     }
 
     if (error && contentData.length === 0) {
@@ -568,15 +510,6 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
     }
     
     if (contentData.length === 0) {
-      const contentNames: { [key: string]: string } = {
-        posts: 'المنشورات', books: 'الكتب', ideas: 'الأفكار', images: 'الصور', videos: 'الفيديوهات',
-        truths: 'الحقائق', questions: 'الأسئلة', ads: 'الإعلانات', products: 'المنتجات', shares: 'المشاركات'
-      }
-      const icons: { [key: string]: string } = {
-        posts: '📝', books: '📚', ideas: '💡', images: '🖼️', videos: '🎥',
-        truths: '✨', questions: '❓', ads: '📢', products: '🛍️', shares: '📤'
-      }
-      
       return (
         <EmptyState 
           icon={icons[activeTab] || '📄'}
@@ -593,13 +526,19 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
       <div className="space-y-4 lg:space-y-6">
         {contentData.map((item, index) => {
           const authorData = createAuthorData(item)
+          const sharedByData = item?.isShared && item.sharedBy ? {
+            id: item.sharedBy.id,
+            firstName: item.sharedBy.firstName,
+            lastName: item.sharedBy.lastName,
+            avatar: item.sharedBy.avatar
+          } : null
+          
           const displayAuthor = item.isShared && item.author 
             ? `${item.author.firstName} ${item.author.lastName}` 
             : fullName
 
-          // Determine the correct content type for the base route
-          const contentType = item.type || activeTab.slice(0, -1) // Remove 's' from plural
-          const baseRoute = getBaseRoute(contentType)
+          const contentType = item.originalType || item.type || activeTab.slice(0, -1)
+          const baseRoute = typeRoutes[contentType] || '/main/posts'
 
           return (
             <PostCard 
@@ -615,7 +554,6 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
               type={contentType}
               image={item.image}
               images={item.images || []}
-              media={item.media || []}
               subcategory={item.subcategory}
               baseRoute={baseRoute}
               stats={{ 
@@ -632,6 +570,10 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
               currency={item.currency}
               inStock={item.inStock}
               sizes={item.sizes}
+              isShared={item.isShared}
+              sharedBy={sharedByData}
+              sharedAt={item.sharedAt}
+              originalType={item.originalType}
               onDelete={handlePostDelete}
               onUpdate={handlePostUpdate}
             />
