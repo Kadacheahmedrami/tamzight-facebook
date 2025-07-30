@@ -103,10 +103,55 @@ model User {
 
   // User badges
   badges        UserBadge[]
+  sentences     Sentence[]
+  words         Word[]
 
   @@map("users")
 }
 
+// Sentence model
+model Sentence {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  authorId    String
+  timestamp   DateTime @default(now())
+  category    String
+  subcategory String?
+  image       String?
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  
+  @@map("sentences")
+}
+
+// Word model
+model Word {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  authorId    String
+  timestamp   DateTime @default(now())
+  category    String
+  subcategory String?
+  image       String?
+  views       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes    Like[]
+  comments Comment[]
+  shares   Share[]
+  
+  @@map("words")
+}
 
 // Friend Request model
 model FriendRequest {
@@ -374,6 +419,8 @@ model Like {
   questionId String?
   adId       String?
   productId  String?
+  sentenceId String?
+  wordId     String?
   
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   post     Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -385,6 +432,8 @@ model Like {
   question Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
   ad       Ad?       @relation(fields: [adId], references: [id], onDelete: Cascade)
   product  Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sentence Sentence? @relation(fields: [sentenceId], references: [id], onDelete: Cascade)
+  word     Word?     @relation(fields: [wordId], references: [id], onDelete: Cascade)
   
   @@unique([userId, postId])
   @@unique([userId, bookId])
@@ -395,6 +444,8 @@ model Like {
   @@unique([userId, questionId])
   @@unique([userId, adId])
   @@unique([userId, productId])
+  @@unique([userId, sentenceId])
+  @@unique([userId, wordId])
   @@map("likes")
 }
 
@@ -416,6 +467,8 @@ model Comment {
   questionId String?
   adId       String?
   productId  String?
+  sentenceId String?
+  wordId     String?
   
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   post     Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -427,6 +480,8 @@ model Comment {
   question Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
   ad       Ad?       @relation(fields: [adId], references: [id], onDelete: Cascade)
   product  Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sentence Sentence? @relation(fields: [sentenceId], references: [id], onDelete: Cascade)
+  word     Word?     @relation(fields: [wordId], references: [id], onDelete: Cascade)
   
   @@map("comments")
 }
@@ -447,6 +502,8 @@ model Share {
   questionId String?
   adId       String?
   productId  String?
+  sentenceId String?
+  wordId     String?
   
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   post     Post?     @relation(fields: [postId], references: [id], onDelete: Cascade)
@@ -458,6 +515,8 @@ model Share {
   question Question? @relation(fields: [questionId], references: [id], onDelete: Cascade)
   ad       Ad?       @relation(fields: [adId], references: [id], onDelete: Cascade)
   product  Product?  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sentence Sentence? @relation(fields: [sentenceId], references: [id], onDelete: Cascade)
+  word     Word?     @relation(fields: [wordId], references: [id], onDelete: Cascade)
   
   @@map("shares")
 }
