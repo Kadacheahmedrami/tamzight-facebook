@@ -44,6 +44,7 @@ interface PostCardProps {
   sharedBy?: User
   sharedAt?: string
   originalType?: string
+  shareId?: string  // Add shareId prop for identifying the share record
   onDelete?: (postId: string) => void
   onUpdate?: (postId: string, updatedData: any) => void
 }
@@ -70,7 +71,7 @@ export default function PostCard(props: PostCardProps) {
     id, title, content, author, authorId, authorData, timestamp, type, category, subcategory,
     media, image, images, stats, session, onDelete, onUpdate, baseRoute,
     price, currency, inStock, sizes, userHasLiked = false, userReaction = null, reactionDetails,
-    sharedBy, sharedAt, originalType
+    sharedBy, sharedAt, originalType, shareId
   } = props
 
   const apiEndpoint = typeToApiEndpoint[type as keyof typeof typeToApiEndpoint] || 'posts'
@@ -88,6 +89,7 @@ export default function PostCard(props: PostCardProps) {
   const [showCommentsModal, setShowCommentsModal] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
   const [isDeletingPost, setIsDeletingPost] = useState(false)
+  const [isDeletingShare, setIsDeletingShare] = useState(false)
   const [currentStats, setCurrentStats] = useState(stats)
   const [videoStarted, setVideoStarted] = useState(false)
 
@@ -180,6 +182,65 @@ export default function PostCard(props: PostCardProps) {
     }
   }
 
+  // New function to handle share removal
+  const handleRemoveShare = async () => {
+    console.log('handleRemoveShare called')
+    console.log('shareId:', shareId)
+    console.log('isDeletingShare:', isDeletingShare)
+    
+    if (!shareId) {
+      console.error('No shareId provided!')
+      alert('خطأ: لا يمكن العثور على معرف المشاركة')
+      return
+    }
+    
+    if (isDeletingShare) {
+      console.log('Already deleting, returning...')
+      return
+    }
+    
+    const confirmed = confirm('هل أنت متأكد من إلغاء مشاركة هذا المنشور؟')
+    console.log('User confirmed:', confirmed)
+    
+    if (!confirmed) return
+    
+    try {
+      console.log('Starting delete process...')
+      setIsDeletingShare(true)
+      
+      const url = `/api/main/shares/${shareId}`
+      console.log('Fetching URL:', url)
+      
+      const response = await fetch(url, { 
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      console.log('Response status:', response.status)
+      console.log('Response ok:', response.ok)
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        console.error('Error response:', errorData)
+        throw new Error(errorData.message || `خطأ HTTP: ${response.status}`)
+      }
+      
+      const result = await response.json().catch(() => null)
+      console.log('Delete result:', result)
+      
+      // Instead of calling onDelete with just the post id, 
+      // call it with a unique identifier for this specific share
+      console.log('Calling onDelete with unique share identifier')
+      onDelete?.(`share-${shareId}`) // Use a unique identifier for the share
+    } catch (error) {
+      console.error('Remove share error:', error)
+      alert(error instanceof Error ? error.message : 'حدث خطأ في إلغاء المشاركة')
+      setIsDeletingShare(false)
+    }
+  }
+
   const navigateToProfile = (e: React.MouseEvent, userId: number) => {
     e.stopPropagation()
     router.push(`/main/member/${userId}`)
@@ -247,7 +308,7 @@ export default function PostCard(props: PostCardProps) {
               <button
                 onClick={(e) => { e.stopPropagation(); setShowActions(!showActions) }}
                 className="text-gray-500 hover:text-gray-700 p-1 rounded-full hover:bg-gray-100 transition-colors"
-                disabled={isDeletingPost}
+                disabled={isDeletingShare}
               >
                 <i className="fa fa-ellipsis-h"></i>
               </button>
@@ -255,12 +316,12 @@ export default function PostCard(props: PostCardProps) {
               {showActions && (
                 <div className="absolute left-0 top-8 bg-white border rounded-lg shadow-lg z-20 min-w-32">
                   <button
-                    onClick={(e) => { e.stopPropagation(); handleDelete(); setShowActions(false) }}
+                    onClick={(e) => { e.stopPropagation(); handleRemoveShare(); setShowActions(false) }}
                     className="w-full text-right px-3 py-2 text-sm hover:bg-gray-100 flex items-center gap-2 text-red-600 transition-colors"
-                    disabled={isDeletingPost}
+                    disabled={isDeletingShare}
                   >
                     <i className="fa fa-times text-red-500"></i>
-                    {isDeletingPost ? 'جاري الإلغاء...' : 'إلغاء المشاركة'}
+                    {isDeletingShare ? 'جاري الإلغاء...' : 'إلغاء المشاركة'}
                   </button>
                 </div>
               )}

@@ -36,6 +36,7 @@ interface Reaction {
 
 interface Post {
   id: string
+  originalId?: string // Add this field to track the original post ID
   title: string
   content: string
   description?: string | null
@@ -76,6 +77,7 @@ interface Post {
   originalType?: string
   originalAuthor?: string
   originalAuthorData?: User
+  shareId?: string
 }
 
 interface ApiResponse {
@@ -136,6 +138,14 @@ export default function PostsPageClient({ session }: { session: Session | null }
   }, [])
 
   const transformPost = useCallback((item: any): Post => {
+    console.log('Raw API item:', {
+      id: item.id,
+      shareId: item.shareId,
+      sharedBy: item.sharedBy,
+      isShared: !!item.sharedBy,
+      allKeys: Object.keys(item)
+    })
+
     const media: MediaItem[] = []
     
     if (item.image) {
@@ -172,8 +182,13 @@ export default function PostsPageClient({ session }: { session: Session | null }
       ? `${item.sharedBy.firstName} ${item.sharedBy.lastName}`
       : undefined
 
-    return {
-      id: item.id?.toString() || Math.random().toString(36).substr(2, 9),
+    // Create a unique ID for shared posts vs original posts
+    const uniqueId = isShared ? `share-${item.shareId}` : item.id?.toString() || Math.random().toString(36).substr(2, 9)
+    const originalId = item.id?.toString()
+
+    const transformedPost = {
+      id: uniqueId, // Use unique ID that differentiates shares from originals
+      originalId, // Keep track of the original post ID for API calls
       title: item.title || 'بدون عنوان',
       content: item.content || item.description || '',
       description: item.description || null,
@@ -225,8 +240,19 @@ export default function PostsPageClient({ session }: { session: Session | null }
       sharedAt: isShared ? formatTimestamp(item.sharedAt) : undefined,
       originalType: item.originalType,
       originalAuthor: isShared ? displayAuthor : undefined,
-      originalAuthorData: isShared ? item.author : undefined
+      originalAuthorData: isShared ? item.author : undefined,
+      shareId: isShared ? item.shareId : undefined
     }
+
+    console.log('Transformed post:', {
+      id: transformedPost.id,
+      originalId: transformedPost.originalId,
+      shareId: transformedPost.shareId,
+      isShared: transformedPost.isShared,
+      sharedBy: transformedPost.sharedBy
+    })
+
+    return transformedPost
   }, [formatTimestamp])
 
   const fetchPosts = useCallback(async (type = "all", offset = 0, isLoadMore = false) => {
@@ -340,6 +366,28 @@ export default function PostsPageClient({ session }: { session: Session | null }
     setPosts([])
     fetchPosts(selectedType, 0, false)
   }, [selectedType, fetchPosts])
+
+  // Updated delete handler
+  const handlePostDelete = useCallback((postId: string) => {
+    console.log('Deleting post with ID:', postId)
+    setPosts(prev => {
+      const filtered = prev.filter(p => p.id !== postId)
+      console.log('Posts before delete:', prev.length, 'After delete:', filtered.length)
+      return filtered
+    })
+  }, [])
+
+  // Updated update handler
+  const handlePostUpdate = useCallback((postId: string, updatedData: any) => {
+    setPosts(prev => prev.map(p => {
+      // For original posts, match by originalId or id
+      // For shared posts, we don't update the content since it's a reference
+      if (!p.isShared && (p.originalId === postId || p.id === postId)) {
+        return { ...p, ...updatedData }
+      }
+      return p
+    }))
+  }, [])
 
   useEffect(() => {
     if (!isMountedRef.current) return
@@ -475,7 +523,7 @@ export default function PostsPageClient({ session }: { session: Session | null }
             {posts.map((post, index) => (
               <PostCard 
                 key={`${post.id}-${index}`}
-                id={post.id}
+                id={post.originalId || post.id} // Use originalId for API calls, fallback to unique id
                 title={post.title}
                 content={post.content}
                 author={post.author}
@@ -498,8 +546,11 @@ export default function PostsPageClient({ session }: { session: Session | null }
                 inStock={post.inStock}
                 sizes={post.sizes}
                 sharedBy={post.sharedBy}
-                onDelete={(postId) => setPosts(prev => prev.filter(p => p.id !== postId))}
-                onUpdate={(postId, updatedData) => setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...updatedData } : p))}
+                sharedAt={post.sharedAt}
+                originalType={post.originalType}
+                shareId={post.shareId}
+                onDelete={handlePostDelete} // Pass the unique ID handler
+                onUpdate={handlePostUpdate} // Pass the updated handler
               />
             ))}
             

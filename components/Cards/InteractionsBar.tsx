@@ -53,6 +53,7 @@ export default function InteractionsBar({
   // UI states
   const [showReactions, setShowReactions] = useState(false)
   const [showReactionsModal, setShowReactionsModal] = useState(false)
+  const [showSharePopup, setShowSharePopup] = useState(false)
   
   // Data states
   const [reactionsData, setReactionsData] = useState<ReactionData[]>([])
@@ -62,6 +63,7 @@ export default function InteractionsBar({
   const [isReactionsLoading, setIsReactionsLoading] = useState(false)
   
   const reactionsRef = useRef<HTMLDivElement>(null)
+  const shareRef = useRef<HTMLDivElement>(null)
 
   // Debug logging
   useEffect(() => {
@@ -91,7 +93,7 @@ export default function InteractionsBar({
     return reactions.find(r => r.emoji === emoji);
   };
 
-  // Close reactions dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as Node
@@ -99,13 +101,17 @@ export default function InteractionsBar({
       if (reactionsRef.current && !reactionsRef.current.contains(target)) {
         setShowReactions(false)
       }
+      
+      if (shareRef.current && !shareRef.current.contains(target)) {
+        setShowSharePopup(false)
+      }
     }
     
-    if (showReactions) {
+    if (showReactions || showSharePopup) {
       document.addEventListener('mousedown', handleClickOutside)
       return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [showReactions])
+  }, [showReactions, showSharePopup])
 
   // Enhanced API helper with better error handling
   const callApi = async (method: string, body?: any) => {
@@ -124,6 +130,27 @@ export default function InteractionsBar({
       return await response.json()
     } catch (error) {
       console.error('API Error:', error)
+      throw error
+    }
+  }
+
+  // Share API helper - uses dedicated shares endpoint
+  const callShareApi = async (method: string, body?: any) => {
+    try {
+      const response = await fetch(`/api/main/shares/${postId}`, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: body ? JSON.stringify(body) : undefined
+      })
+      
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.message || `HTTP ${response.status}`)
+      }
+      
+      return await response.json()
+    } catch (error) {
+      console.error('Share API Error:', error)
       throw error
     }
   }
@@ -214,8 +241,8 @@ export default function InteractionsBar({
     }
   }
 
-  // Enhanced share handler
-  const handleShare = async () => {
+  // Share on page handler - now uses dedicated shares API
+  const handleShareOnPage = async () => {
     if (isLoading || !session?.user?.id) return
     
     try {
@@ -225,27 +252,39 @@ export default function InteractionsBar({
       const newStats = { ...stats, shares: stats.shares + 1 }
       onStatsUpdate(newStats)
       
-      await callApi('POST', { action: 'share' })
-      
-      // Copy to clipboard as additional feature
-      if (navigator.share) {
-        await navigator.share({
-          title: `منشور من التطبيق`,
-          text: 'شاهد هذا المنشور المثير للاهتمام',
-          url: window.location.href
-        })
-      } else {
-        await navigator.clipboard.writeText(window.location.href)
-        // You could show a toast notification here
-      }
+      // Use shares API with content type
+      await callShareApi('POST', { 
+        contentType: apiEndpoint.slice(0, -1) // Remove 's' from endpoint (posts -> post)
+      })
       
     } catch (error) {
+      console.error('Share error:', error)
       // Revert optimistic update on error
       const revertedStats = { ...stats, shares: Math.max(0, stats.shares) }
       onStatsUpdate(revertedStats)
       alert('حدث خطأ في المشاركة')
     } finally {
       setIsLoading(false)
+      setShowSharePopup(false)
+    }
+  }
+
+  // Copy link handler
+  const handleCopyLink = async () => {
+    try {
+      const currentUrl = window.location.origin
+      const postLink = `${currentUrl}/${apiEndpoint}/${postId}`
+      
+      await navigator.clipboard.writeText(postLink)
+      
+      // You can add a toast notification here if you want
+      alert('تم نسخ الرابط بنجاح')
+      
+    } catch (error) {
+      console.error('Error copying link:', error)
+      alert('حدث خطأ في نسخ الرابط')
+    } finally {
+      setShowSharePopup(false)
     }
   }
 
@@ -344,19 +383,48 @@ export default function InteractionsBar({
           </Button>
 
           {/* Share Button */}
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            className="text-gray-500 hover:text-green-500 p-2 transition-colors"
-            onClick={(e) => {
-              e.stopPropagation()
-              handleShare()
-            }}
-            disabled={isLoading}
-          >
-            <FontAwesomeIcon icon={fas.faShare} className="text-sm mr-1" />
-            <span className="md:block hidden text-sm ">مشاركة</span>
-          </Button>
+          <div className="relative" ref={shareRef}>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-gray-500 hover:text-green-500 p-2 transition-colors"
+              onClick={(e) => {
+                e.stopPropagation()
+                setShowSharePopup(!showSharePopup)
+              }}
+              disabled={isLoading}
+            >
+              <FontAwesomeIcon icon={fas.faShare} className="text-sm mr-1" />
+              <span className="md:block hidden text-sm">مشاركة</span>
+            </Button>
+
+            {/* Share Popup */}
+            {showSharePopup && (
+              <div className="absolute bottom-full left-0 mb-2 bg-white rounded-lg shadow-xl border py-2 z-50 min-w-48">
+                <button
+                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2 text-sm transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleShareOnPage()
+                  }}
+                  disabled={isLoading}
+                >
+                  <FontAwesomeIcon icon={fas.faShare} className="text-green-500" />
+                  مشاركة في صفحتك
+                </button>
+                <button
+                  className="w-full px-4 py-2 text-left hover:bg-gray-50 flex items-center gap-2 text-sm transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleCopyLink()
+                  }}
+                >
+                  <FontAwesomeIcon icon={fas.faLink} className="text-blue-500" />
+                  نسخ الرابط
+                </button>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center gap-4 text-sm text-gray-500">

@@ -30,6 +30,7 @@ interface ContentItem {
   userReaction?: string | null;
   reactionDetails?: any;
   // Share-specific fields
+  shareId?: number; // Add shareId field
   sharedBy?: { id: number; firstName: string; lastName: string; avatar?: string | null };
   sharedAt?: Date;
   originalType?: string;
@@ -193,6 +194,8 @@ const fetchSharedContent = async (authorId?: string): Promise<ContentItem[]> => 
         inStock: originalContent.inStock !== undefined ? originalContent.inStock : undefined,
         sizes: originalContent.sizes || undefined,
         colors: originalContent.colors || undefined,
+        // Include share-specific data
+        shareId: share.id, // Include the share ID
         sharedBy: {
           id: share.user.id,
           firstName: share.user.firstName,
@@ -388,6 +391,11 @@ export async function GET(request: NextRequest) {
           inStock: item.inStock !== undefined ? item.inStock : undefined,
           sizes: item.sizes || undefined,
           colors: item.colors || undefined,
+          // Regular content won't have share-specific fields
+          shareId: undefined,
+          sharedBy: undefined,
+          sharedAt: undefined,
+          originalType: undefined,
         }))
       );
 
@@ -398,7 +406,7 @@ export async function GET(request: NextRequest) {
       }
     }
     
-    // Sort all content by timestamp
+    // Sort all content by timestamp (prioritize sharedAt for shared content)
     allContent.sort((a, b) => {
       const timeA = a.sharedAt || a.timestamp;
       const timeB = b.sharedAt || b.timestamp;
@@ -425,7 +433,9 @@ export async function GET(request: NextRequest) {
         reactions,
         userHasLiked: !!userReaction,
         userReaction,
-        reactionDetails: processReactionDetails(reactions)
+        reactionDetails: processReactionDetails(reactions),
+        // Ensure shareId is included in the response
+        shareId: item.shareId || undefined,
       };
     });
     
@@ -504,7 +514,12 @@ export async function POST(request: NextRequest) {
         reactions,
         userHasLiked: false,
         userReaction: null,
-        reactionDetails: processReactionDetails(reactions)
+        reactionDetails: processReactionDetails(reactions),
+        // New content won't have share-specific fields
+        shareId: undefined,
+        sharedBy: undefined,
+        sharedAt: undefined,
+        originalType: undefined,
       },
     });
   } catch (error) {
