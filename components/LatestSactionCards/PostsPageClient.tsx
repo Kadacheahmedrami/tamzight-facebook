@@ -21,6 +21,9 @@ interface User {
   firstName: string
   lastName: string
   avatar?: string | null
+  email: string
+  createdAt: Date
+  updatedAt: Date
 }
 
 interface Reaction {
@@ -179,7 +182,10 @@ export default function PostsPageClient({ session }: { session: Session | null }
       authorData: item.author || { 
         id: parseInt(item.authorId) || 0, 
         firstName: 'مجهول', 
-        lastName: '' 
+        lastName: '',
+        email: '',
+        createdAt: new Date(),
+        updatedAt: new Date()
       },
       timestamp: formatTimestamp(isShared ? item.sharedAt : item.timestamp),
       type: item.originalType || item.type || 'post',
@@ -210,7 +216,12 @@ export default function PostsPageClient({ session }: { session: Session | null }
       reactionDetails: item.reactionDetails,
       // Share-specific fields
       isShared,
-      sharedBy: item.sharedBy,
+      sharedBy: item.sharedBy ? {
+        ...item.sharedBy,
+        email: item.sharedBy.email || '',
+        createdAt: new Date(item.sharedBy.createdAt || Date.now()),
+        updatedAt: new Date(item.sharedBy.updatedAt || Date.now())
+      } : undefined,
       sharedAt: isShared ? formatTimestamp(item.sharedAt) : undefined,
       originalType: item.originalType,
       originalAuthor: isShared ? displayAuthor : undefined,
@@ -221,7 +232,6 @@ export default function PostsPageClient({ session }: { session: Session | null }
   const fetchPosts = useCallback(async (type = "all", offset = 0, isLoadMore = false) => {
     if (isLoadingRef.current || !isMountedRef.current) return
 
-    // Cancel previous request if it exists
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
       abortControllerRef.current = null
@@ -246,7 +256,6 @@ export default function PostsPageClient({ session }: { session: Session | null }
         signal: abortController.signal
       })
       
-      // Check if component is still mounted before proceeding
       if (!isMountedRef.current || abortController.signal.aborted) {
         return
       }
@@ -258,7 +267,6 @@ export default function PostsPageClient({ session }: { session: Session | null }
       
       const data: ApiResponse = await response.json()
       
-      // Check again if component is still mounted
       if (!isMountedRef.current || abortController.signal.aborted) {
         return
       }
@@ -284,11 +292,9 @@ export default function PostsPageClient({ session }: { session: Session | null }
       setHasMore(data.meta?.hasMore !== false && transformedPosts.length === LIMIT)
       
     } catch (error) {
-      // Only handle errors if component is still mounted and request wasn't intentionally aborted
       if (!isMountedRef.current) return
       
       if (error instanceof Error && error.name === 'AbortError') {
-        // Silently ignore abort errors - they're intentional
         return
       }
       
@@ -304,7 +310,6 @@ export default function PostsPageClient({ session }: { session: Session | null }
       }
       isLoadingRef.current = false
       
-      // Clean up abort controller if it's the current one
       if (abortControllerRef.current === abortController) {
         abortControllerRef.current = null
       }
@@ -336,7 +341,6 @@ export default function PostsPageClient({ session }: { session: Session | null }
     fetchPosts(selectedType, 0, false)
   }, [selectedType, fetchPosts])
 
-  // Intersection Observer for infinite scroll
   useEffect(() => {
     if (!isMountedRef.current) return
     
@@ -359,14 +363,12 @@ export default function PostsPageClient({ session }: { session: Session | null }
     return () => observer.disconnect()
   }, [hasMore, loadingMore, loadMore, posts.length])
 
-  // Initial load
   useEffect(() => {
     if (isMountedRef.current) {
       fetchPosts()
     }
   }, [])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       isMountedRef.current = false
@@ -473,16 +475,31 @@ export default function PostsPageClient({ session }: { session: Session | null }
             {posts.map((post, index) => (
               <PostCard 
                 key={`${post.id}-${index}`}
-                {...post}
+                id={post.id}
+                title={post.title}
+                content={post.content}
+                author={post.author}
+                authorId={post.authorId}
+                authorData={post.authorData}
+                timestamp={post.timestamp}
+                category={post.category}
+                subcategory={post.subcategory}
+                type={post.type}
+                image={post.image}
+                images={post.images}
+                stats={post.stats}
                 baseRoute={`/main/${post.type}s`}
                 session={session}
-                // Pass share-specific props
-                isShared={post.isShared}
+                userHasLiked={post.userHasLiked}
+                userReaction={post.userReaction}
+                reactionDetails={post.reactionDetails}
+                price={post.price}
+                currency={post.currency}
+                inStock={post.inStock}
+                sizes={post.sizes}
                 sharedBy={post.sharedBy}
-                sharedAt={post.sharedAt}
-                originalType={post.originalType}
-                originalAuthor={post.originalAuthor}
-                originalAuthorData={post.originalAuthorData}
+                onDelete={(postId) => setPosts(prev => prev.filter(p => p.id !== postId))}
+                onUpdate={(postId, updatedData) => setPosts(prev => prev.map(p => p.id === postId ? { ...p, ...updatedData } : p))}
               />
             ))}
             

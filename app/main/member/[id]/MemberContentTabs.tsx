@@ -124,47 +124,37 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
     }
   }, [])
 
-  const transformContentItem = useCallback((item: any): ContentItem => {
-    const media = []
-    if (item.image) media.push({ id: `img-${item.id}`, type: 'image', url: item.image, alt: item.title || 'صورة' })
-    if (item.images?.length) {
-      item.images.forEach((url: string, i: number) => {
-        media.push({ id: `img-${item.id}-${i}`, type: 'image', url, alt: item.title || 'صورة' })
-      })
-    }
-
-    return {
-      id: item.id?.toString() || Math.random().toString(36).substr(2, 9),
-      title: item.title || 'بدون عنوان',
-      content: item.content || item.description || '',
-      description: item.description || null,
-      timestamp: item.timestamp,
-      createdAt: item.createdAt,
-      category: item.category || 'عام',
-      subcategory: item.subcategory,
-      type: item.type,
-      originalType: item.originalType,
-      image: item.image,
-      images: item.images,
-      views: item.views || 0,
-      shareId: item.shareId,
-      sharedAt: item.sharedAt,
-      sharedBy: item.sharedBy,
-      isShared: Boolean(item.sharedBy || item.sharedAt),
-      author: item.author,
-      authorId: item.authorId || item.author?.id,
-      reactions: item.reactions || [],
-      _count: item._count || { likes: item.likes?.length || 0, comments: item.comments?.length || 0, shares: item.shares?.length || 0 },
-      price: item.price,
-      currency: item.currency,
-      inStock: item.inStock,
-      sizes: item.sizes,
-      colors: item.colors,
-      userHasLiked: item.userHasLiked || false,
-      userReaction: item.userReaction,
-      reactionDetails: item.reactionDetails
-    }
-  }, [])
+  const transformContentItem = useCallback((item: any): ContentItem => ({
+    id: item.id?.toString() || Math.random().toString(36).substr(2, 9),
+    title: item.title || 'بدون عنوان',
+    content: item.content || item.description || '',
+    description: item.description || null,
+    timestamp: item.timestamp,
+    createdAt: item.createdAt,
+    category: item.category || 'عام',
+    subcategory: item.subcategory,
+    type: item.type,
+    originalType: item.originalType,
+    image: item.image,
+    images: item.images,
+    views: item.views || 0,
+    shareId: item.shareId,
+    sharedAt: item.sharedAt,
+    sharedBy: item.sharedBy,
+    isShared: Boolean(item.sharedBy || item.sharedAt),
+    author: item.author,
+    authorId: item.authorId || item.author?.id,
+    reactions: item.reactions || [],
+    _count: item._count || { likes: item.likes?.length || 0, comments: item.comments?.length || 0, shares: item.shares?.length || 0 },
+    price: item.price,
+    currency: item.currency,
+    inStock: item.inStock,
+    sizes: item.sizes,
+    colors: item.colors,
+    userHasLiked: item.userHasLiked || false,
+    userReaction: item.userReaction,
+    reactionDetails: item.reactionDetails
+  }), [])
 
   const fetchContentData = useCallback(async (contentType: string, offset = 0, isLoadMore = false) => {
     if (isLoadingRef.current || !isMountedRef.current) return
@@ -183,10 +173,9 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
       if (contentType === 'interactions' || contentType === 'friends') {
         url = `/api/main/member/${memberId}/content?type=${contentType}`
       } else if (contentType === 'shares') {
-        // Special handling for shares - fetch shares made by this specific member
         const params = new URLSearchParams({ 
           type: 'share',
-          authorId: memberId, // This tells the API to get shares made by this member
+          authorId: memberId,
           limit: LIMIT.toString(), 
           offset: offset.toString()
         })
@@ -240,8 +229,6 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
 
         let memberContent = data.data
 
-        // For shares, the data is already filtered by authorId in the API
-        // For other content types, filter by member ID
         if (contentType !== 'shares') {
           memberContent = data.data.filter((item: any) => {
             const itemAuthorId = item.authorId || item.author?.id
@@ -336,19 +323,6 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
   const fullName = `${memberData.firstName} ${memberData.lastName}`
   const totalFriends = memberData._count.friendships + memberData._count.friendOf
   
-  const createAuthorData = (item?: ContentItem) => 
-    item?.isShared && item.author ? {
-      id: item.author.id || parseInt(memberId, 10),
-      firstName: item.author.firstName,
-      lastName: item.author.lastName,
-      avatar: item.author.avatar
-    } : {
-      id: parseInt(memberData.id, 10),
-      firstName: memberData.firstName,
-      lastName: memberData.lastName,
-      avatar: memberData.avatar
-    }
-
   const handlePostDelete = (postId: string) => setContentData(prev => prev.filter(item => item.id !== postId))
   const handlePostUpdate = (postId: string, updatedData: any) => 
     setContentData(prev => prev.map(item => item.id === postId ? { ...item, ...updatedData } : item))
@@ -525,13 +499,28 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
     return (
       <div className="space-y-4 lg:space-y-6">
         {contentData.map((item, index) => {
-          const authorData = createAuthorData(item)
+          const authorData = item?.isShared && item.author ? {
+            id: item.author.id || parseInt(memberId, 10),
+            firstName: item.author.firstName,
+            lastName: item.author.lastName,
+            avatar: item.author.avatar
+          } : {
+            id: parseInt(memberData.id, 10),
+            firstName: memberData.firstName,
+            lastName: memberData.lastName,
+            avatar: memberData.avatar
+          }
+
+          // Fix: Create proper User object or undefined for sharedBy
           const sharedByData = item?.isShared && item.sharedBy ? {
             id: item.sharedBy.id,
             firstName: item.sharedBy.firstName,
             lastName: item.sharedBy.lastName,
-            avatar: item.sharedBy.avatar
-          } : null
+            avatar: item.sharedBy.avatar,
+            email: '', // Add required User properties
+            createdAt: new Date(),
+            updatedAt: new Date()
+          } : undefined
           
           const displayAuthor = item.isShared && item.author 
             ? `${item.author.firstName} ${item.author.lastName}` 
@@ -570,10 +559,7 @@ export default function MemberContentTabs({ memberData, memberId, session }: Mem
               currency={item.currency}
               inStock={item.inStock}
               sizes={item.sizes}
-              isShared={item.isShared}
               sharedBy={sharedByData}
-              sharedAt={item.sharedAt}
-              originalType={item.originalType}
               onDelete={handlePostDelete}
               onUpdate={handlePostUpdate}
             />
