@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     const hasNextPage = page < totalPages
     const hasPreviousPage = page > 1
 
-    // Fetch words from database with pagination
+    // Fetch words from database with pagination and pronunciations
     const words = await prisma.word.findMany({
       where: whereClause,
       include: {
@@ -93,14 +93,31 @@ export async function GET(request: NextRequest) {
             id: true,
             firstName: true,
             lastName: true,
-            avatar: true
+            avatar: true,
+            image: true // Include NextAuth image field as well
+          }
+        },
+        pronunciations: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatar: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
           }
         },
         _count: {
           select: {
             likes: true,
             comments: true,
-            shares: true
+            shares: true,
+            pronunciations: true
           }
         }
       },
@@ -209,7 +226,7 @@ export async function GET(request: NextRequest) {
     type WordFromDb = {
       id: string;
       title: string;
-      content: string | null;
+      content: string;
       createdAt: Date;
       category: string;
       subcategory: string | null;
@@ -220,11 +237,25 @@ export async function GET(request: NextRequest) {
         firstName: string;
         lastName: string;
         avatar: string | null;
+        image: string | null;
       };
+      pronunciations: {
+        id: string;
+        accent: string;
+        pronunciation: string;
+        createdAt: Date;
+        user: {
+          id: string;
+          firstName: string;
+          lastName: string;
+          avatar: string | null;
+        };
+      }[];
       _count: {
         likes: number;
         comments: number;
         shares: number;
+        pronunciations: number;
       };
     };
 
@@ -232,12 +263,31 @@ export async function GET(request: NextRequest) {
     const transformedWords = words.map((word: WordFromDb) => {
       const wordReactions = reactionsData.get(word.id);
       
+      // Group pronunciations by accent
+      const pronunciationsByAccent = word.pronunciations.reduce((acc, pronunciation) => {
+        if (!acc[pronunciation.accent]) {
+          acc[pronunciation.accent] = [];
+        }
+        acc[pronunciation.accent].push({
+          id: pronunciation.id,
+          pronunciation: pronunciation.pronunciation,
+          createdAt: pronunciation.createdAt,
+          user: {
+            id: pronunciation.user.id,
+            name: `${pronunciation.user.firstName} ${pronunciation.user.lastName}`,
+            avatar: pronunciation.user.avatar
+          }
+        });
+        return acc;
+      }, {} as Record<string, any[]>);
+      
       return {
         id: word.id,
         title: word.title,
-        content: word.content || "",
+        content: word.content,
         author: `${word.author.firstName} ${word.author.lastName}`,
         authorId: word.author.id,
+        authorAvatar: word.author.avatar || word.author.image, // Fallback to NextAuth image
         timestamp: `نشر بتاريخ ${word.createdAt.toLocaleDateString('ar-EG')} الساعة ${word.createdAt.toLocaleTimeString('ar-EG')}`,
         category: word.category,
         subcategory: word.subcategory || "",
@@ -246,7 +296,8 @@ export async function GET(request: NextRequest) {
           views: word.views,
           likes: word._count.likes,
           comments: word._count.comments,
-          shares: word._count.shares
+          shares: word._count.shares,
+          pronunciations: word._count.pronunciations
         },
         // Add user interaction information
         userHasLiked: currentUserId ? userLikesMap.has(word.id) : false,
@@ -256,6 +307,22 @@ export async function GET(request: NextRequest) {
           total: wordReactions?.totalReactions || 0,
           summary: wordReactions?.summary || [],
           details: wordReactions?.byEmoji || {}
+        },
+        // Add pronunciations data
+        pronunciations: {
+          total: word._count.pronunciations,
+          byAccent: pronunciationsByAccent,
+          recent: word.pronunciations.slice(0, 5).map(p => ({
+            id: p.id,
+            accent: p.accent,
+            pronunciation: p.pronunciation,
+            createdAt: p.createdAt,
+            user: {
+              id: p.user.id,
+              name: `${p.user.firstName} ${p.user.lastName}`,
+              avatar: p.user.avatar
+            }
+          }))
         }
       }
     })

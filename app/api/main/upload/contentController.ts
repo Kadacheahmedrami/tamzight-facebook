@@ -1,9 +1,8 @@
 // lib/controllers/contentController.ts
 
-
 import { prisma } from '@/lib/prisma';
 
-// Content type mapping for validation
+// Content type mapping for validation - Updated to include sentences and words
 const CONTENT_TYPES = {
   posts: 'Post',
   books: 'Book',
@@ -13,7 +12,9 @@ const CONTENT_TYPES = {
   truths: 'Truth',
   questions: 'Question',
   ads: 'Ad',
-  products: 'Product'
+  products: 'Product',
+  sentences: 'Sentence',  // Added
+  words: 'Word'          // Added
 } as const;
 
 type ContentType = keyof typeof CONTENT_TYPES;
@@ -69,15 +70,54 @@ interface QuestionData extends BaseContentData {
   type?: string;
 }
 
-type ContentData = BaseContentData | BookData | IdeaData | ImageData | VideoData | AdData | ProductData | QuestionData;
+// New interfaces for sentences and words
+interface SentenceData extends BaseContentData {
+  content: string; // Required for sentences
+}
 
-// Validation schemas for each content type
+interface WordData extends BaseContentData {
+  content: string; // Required for words (meaning/explanation)
+}
+
+type ContentData = BaseContentData | BookData | IdeaData | ImageData | VideoData | AdData | ProductData | QuestionData | SentenceData | WordData;
+
+// Enhanced image URL validation function
+const isValidImageUrl = (url: string): boolean => {
+  if (!url || !url.trim()) return true; // Empty is OK (optional field)
+  
+  const trimmedUrl = url.trim();
+  
+  // Allow relative paths (starting with /)
+  if (trimmedUrl.startsWith('/')) {
+    return true;
+  }
+  
+  // Allow data URLs (base64 images)
+  if (trimmedUrl.startsWith('data:image/')) {
+    return true;
+  }
+  
+  // Validate absolute URLs
+  try {
+    const urlObj = new URL(trimmedUrl);
+    return urlObj.protocol === 'http:' || urlObj.protocol === 'https:';
+  } catch {
+    return false;
+  }
+};
+
+// Validation schemas for each content type - Updated with sentences and words
 const validateContentData = (type: ContentType, data: ContentData): string[] => {
   const errors: string[] = [];
   
   // Common required fields
-  if (!data.title || !data.title.trim()) errors.push('Title is required');
-  if (!data.category || !data.category.trim()) errors.push('Category is required');
+  if (!data.title || !data.title.trim()) {
+    errors.push(type === 'sentences' ? 'عنوان الجملة مطلوب' : 
+                type === 'words' ? 'الكلمة مطلوبة' : 'Title is required');
+  }
+  if (!data.category || !data.category.trim()) {
+    errors.push('القسم الرئيسي مطلوب');
+  }
   
   // Type-specific validations
   switch (type) {
@@ -90,6 +130,32 @@ const validateContentData = (type: ContentType, data: ContentData): string[] => 
     case 'ads':
     case 'products':
       if (!data.content || !data.content.trim()) errors.push('Content is required');
+      break;
+      
+    case 'sentences':
+      if (!data.content || !data.content.trim()) {
+        errors.push('محتوى الجملة مطلوب');
+      }
+      // Validate sentence length
+      if (data.title && data.title.length > 200) {
+        errors.push('عنوان الجملة يجب أن يكون أقل من 200 حرف');
+      }
+      if (data.content && data.content.length > 1000) {
+        errors.push('محتوى الجملة يجب أن يكون أقل من 1000 حرف');
+      }
+      break;
+      
+    case 'words':
+      if (!data.content || !data.content.trim()) {
+        errors.push('معنى الكلمة مطلوب');
+      }
+      // Validate word length
+      if (data.title && data.title.length > 100) {
+        errors.push('الكلمة يجب أن تكون أقل من 100 حرف');
+      }
+      if (data.content && data.content.length > 500) {
+        errors.push('معنى الكلمة يجب أن يكون أقل من 500 حرف');
+      }
       break;
       
     case 'images':
@@ -125,13 +191,13 @@ const validateContentData = (type: ContentType, data: ContentData): string[] => 
     case 'ads':
       const adData = data as AdData;
       if (adData.targetAmount && isNaN(parseFloat(adData.targetAmount))) {
-        errors.push('Target amount must be a valid number');
+        errors.push('يجب أن يكون المبلغ المطلوب رقماً صحيحاً');
       }
       if (adData.currentAmount && isNaN(parseFloat(adData.currentAmount))) {
-        errors.push('Current amount must be a valid number');
+        errors.push('يجب أن يكون المبلغ المتوفر رقماً صحيحاً');
       }
       if (adData.deadline && isNaN(new Date(adData.deadline).getTime())) {
-        errors.push('Invalid deadline date');
+        errors.push('تاريخ انتهاء الموعد غير صحيح');
       }
       break;
       
@@ -150,21 +216,41 @@ const validateContentData = (type: ContentType, data: ContentData): string[] => 
       break;
   }
   
+  // Enhanced image URL validation (for all types)
+  if (data.image && !isValidImageUrl(data.image)) {
+    errors.push('رابط الصورة غير صحيح');
+  }
+  
   return errors;
 };
 
-// Prepare data for database insertion
+// Prepare data for database insertion - Updated with sentences and words
 const prepareContentData = (type: ContentType, data: ContentData, userId: string): any => {
   const baseData = {
     title: data.title.trim(),
     content: data.content ? data.content.trim() : '',
     authorId: userId,
     category: data.category.trim(),
-    subcategory: data.subcategory ? data.subcategory.trim() : null,
-    image: data.image ? data.image.trim() : null,
+    subcategory: data.subcategory ? data.subcategory.trim() : '',
+    image: data.image ? data.image.trim() : '',
+    timestamp: new Date(), // Add timestamp for sentences and words
   };
   
   switch (type) {
+    case 'sentences':
+      return {
+        ...baseData,
+        content: data.content!.trim(), // Required for sentences
+        views: 0, // Initialize views counter
+      };
+      
+    case 'words':
+      return {
+        ...baseData,
+        content: data.content!.trim(), // Required for words
+        views: 0, // Initialize views counter
+      };
+      
     case 'books':
       const bookData = data as BookData;
       return {
@@ -212,8 +298,8 @@ const prepareContentData = (type: ContentType, data: ContentData, userId: string
       const adData = data as AdData;
       return {
         ...baseData,
-        targetAmount: adData.targetAmount ? adData.targetAmount.trim() : null,
-        currentAmount: adData.currentAmount ? adData.currentAmount.trim() : null,
+        targetAmount: adData.targetAmount ? parseInt(adData.targetAmount) : 0,
+        currentAmount: adData.currentAmount ? parseInt(adData.currentAmount) : 0,
         deadline: adData.deadline ? new Date(adData.deadline) : null,
       };
       
@@ -221,7 +307,7 @@ const prepareContentData = (type: ContentType, data: ContentData, userId: string
       const productData = data as ProductData;
       return {
         ...baseData,
-        price: productData.price.trim(),
+        price: parseFloat(productData.price),
         currency: productData.currency.trim(),
         inStock: productData.inStock !== undefined ? Boolean(productData.inStock) : true,
         sizes: Array.isArray(productData.sizes) ? productData.sizes : 
@@ -235,7 +321,7 @@ const prepareContentData = (type: ContentType, data: ContentData, userId: string
       return {
         ...baseData,
         category: 'سؤال',
-        type: questionData.type ? questionData.type.trim() : 'answer',
+        type: questionData.type ? questionData.type.trim() : 'يحتاج إجابة',
         answered: false,
       };
       
@@ -250,7 +336,7 @@ const prepareContentData = (type: ContentType, data: ContentData, userId: string
   }
 };
 
-// Content Controller Class
+// Content Controller Class - Updated with sentences and words support
 export class ContentController {
   
   // Validate content type
@@ -284,7 +370,7 @@ export class ContentController {
     return { isValid: true };
   }
 
-  // Create content in database
+  // Create content in database - Updated with sentences and words
   static async createContent(type: ContentType, data: ContentData, userId: string) {
     try {
       console.log(`🔄 Creating ${type} content for user ${userId}`);
@@ -297,33 +383,52 @@ export class ContentController {
       let createdContent: any;
       
       switch (type) {
+        case 'sentences':
+          createdContent = await prisma.sentence.create({ data: contentData });
+          console.log('✅ Sentence created with ID:', createdContent.id);
+          break;
+          
+        case 'words':
+          createdContent = await prisma.word.create({ data: contentData });
+          console.log('✅ Word created with ID:', createdContent.id);
+          break;
+          
         case 'posts':
           createdContent = await prisma.post.create({ data: contentData });
           break;
+          
         case 'books':
           createdContent = await prisma.book.create({ data: contentData });
           break;
+          
         case 'ideas':
           createdContent = await prisma.idea.create({ data: contentData });
           break;
+          
         case 'images':
           createdContent = await prisma.image.create({ data: contentData });
           break;
+          
         case 'videos':
           createdContent = await prisma.video.create({ data: contentData });
           break;
+          
         case 'truths':
           createdContent = await prisma.truth.create({ data: contentData });
           break;
+          
         case 'questions':
           createdContent = await prisma.question.create({ data: contentData });
           break;
+          
         case 'ads':
           createdContent = await prisma.ad.create({ data: contentData });
           break;
+          
         case 'products':
           createdContent = await prisma.product.create({ data: contentData });
           break;
+          
         default:
           throw new Error(`Unsupported content type: ${type}`);
       }
@@ -337,63 +442,185 @@ export class ContentController {
     }
   }
 
-  // Get content with author information
-  static async getContentWithAuthor(type: ContentType, contentId: number) {
+  // Get content with author information - Updated with sentences and words
+  static async getContentWithAuthor(type: ContentType, contentId: string) {
     try {
-      const modelName = type === 'posts' ? 'post' : 
-                        type === 'books' ? 'book' :
-                        type === 'ideas' ? 'idea' :
-                        type === 'images' ? 'image' :
-                        type === 'videos' ? 'video' :
-                        type === 'truths' ? 'truth' :
-                        type === 'questions' ? 'question' :
-                        type === 'ads' ? 'ad' :
-                        type === 'products' ? 'product' : 'post';
-
-      const contentWithAuthor = await (prisma as any)[modelName].findUnique({
-        where: { id: contentId },
-        include: {
-          author: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              avatar: true,
-              image: true,
-            },
+      const includeAuthor = {
+        author: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            avatar: true,
+            image: true, // NextAuth image field
           },
-          likes: true,
-          comments: true,
-          shares: true,
         },
-      });
+        likes: true,
+        comments: true,
+        shares: true,
+      };
+
+      let contentWithAuthor: any;
+
+      switch (type) {
+        case 'sentences':
+          contentWithAuthor = await prisma.sentence.findUnique({
+            where: { id: contentId },
+            include: {
+              ...includeAuthor,
+              pronunciations: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      firstName: true,
+                      lastName: true,
+                      avatar: true,
+                    }
+                  }
+                }
+              }
+            },
+          });
+          break;
+          
+        case 'words':
+          contentWithAuthor = await prisma.word.findUnique({
+            where: { id: contentId },
+            include: {
+              ...includeAuthor,
+              pronunciations: {
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      firstName: true,
+                      lastName: true,
+                      avatar: true,
+                    }
+                  }
+                }
+              }
+            },
+          });
+          break;
+          
+        case 'posts':
+          contentWithAuthor = await prisma.post.findUnique({
+            where: { id: contentId },
+            include: includeAuthor,
+          });
+          break;
+          
+        case 'books':
+          contentWithAuthor = await prisma.book.findUnique({
+            where: { id: contentId },
+            include: includeAuthor,
+          });
+          break;
+          
+        case 'ideas':
+          contentWithAuthor = await prisma.idea.findUnique({
+            where: { id: contentId },
+            include: includeAuthor,
+          });
+          break;
+          
+        case 'images':
+          contentWithAuthor = await prisma.image.findUnique({
+            where: { id: contentId },
+            include: includeAuthor,
+          });
+          break;
+          
+        case 'videos':
+          contentWithAuthor = await prisma.video.findUnique({
+            where: { id: contentId },
+            include: includeAuthor,
+          });
+          break;
+          
+        case 'truths':
+          contentWithAuthor = await prisma.truth.findUnique({
+            where: { id: contentId },
+            include: includeAuthor,
+          });
+          break;
+          
+        case 'questions':
+          contentWithAuthor = await prisma.question.findUnique({
+            where: { id: contentId },
+            include: includeAuthor,
+          });
+          break;
+          
+        case 'ads':
+          contentWithAuthor = await prisma.ad.findUnique({
+            where: { id: contentId },
+            include: includeAuthor,
+          });
+          break;
+          
+        case 'products':
+          contentWithAuthor = await prisma.product.findUnique({
+            where: { id: contentId },
+            include: includeAuthor,
+          });
+          break;
+          
+        default:
+          throw new Error(`Unsupported content type: ${type}`);
+      }
 
       return contentWithAuthor;
+      
     } catch (error) {
       console.error('Error fetching content with author:', error);
       throw error;
     }
   }
 
-  // Handle Prisma errors
+  // Handle Prisma errors - Enhanced with Arabic messages
   static handlePrismaError(error: any): { status: number; message: string } {
     if (error && typeof error === 'object' && 'code' in error) {
       switch (error.code) {
         case 'P2002':
-          return { status: 400, message: 'Duplicate entry detected' };
+          return { status: 400, message: 'المحتوى موجود مسبقاً' };
         case 'P2025':
-          return { status: 404, message: 'Record not found' };
+          return { status: 404, message: 'البيانات المطلوبة غير موجودة' };
         case 'P2003':
-          return { status: 400, message: 'Foreign key constraint failed' };
+          return { status: 400, message: 'مرجع غير صحيح في البيانات' };
+        case 'P2014':
+          return { status: 400, message: 'البيانات المدخلة تنتهك قيود قاعدة البيانات' };
         default:
           console.error('Unhandled Prisma error:', error);
-          return { status: 500, message: 'Database error occurred' };
+          return { status: 500, message: 'خطأ في قاعدة البيانات' };
       }
     }
-    return { status: 500, message: 'Internal server error' };
+    
+    // Handle validation errors
+    if (error && error.name === 'ValidationError') {
+      return { status: 400, message: 'بيانات غير صحيحة' };
+    }
+    
+    return { status: 500, message: 'خطأ داخلي في الخادم' };
   }
 }
 
-// Export types for use in the endpoint
-export type { ContentType, ContentData, BaseContentData, BookData, IdeaData, ImageData, VideoData, AdData, ProductData, QuestionData };
-export { CONTENT_TYPES };   
+// Export types for use in the endpoint - Updated with new types
+export type { 
+  ContentType, 
+  ContentData, 
+  BaseContentData, 
+  BookData, 
+  IdeaData, 
+  ImageData, 
+  VideoData, 
+  AdData, 
+  ProductData, 
+  QuestionData,
+  SentenceData,  // New export
+  WordData       // New export
+};
+export { CONTENT_TYPES };

@@ -15,6 +15,8 @@ export async function getStats() {
       totalAds,
       totalProducts,
       totalIdeas,
+      totalSentences,
+      totalWords,
     ] = await Promise.all([
       prisma.post.count(),
       prisma.truth.count(),
@@ -25,6 +27,8 @@ export async function getStats() {
       prisma.ad.count(),
       prisma.product.count(),
       prisma.idea.count(),
+      prisma.sentence.count(),
+      prisma.word.count(),
     ]);
 
     return {
@@ -38,6 +42,8 @@ export async function getStats() {
       shop: totalProducts,
       ideas: totalIdeas,
       support: 0, // No support model in schema
+      sentences: totalSentences,
+      words: totalWords,
     };
   } catch (error) {
     console.error("Stats Server Action Error:", error);
@@ -52,6 +58,8 @@ export async function getStats() {
       shop: 0,
       ideas: 0,
       support: 0,
+      sentences: 0,
+      words: 0,
       error: "Failed to fetch stats",
       details: (error as Error).message,
     };

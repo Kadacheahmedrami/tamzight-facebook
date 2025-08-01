@@ -84,11 +84,30 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
             }
           }
         },
+        pronunciations: {
+          select: {
+            id: true,
+            accent: true,
+            pronunciation: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                image: true,
+                avatar: true,
+              }
+            }
+          },
+          orderBy: { createdAt: 'desc' }
+        },
         _count: {
           select: {
             comments: true,
             likes: true,
             shares: true,
+            pronunciations: true,
           },
         },
       },
@@ -101,6 +120,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     // Check if current user has liked this word
     const userLike = currentUser ? word.likes.find(like => like.userId === currentUser.id) : null;
 
+    // Check if current user has added a pronunciation
+    const userPronunciation = currentUser ? word.pronunciations.find(p => p.user.id === currentUser.id) : null;
+
     // Group reactions by emoji
     const reactionSummary = word.likes.reduce((acc: any, like) => {
       if (like.emoji) {
@@ -109,11 +131,22 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       return acc;
     }, {});
 
+    // Group pronunciations by accent
+    const pronunciationsByAccent = word.pronunciations.reduce((acc: any, pronunciation) => {
+      if (!acc[pronunciation.accent]) {
+        acc[pronunciation.accent] = [];
+      }
+      acc[pronunciation.accent].push(pronunciation);
+      return acc;
+    }, {});
+
     return NextResponse.json({
       word: {
         ...word,
         userLike,
+        userPronunciation,
         reactionSummary,
+        pronunciationsByAccent,
         isOwner: currentUser?.id === word.authorId
       }
     });
@@ -122,7 +155,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
   }
 }
 
-// POST /api/main/words/[id] - Handle likes, reactions, shares, comments
+// POST /api/main/words/[id] - Handle likes, reactions, shares, comments, pronunciations
 export async function POST(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params;
@@ -132,7 +165,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     }
 
     const body = await req.json();
-    const { action, emoji, content } = body;
+    const { action, emoji, content, accent, pronunciation } = body;
 
     if (action === 'like') {
       // Check if user already liked this word
@@ -329,6 +362,104 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       });
     }
 
+    if (action === 'pronunciation') {
+      // Validate pronunciation data
+      if (!accent || accent.trim() === '') {
+        return NextResponse.json({ error: 'Accent is required' }, { status: 400 });
+      }
+      if (!pronunciation || pronunciation.trim() === '') {
+        return NextResponse.json({ error: 'Pronunciation is required' }, { status: 400 });
+      }
+      if (accent.trim().length > 100) {
+        return NextResponse.json({ error: 'Accent name too long (max 100 characters)' }, { status: 400 });
+      }
+      if (pronunciation.trim().length > 500) {
+        return NextResponse.json({ error: 'Pronunciation too long (max 500 characters)' }, { status: 400 });
+      }
+
+      // Check if user already added a pronunciation for this word
+      const existingPronunciation = await prisma.wordPronunciation.findFirst({
+        where: {
+          userId: user.id,
+          wordId: id
+        }
+      });
+
+      if (existingPronunciation) {
+        // Update existing pronunciation
+        const updatedPronunciation = await prisma.wordPronunciation.update({
+          where: { id: existingPronunciation.id },
+          data: {
+            accent: accent.trim(),
+            pronunciation: pronunciation.trim()
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                image: true,
+                avatar: true,
+              }
+            }
+          }
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: 'Pronunciation updated',
+          pronunciation: updatedPronunciation,
+          action: 'pronunciation_updated'
+        });
+      } else {
+        // Create new pronunciation
+        const newPronunciation = await prisma.wordPronunciation.create({
+          data: {
+            userId: user.id,
+            wordId: id,
+            accent: accent.trim(),
+            pronunciation: pronunciation.trim()
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                image: true,
+                avatar: true,
+              }
+            }
+          }
+        });
+
+        // Create notification for word author (but not for own words)
+        const word = await prisma.word.findUnique({
+          where: { id },
+          select: { authorId: true, title: true }
+        });
+
+        if (word && word.authorId !== user.id) {
+          await prisma.notification.create({
+            data: {
+              userId: word.authorId,
+              type: 'pronunciation',
+              message: `${user.firstName} ${user.lastName} added a pronunciation in ${accent.trim()} to your word`,
+              avatar: user.image || user.avatar
+            }
+          });
+        }
+
+        return NextResponse.json({
+          success: true,
+          message: 'Pronunciation added',
+          pronunciation: newPronunciation,
+          action: 'pronunciation_added'
+        });
+      }
+    }
+
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error) {
     return NextResponse.json({ error: 'Internal server error', details: (error as Error).message }, { status: 500 });
@@ -400,6 +531,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
             comments: true,
             likes: true,
             shares: true,
+            pronunciations: true,
           },
         },
       },

@@ -106,6 +106,10 @@ model User {
   sentences     Sentence[]
   words         Word[]
 
+  // Add these missing relations to fix the Prisma errors
+  wordPronunciations     WordPronunciation[]     @relation("WordPronunciations")
+  sentencePronunciations SentencePronunciation[] @relation("SentencePronunciations")
+
   @@map("users")
 }
 
@@ -123,10 +127,11 @@ model Sentence {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  likes    Like[]
-  comments Comment[]
-  shares   Share[]
+  author         User                    @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes          Like[]
+  comments       Comment[]
+  shares         Share[]
+  pronunciations SentencePronunciation[]
   
   @@map("sentences")
 }
@@ -145,12 +150,43 @@ model Word {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  author   User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  likes    Like[]
-  comments Comment[]
-  shares   Share[]
+  author         User               @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes          Like[]
+  comments       Comment[]
+  shares         Share[]
+  pronunciations WordPronunciation[]
   
   @@map("words")
+}
+
+// Simple Word Pronunciation - users can add how they spell/pronounce words
+model WordPronunciation {
+  id            String   @id @default(cuid())
+  wordId        String
+  userId        String
+  accent        String   // e.g., "قبائلي", "شاوي", "مزابي"
+  pronunciation String   // How they write/pronounce it
+  createdAt     DateTime @default(now())
+  
+  word Word @relation(fields: [wordId], references: [id], onDelete: Cascade)
+  user User @relation("WordPronunciations", fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("word_pronunciations")
+}
+
+// Simple Sentence Pronunciation - users can add how they say sentences
+model SentencePronunciation {
+  id            String   @id @default(cuid())
+  sentenceId    String
+  userId        String
+  accent        String   // e.g., "قبائلي", "شاوي", "مزابي"
+  pronunciation String   // How they say the sentence
+  createdAt     DateTime @default(now())
+  
+  sentence Sentence @relation(fields: [sentenceId], references: [id], onDelete: Cascade)
+  user     User     @relation("SentencePronunciations", fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("sentence_pronunciations")
 }
 
 // Friend Request model

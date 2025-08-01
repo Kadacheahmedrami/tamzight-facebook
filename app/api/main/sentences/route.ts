@@ -84,7 +84,7 @@ export async function GET(request: NextRequest) {
     const hasNextPage = page < totalPages
     const hasPreviousPage = page > 1
 
-    // Fetch sentences from database with pagination
+    // Fetch sentences from database with pagination and pronunciations
     const sentences = await prisma.sentence.findMany({
       where: whereClause,
       include: {
@@ -93,14 +93,31 @@ export async function GET(request: NextRequest) {
             id: true,
             firstName: true,
             lastName: true,
-            avatar: true
+            avatar: true,
+            image: true // Include NextAuth image field as well
+          }
+        },
+        pronunciations: {
+          include: {
+            user: {
+              select: {
+                id: true,
+                firstName: true,
+                lastName: true,
+                avatar: true
+              }
+            }
+          },
+          orderBy: {
+            createdAt: 'desc'
           }
         },
         _count: {
           select: {
             likes: true,
             comments: true,
-            shares: true
+            shares: true,
+            pronunciations: true
           }
         }
       },
@@ -209,7 +226,7 @@ export async function GET(request: NextRequest) {
     type SentenceFromDb = {
       id: string;
       title: string;
-      content: string | null;
+      content: string;
       createdAt: Date;
       category: string;
       subcategory: string | null;
@@ -220,11 +237,25 @@ export async function GET(request: NextRequest) {
         firstName: string;
         lastName: string;
         avatar: string | null;
+        image: string | null;
       };
+      pronunciations: {
+        id: string;
+        accent: string;
+        pronunciation: string;
+        createdAt: Date;
+        user: {
+          id: string;
+          firstName: string;
+          lastName: string;
+          avatar: string | null;
+        };
+      }[];
       _count: {
         likes: number;
         comments: number;
         shares: number;
+        pronunciations: number;
       };
     };
 
@@ -232,12 +263,31 @@ export async function GET(request: NextRequest) {
     const transformedSentences = sentences.map((sentence: SentenceFromDb) => {
       const sentenceReactions = reactionsData.get(sentence.id);
       
+      // Group pronunciations by accent
+      const pronunciationsByAccent = sentence.pronunciations.reduce((acc, pronunciation) => {
+        if (!acc[pronunciation.accent]) {
+          acc[pronunciation.accent] = [];
+        }
+        acc[pronunciation.accent].push({
+          id: pronunciation.id,
+          pronunciation: pronunciation.pronunciation,
+          createdAt: pronunciation.createdAt,
+          user: {
+            id: pronunciation.user.id,
+            name: `${pronunciation.user.firstName} ${pronunciation.user.lastName}`,
+            avatar: pronunciation.user.avatar
+          }
+        });
+        return acc;
+      }, {} as Record<string, any[]>);
+      
       return {
         id: sentence.id,
         title: sentence.title,
-        content: sentence.content || "",
+        content: sentence.content,
         author: `${sentence.author.firstName} ${sentence.author.lastName}`,
         authorId: sentence.author.id,
+        authorAvatar: sentence.author.avatar || sentence.author.image, // Fallback to NextAuth image
         timestamp: `نشر بتاريخ ${sentence.createdAt.toLocaleDateString('ar-EG')} الساعة ${sentence.createdAt.toLocaleTimeString('ar-EG')}`,
         category: sentence.category,
         subcategory: sentence.subcategory || "",
@@ -246,7 +296,8 @@ export async function GET(request: NextRequest) {
           views: sentence.views,
           likes: sentence._count.likes,
           comments: sentence._count.comments,
-          shares: sentence._count.shares
+          shares: sentence._count.shares,
+          pronunciations: sentence._count.pronunciations
         },
         // Add user interaction information
         userHasLiked: currentUserId ? userLikesMap.has(sentence.id) : false,
@@ -256,6 +307,22 @@ export async function GET(request: NextRequest) {
           total: sentenceReactions?.totalReactions || 0,
           summary: sentenceReactions?.summary || [],
           details: sentenceReactions?.byEmoji || {}
+        },
+        // Add pronunciations data
+        pronunciations: {
+          total: sentence._count.pronunciations,
+          byAccent: pronunciationsByAccent,
+          recent: sentence.pronunciations.slice(0, 5).map(p => ({
+            id: p.id,
+            accent: p.accent,
+            pronunciation: p.pronunciation,
+            createdAt: p.createdAt,
+            user: {
+              id: p.user.id,
+              name: `${p.user.firstName} ${p.user.lastName}`,
+              avatar: p.user.avatar
+            }
+          }))
         }
       }
     })

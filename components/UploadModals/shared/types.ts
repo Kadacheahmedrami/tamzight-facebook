@@ -1,5 +1,5 @@
 // shared/types.ts
-export type ContentType = 'posts' | 'books' | 'ideas' | 'images' | 'videos' | 'truths' | 'questions' | 'ads' | 'products'
+export type ContentType = 'posts' | 'books' | 'ideas' | 'images' | 'videos' | 'truths' | 'questions' | 'ads' | 'products' | 'sentences' | 'words'
 
 export interface BaseFormData {
   title: string
@@ -55,3 +55,18 @@ export interface TruthFormData extends BaseFormData {}
 
 export interface PostFormData extends BaseFormData {}
 
+export interface SentenceFormData {
+  title: string
+  content: string
+  category: string
+  subcategory: string
+  image: string
+}
+
+export interface WordFormData {
+  title: string
+  content: string
+  category: string
+  subcategory: string
+  image: string
+}

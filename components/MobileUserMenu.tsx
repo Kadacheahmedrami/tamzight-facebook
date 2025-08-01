@@ -16,6 +16,8 @@ interface Stats {
   shop: number
   ideas: number
   support: number
+  sentences?: number
+  words?: number
 }
 
 interface UnifiedNavigationProps {
@@ -65,16 +67,18 @@ export default function UnifiedNavigation({ user, unreadMessages = 0, onLogout, 
 
   const sidebarLinks = [
     { href: "/main", icon: "fa-home", label: "أحدث المنشورات", badge: null },
-    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: formatStatsBadge(stats!.posts) },
-    { href: "/main/truths", icon: "fa-sun", label: "حقيقة امازيغية", badge: formatStatsBadge(stats!.truth) },
-    { href: "/main/questions", icon: "fa-question-circle", label: "اسئلة امازيغية", badge: formatStatsBadge(stats!.questions) },
-    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: formatStatsBadge(stats!.books) },
-    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: formatStatsBadge(stats!.images) },
-    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: formatStatsBadge(stats!.videos) },
-    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: formatStatsBadge(stats!.ads) },
-    { href: "/main/products", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: formatStatsBadge(stats!.shop) },
-    { href: "/main/ideas", icon: "fa-lightbulb", label: "اقتراحات لتطوير المنصة", badge: formatStatsBadge(stats!.ideas) },
-    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: formatStatsBadge(stats!.support) },
+    { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: formatStatsBadge(stats?.posts) },
+    { href: "/main/truths", icon: "fa-sun", label: "حقيقة امازيغية", badge: formatStatsBadge(stats?.truth) },
+    { href: "/main/questions", icon: "fa-question-circle", label: "اسئلة امازيغية", badge: formatStatsBadge(stats?.questions) },
+    { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: formatStatsBadge(stats?.books) },
+    { href: "/main/images", icon: "fa-images", label: "صور امازيغية", badge: formatStatsBadge(stats?.images) },
+    { href: "/main/videos", icon: "fa-tv", label: "فيديوهات امازيغية", badge: formatStatsBadge(stats?.videos) },
+    { href: "/main/ads", icon: "fa-bullhorn", label: "اعلانات امازيغية", badge: formatStatsBadge(stats?.ads) },
+    { href: "/main/products", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: formatStatsBadge(stats?.shop) },
+    { href: "/main/ideas", icon: "fa-lightbulb", label: "اقتراحات لتطوير المنصة", badge: formatStatsBadge(stats?.ideas) },
+    { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: formatStatsBadge(stats?.support) },
+    { href: "/main/sentences", icon: "fa-paragraph", label: "الجمل الامازيغية", badge: formatStatsBadge(stats?.sentences) },
+    { href: "/main/words", icon: "fa-font", label: "الكلمات الامازيغية", badge: formatStatsBadge(stats?.words) },
   ]
 
   const isActiveLink = (href: string) => {

@@ -14,6 +14,8 @@ interface Stats {
   shop: number
   ideas: number
   support: number
+  sentences?: number
+  words?: number
 }
 
 interface SidebarProps {
@@ -26,6 +28,8 @@ export default function Sidebar({ stats }: SidebarProps) {
   const sidebarLinks = [
     { href: "/main", icon: "fa-home", label: " أحدث المنشورات", badge: null },
     { href: "/main/posts", icon: "fa-edit", label: "منشورات امازيغية", badge: stats.posts.toString() },
+    { href: "/main/sentences", icon: "fa-paragraph", label: "الجمل الامازيغية", badge: (stats.sentences || 0).toString() },
+    { href: "/main/words", icon: "fa-font", label: "الكلمات الامازيغية", badge: (stats.words || 0).toString() },
     { href: "/main/truths", icon: "fa-sun", label: "حقيقة امازيغية", badge: stats.truth.toString() },
     { href: "/main/questions", icon: "fa-question-circle", label: "اسئلة امازيغية", badge: stats.questions.toString() },
     { href: "/main/books", icon: "fa-book", label: "كُتب امازيغية", badge: stats.books.toString() },
@@ -35,6 +39,7 @@ export default function Sidebar({ stats }: SidebarProps) {
     { href: "/main/products", icon: "fa-store", label: "تسوق منتجات امازيغية", badge: stats.shop.toString() },
     { href: "/main/ideas", icon: "fa-lightbulb", label: "اقتراحات لتطوير المنصة", badge: stats.ideas.toString() },
     { href: "/main/support", icon: "fa-archive", label: "صندوق دعم الامازيغ", badge: stats.support.toString() },
+
   ]
 
   const isActiveLink = (href: string) => {
