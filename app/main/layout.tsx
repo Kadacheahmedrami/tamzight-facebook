@@ -6,7 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import Header from "@/components/header";
 import { getUserData } from "@/app/action/UserData";
-
+import ChatWidget from "@/components/chat-widget"
 interface LayoutProps {
   children: ReactNode;
   showRightSidebar?: boolean;
@@ -59,6 +59,7 @@ export default async function MainLayout({
           {showRightSidebar && <LeftSidebar session={session} />}
         </div>
       </div>
+      <ChatWidget />
     </>
   );
 }
