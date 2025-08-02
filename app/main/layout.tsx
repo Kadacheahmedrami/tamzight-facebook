@@ -59,7 +59,7 @@ export default async function MainLayout({
           {showRightSidebar && <LeftSidebar session={session} />}
         </div>
       </div>
-      <ChatWidget />
+      <ChatWidget session={session} />
     </>
   );
 }
